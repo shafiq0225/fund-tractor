@@ -6,7 +6,6 @@ public class AmfiRawData
 {
     public int Id { get; set; }
     public string FundId { get; set; }
-
     public string FundName { get; set; }
     public string SchemeName { get; set; }
     public string SchemeCode { get; set; }
