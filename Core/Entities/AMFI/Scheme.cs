@@ -14,5 +14,4 @@ public class Scheme
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ApprovedAt { get; set; } = DateTime.UtcNow;
     public string ApprovedBy { get; set; }
-
 }
