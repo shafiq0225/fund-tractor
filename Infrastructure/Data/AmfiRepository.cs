@@ -1,13 +1,12 @@
-﻿using Core.Entities.AMFI;
-using Infrastructure.Data;
+using System;
+using Core.Entities.AMFI;
+using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Services;
+namespace Infrastructure.Data;
 
-public class AmfiImportService(StoreContext storeContext)
+public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 {
-    private readonly StoreContext storeContext = storeContext;
-
     public async Task ImportAmfiDataAsync(string rawData)
     {
         var lines = rawData.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -30,7 +29,12 @@ public class AmfiImportService(StoreContext storeContext)
             await ProcessRawDataAsync(line, currentFundId, currentFundName);
         }
 
-        await storeContext.SaveChangesAsync();
+        await SaveChangesAsync();
+    }
+
+    public async Task<bool> SaveChangesAsync()
+    {
+        return await storeContext.SaveChangesAsync() > 0;
     }
 
     public async Task<bool> SetFundApprovalAsync(string fundId, bool isApproved)
@@ -63,7 +67,43 @@ public class AmfiImportService(StoreContext storeContext)
             record.IsVisible = isApproved;
         }
 
-        await storeContext.SaveChangesAsync();
+        await SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> SetSchemeApprovalAsync(string schemeId, bool isApproved)
+    {
+        // Fetch scheme along with its parent fund in a single query
+        var scheme = await storeContext.Schemes
+            .Include(s => s.Fund)
+            .FirstOrDefaultAsync(s => s.SchemeId == schemeId);
+
+        if (scheme == null) return false;
+
+        // Update scheme approval and visibility
+        scheme.IsManagerApproved = isApproved;
+        scheme.IsVisible = isApproved;
+
+        // Update fund approval/visibility if approving a scheme
+        if (scheme.Fund != null)
+        {
+            scheme.Fund.IsManagerApproved = isApproved;
+            scheme.Fund.IsVisible = isApproved;
+        }
+
+        // Update AMFI raw data visibility if needed
+        var amfiDatas = await storeContext.AmfiRawDatas.Where(x => x.SchemeCode == schemeId).ToListAsync();
+
+
+        if (amfiDatas.Count != 0)
+        {
+            foreach (var amfiData in amfiDatas)
+            {
+                amfiData.IsVisible = isApproved;
+            }
+        }
+
+        await SaveChangesAsync();
         return true;
     }
 
@@ -96,6 +136,12 @@ public class AmfiImportService(StoreContext storeContext)
         }
 
         return (fundName, fundId);
+    }
+
+    private static string GenerateFundId(string fundName, int index)
+    {
+        var normalized = new string(fundName.Where(char.IsLetterOrDigit).ToArray());
+        return $"{normalized}MF_{index}";
     }
 
     private async Task ProcessRawDataAsync(string line, string currentFundId, string currentFundName)
@@ -142,45 +188,6 @@ public class AmfiImportService(StoreContext storeContext)
             IsVisible = false,
             ApprovedBy = "Shafiq"
         });
-    }
-
-    private static string GenerateFundId(string fundName, int index)
-    {
-        var normalized = new string(fundName.Where(char.IsLetterOrDigit).ToArray());
-        return $"{normalized}MF_{index}";
-    }
-
-    public async Task<bool> SetSchemeApprovalAsync(string schemeId, bool isApproved)
-    {
-        // Fetch scheme along with its parent fund in a single query
-        var scheme = await storeContext.Schemes
-            .Include(s => s.Fund)
-            .FirstOrDefaultAsync(s => s.SchemeId == schemeId);
-
-        if (scheme == null) return false;
-
-        // Update scheme approval and visibility
-        scheme.IsManagerApproved = isApproved;
-        scheme.IsVisible = isApproved;
-
-        // Update fund approval/visibility if approving a scheme
-        if (isApproved && scheme.Fund != null)
-        {
-            scheme.Fund.IsManagerApproved = true;
-            scheme.Fund.IsVisible = true;
-        }
-
-        // Update AMFI raw data visibility if needed
-        var amfiData = await storeContext.AmfiRawDatas
-            .FirstOrDefaultAsync(x => x.SchemeCode == schemeId && x.IsVisible != true);
-
-        if (amfiData != null)
-        {
-            amfiData.IsVisible = isApproved;
-        }
-
-        await storeContext.SaveChangesAsync();
-        return true;
     }
 
 }

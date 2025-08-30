@@ -1,18 +1,13 @@
-﻿using Infrastructure.Services;
+﻿using Core.Interfaces;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AmfiController : ControllerBase
+    public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
-        private readonly AmfiImportService amfiImportService;
-
-        public AmfiController(AmfiImportService amfiImportService)
-        {
-            this.amfiImportService = amfiImportService;
-        }
 
         [HttpPost("import")]
         public async Task<IActionResult> Import(IFormFile rawdata)
@@ -25,7 +20,7 @@ namespace API.Controllers
                 using var reader = new StreamReader(rawdata.OpenReadStream());
                 var content = await reader.ReadToEndAsync();
 
-                await amfiImportService.ImportAmfiDataAsync(content);
+                await amfiRepository.ImportAmfiDataAsync(content);
 
                 return Ok(new { Message = "Imported successfully" });
             }
@@ -42,7 +37,7 @@ namespace API.Controllers
         {
             try
             {
-                bool success = await amfiImportService.SetFundApprovalAsync(fundId, isApproved);
+                bool success = await amfiRepository.SetFundApprovalAsync(fundId, isApproved);
 
                 if (!success)
                     return NotFound($"Fund with id {fundId} not found.");
@@ -76,7 +71,7 @@ namespace API.Controllers
         {
             try
             {
-                bool success = await amfiImportService.SetSchemeApprovalAsync(schemeId, isApproved);
+                bool success = await amfiRepository.SetSchemeApprovalAsync(schemeId, isApproved);
 
                 if (!success)
                     return NotFound($"Scheme with id {schemeId} not found.");
@@ -99,7 +94,7 @@ namespace API.Controllers
                     SchemeId = schemeId,
                     Approved = isApproved,
                     Error = "An error occurred while updating scheme approval.",
-                    Details = ex.Message // ⚠️ hide in prod
+                    Details = ex.Message 
                 });
             }
         }
