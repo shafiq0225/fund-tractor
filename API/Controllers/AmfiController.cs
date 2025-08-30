@@ -1,6 +1,4 @@
-using Infrastructure.Data;
-using Infrastructure.Services;
-using Microsoft.AspNetCore.Http;
+﻿using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -17,27 +15,93 @@ namespace API.Controllers
         }
 
         [HttpPost("import")]
-        public IActionResult Import(IFormFile csvLines)
+        public async Task<IActionResult> Import(IFormFile rawdata)
         {
-            using var reader = new StreamReader(csvLines.OpenReadStream());
-            var content = reader.ReadToEnd();
+            if (rawdata == null || rawdata.Length == 0)
+                return BadRequest("No file uploaded.");
 
-            amfiImportService.ImportAmfiData(content);
-            return Ok("Imported successfully");
+            try
+            {
+                using var reader = new StreamReader(rawdata.OpenReadStream());
+                var content = await reader.ReadToEndAsync();
+
+                await amfiImportService.ImportAmfiDataAsync(content);
+
+                return Ok(new { Message = "Imported successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Log error here if you have logging
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "An error occurred during import", Details = ex.Message });
+            }
         }
 
-        [HttpPost("set-fund-approval/{fundId}")]
-        public IActionResult SetFundApproval(string fundId, [FromQuery] bool isApproved)
+        [HttpPost("funds/{fundId}/approval")]
+        public async Task<IActionResult> UpdateFundApprovalAsync(string fundId, [FromQuery] bool isApproved)
         {
-            amfiImportService.SetFundApproval(fundId, isApproved);
-            return Ok(isApproved ? "Fund approved" : "Fund unapproved");
+            try
+            {
+                bool success = await amfiImportService.SetFundApprovalAsync(fundId, isApproved);
+
+                if (!success)
+                    return NotFound($"Fund with id {fundId} not found.");
+
+                return Ok(new
+                {
+                    FundId = fundId,
+                    Approved = isApproved,
+                    Message = isApproved
+                        ? "Fund approved successfully."
+                        : "Fund unapproved successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log error if you have ILogger
+                // _logger.LogError(ex, "Error updating approval for fund {FundId}", fundId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    FundId = fundId,
+                    Approved = isApproved,
+                    Error = "An error occurred while updating fund approval.",
+                    Details = ex.Message
+                });
+            }
         }
 
-        [HttpPost("set-scheme-approval/{schemeId}")]
-        public IActionResult SetSchemeApproval(string schemeId, [FromQuery] bool isApproved)
+        [HttpPost("schemes/{schemeId}/approval")]
+        public async Task<IActionResult> UpdateSchemeApprovalAsync(string schemeId, [FromQuery] bool isApproved)
         {
-            amfiImportService.SetSchemeApproval(schemeId, isApproved);
-            return Ok(isApproved ? "Scheme approved" : "Scheme unapproved");
+            try
+            {
+                bool success = await amfiImportService.SetSchemeApprovalAsync(schemeId, isApproved);
+
+                if (!success)
+                    return NotFound($"Scheme with id {schemeId} not found.");
+
+                return Ok(new
+                {
+                    SchemeId = schemeId,
+                    Approved = isApproved,
+                    Message = isApproved
+                        ? "Scheme approved successfully."
+                        : "Scheme unapproved successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                // _logger.LogError(ex, "Error updating scheme approval for {SchemeId}", schemeId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    SchemeId = schemeId,
+                    Approved = isApproved,
+                    Error = "An error occurred while updating scheme approval.",
+                    Details = ex.Message // ⚠️ hide in prod
+                });
+            }
         }
     }
 }
