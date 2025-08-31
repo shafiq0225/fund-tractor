@@ -1,5 +1,4 @@
 ﻿using Core.Interfaces;
-using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -8,12 +7,15 @@ namespace API.Controllers
     [ApiController]
     public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
-
         [HttpPost("import")]
         public async Task<IActionResult> Import(IFormFile rawdata)
         {
             if (rawdata == null || rawdata.Length == 0)
                 return BadRequest("No file uploaded.");
+
+            var extension = Path.GetExtension(rawdata.FileName).ToLowerInvariant();
+            if (extension != ".txt")
+                return BadRequest("Only .txt files are allowed.");
 
             try
             {
@@ -26,7 +28,6 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                // Log error here if you have logging
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new { Message = "An error occurred during import", Details = ex.Message });
             }
@@ -53,9 +54,6 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                // Log error if you have ILogger
-                // _logger.LogError(ex, "Error updating approval for fund {FundId}", fundId);
-
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
                     FundId = fundId,
@@ -87,14 +85,12 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                // _logger.LogError(ex, "Error updating scheme approval for {SchemeId}", schemeId);
-
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
                     SchemeId = schemeId,
                     Approved = isApproved,
                     Error = "An error occurred while updating scheme approval.",
-                    Details = ex.Message 
+                    Details = ex.Message
                 });
             }
         }

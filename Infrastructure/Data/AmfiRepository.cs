@@ -132,7 +132,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 IsVisible = false,
                 ApprovedBy = "Shafiq"
             });
-            await storeContext.SaveChangesAsync();
+            await SaveChangesAsync();
         }
 
         return (fundName, fundId);
