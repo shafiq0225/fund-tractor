@@ -1,5 +1,6 @@
 using System;
 using Core.Entities.AMFI;
+using Core.Helpers;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,19 +16,11 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         string currentFundId = string.Empty;
 
         // Cache to avoid duplicate DB queries
-        var existingFunds = (await storeContext.Funds
-    .Select(f => f.FundId)
-    .ToListAsync()).ToHashSet();
+        var existingFunds = (await storeContext.Funds.Select(f => f.FundId).ToListAsync()).ToHashSet();
 
+        var existingSchemes = (await storeContext.Schemes.Select(s => s.SchemeId).ToListAsync()).ToHashSet();
 
-        var existingSchemes = (await storeContext.Schemes
-    .Select(s => s.SchemeId)
-    .ToListAsync()).ToHashSet();
-
-        var existingAmfiData = (await storeContext.AmfiRawDatas
-            .Select(a => a.SchemeCode)
-            .ToListAsync()).ToHashSet();
-
+        var existingAmfiData = (await storeContext.AmfiRawDatas.Select(a => a.SchemeCode).ToListAsync()).ToHashSet();
 
         var newFunds = new List<Fund>();
         var newSchemes = new List<Scheme>();
@@ -35,13 +28,13 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         foreach (var line in lines)
         {
-            if (IsHeaderOrSection(line))
+            if (AmfiDataHelper.IsHeaderOrSection(line))
                 continue;
 
-            if (IsFundLine(line))
+            if (AmfiDataHelper.IsFundLine(line))
             {
                 currentFundName = line.Trim();
-                currentFundId = GenerateFundId(currentFundName);
+                currentFundId = AmfiDataHelper.GenerateFundId(currentFundName);
 
                 if (!existingFunds.Contains(currentFundId))
                 {
@@ -106,9 +99,8 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         if (newSchemes.Any()) await storeContext.Schemes.AddRangeAsync(newSchemes);
         if (newAmfiData.Any()) await storeContext.AmfiRawDatas.AddRangeAsync(newAmfiData);
 
-        await storeContext.SaveChangesAsync();
+        await SaveChangesAsync();
     }
-
 
     public async Task<bool> SaveChangesAsync()
     {
@@ -183,106 +175,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         await SaveChangesAsync();
         return true;
-    }
-
-    private static bool IsHeaderOrSection(string line)
-    {
-        return line.StartsWith("Scheme Code") || line.Contains("Open Ended") || string.IsNullOrWhiteSpace(line);
-    }
-
-    private static bool IsFundLine(string line)
-    {
-        return !line.Contains(";");
-    }
-
-    private async Task<(string fundName, string fundId)> ProcessFundAsync(string fundName)
-    {
-        var fundId = GenerateFundId(fundName);
-
-        bool exists = await storeContext.Funds.AnyAsync(f => f.FundId == fundId);
-        if (!exists)
-        {
-            await storeContext.Funds.AddAsync(new Fund
-            {
-                FundId = fundId,
-                FundName = fundName,
-                IsManagerApproved = false,
-                IsVisible = false,
-                ApprovedBy = "Shafiq"
-            });
-            await SaveChangesAsync();
-        }
-
-        return (fundName, fundId);
-    }
-
-    private static string GenerateFundId(string fundName)
-    {
-        if (string.IsNullOrWhiteSpace(fundName))
-            return string.Empty;
-
-        const string suffix = "Mutual Fund";
-        string result;
-
-        if (fundName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-        {
-            // Remove "Mutual Fund" and append "_MF"
-            result = fundName.Substring(0, fundName.Length - suffix.Length).Trim().Replace(" ", "");
-            result += "_MF";
-        }
-        else
-        {
-            // Just remove spaces if no "Mutual Fund" suffix
-            result = fundName.Replace(" ", "");
-        }
-
-        return result;
-    }
-
-    private async Task ProcessRawDataAsync(string line, string currentFundId, string currentFundName)
-    {
-        var parts = line.Split(';');
-        if (parts.Length < 6) return;
-
-        var schemeCode = parts[0].Trim();
-        var schemeName = parts[3].Trim();
-
-        decimal nav = decimal.TryParse(parts[4], out var parsedNav) ? parsedNav : 0;
-        DateTime date = DateTime.TryParse(parts[5], out var parsedDate) ? parsedDate : DateTime.UtcNow;
-
-        await EnsureSchemeExistsAsync(schemeCode, schemeName, currentFundId);
-
-        var amfi = await storeContext.AmfiRawDatas
-            .FirstOrDefaultAsync(a => a.SchemeCode == schemeCode);
-
-        bool isVisible = amfi?.IsVisible ?? false;
-
-        await storeContext.AmfiRawDatas.AddAsync(new AmfiRawData
-        {
-            FundId = currentFundId,
-            FundName = currentFundName,
-            SchemeCode = schemeCode,
-            SchemeName = schemeName,
-            NetAssetValue = nav,
-            Date = date,
-            IsVisible = isVisible
-        });
-    }
-
-    private async Task EnsureSchemeExistsAsync(string schemeCode, string schemeName, string fundId)
-    {
-        bool exists = await storeContext.Schemes.AnyAsync(s => s.SchemeId == schemeCode);
-        if (exists) return;
-
-        await storeContext.Schemes.AddAsync(new Scheme
-        {
-            SchemeId = schemeCode,
-            FundId = fundId,
-            SchemeName = schemeName,
-            IsManagerApproved = false,
-            IsVisible = false,
-            ApprovedBy = "Shafiq"
-        });
     }
 
 }
