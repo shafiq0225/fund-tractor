@@ -1,4 +1,5 @@
-﻿using Core.Interfaces;
+﻿using Core.DTOs;
+using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -32,6 +33,50 @@ namespace API.Controllers
                     new { Message = "An error occurred during import", Details = ex.Message });
             }
         }
+
+        [HttpPost("import-amfi-url")]
+        public async Task<IActionResult> ImportAmfiFromUrl([FromBody] ImportUrlRequest fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl.FileUrl))
+                return BadRequest("File URL is required.");
+
+            try
+            {
+                // ✅ Ensure it’s from AMFI domain
+                if (!fileUrl.FileUrl.StartsWith("https://www.amfiindia.com", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("Invalid URL. Only AMFI URLs are allowed.");
+
+                // ✅ Ensure it’s a .txt file
+                var extension = Path.GetExtension(new Uri(fileUrl.FileUrl).AbsolutePath).ToLowerInvariant();
+                if (extension != ".txt")
+                    return BadRequest("Only .txt files are allowed.");
+
+                using var httpClient = new HttpClient();
+                var response = await httpClient.GetAsync(fileUrl.FileUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return BadRequest("Unable to download the file from the provided URL.");
+
+                // ✅ Check MIME type
+                var contentType = response.Content.Headers.ContentType?.MediaType;
+                if (contentType != null && contentType != "text/plain")
+                    return BadRequest("Invalid file type. Only plain text (.txt) files are allowed.");
+
+                // ✅ Read content
+                var content = await response.Content.ReadAsStringAsync();
+
+                // ✅ Save in DB via repository
+                await amfiRepository.ImportAmfiDataAsync(content);
+
+                return Ok(new { Message = "Imported successfully from AMFI URL" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "An error occurred during import", Details = ex.Message });
+            }
+        }
+
 
         [HttpPost("funds/{fundId}/approval")]
         public async Task<IActionResult> UpdateFundApprovalAsync(string fundId, [FromQuery] bool isApproved)

@@ -13,7 +13,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         string currentFundName = string.Empty;
         string currentFundId = string.Empty;
-        int fundIndex = 1;
 
         foreach (var line in lines)
         {
@@ -22,7 +21,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
             if (IsFundLine(line))
             {
-                (currentFundName, currentFundId) = await ProcessFundAsync(line.Trim(), fundIndex++);
+                (currentFundName, currentFundId) = await ProcessFundAsync(line.Trim());
                 continue;
             }
 
@@ -117,9 +116,9 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         return !line.Contains(";");
     }
 
-    private async Task<(string fundName, string fundId)> ProcessFundAsync(string fundName, int index)
+    private async Task<(string fundName, string fundId)> ProcessFundAsync(string fundName)
     {
-        var fundId = GenerateFundId(fundName, index);
+        var fundId = GenerateFundId(fundName);
 
         bool exists = await storeContext.Funds.AnyAsync(f => f.FundId == fundId);
         if (!exists)
@@ -138,10 +137,27 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         return (fundName, fundId);
     }
 
-    private static string GenerateFundId(string fundName, int index)
+    private static string GenerateFundId(string fundName)
     {
-        var normalized = new string(fundName.Where(char.IsLetterOrDigit).ToArray());
-        return $"{normalized}MF_{index}";
+        if (string.IsNullOrWhiteSpace(fundName))
+            return string.Empty;
+
+        const string suffix = "Mutual Fund";
+        string result;
+
+        if (fundName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            // Remove "Mutual Fund" and append "_MF"
+            result = fundName.Substring(0, fundName.Length - suffix.Length).Trim().Replace(" ", "");
+            result += "_MF";
+        }
+        else
+        {
+            // Just remove spaces if no "Mutual Fund" suffix
+            result = fundName.Replace(" ", "");
+        }
+
+        return result;
     }
 
     private async Task ProcessRawDataAsync(string line, string currentFundId, string currentFundName)
@@ -162,31 +178,31 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         bool isVisible = amfi?.IsVisible ?? false;
 
-        await storeContext.AmfiRawDatas.AddAsync(new AmfiRawData
-        {
-            FundId = currentFundId,
-            FundName = currentFundName,
-            SchemeCode = schemeCode,
-            SchemeName = schemeName,
-            NetAssetValue = nav,
-            Date = date,
-            IsVisible = isVisible
-        });
-    }
-
+            await storeContext.AmfiRawDatas.AddAsync(new AmfiRawData
+            {
+                FundId = currentFundId,
+                FundName = currentFundName,
+                SchemeCode = schemeCode,
+                SchemeName = schemeName,
+                NetAssetValue = nav,
+                Date = date,
+                IsVisible = isVisible
+            });
+        }
+        
     private async Task EnsureSchemeExistsAsync(string schemeCode, string schemeName, string fundId)
     {
         bool exists = await storeContext.Schemes.AnyAsync(s => s.SchemeId == schemeCode);
         if (exists) return;
 
         await storeContext.Schemes.AddAsync(new Scheme
-        {
-            SchemeId = schemeCode,
-            FundId = fundId,
-            SchemeName = schemeName,
-            IsManagerApproved = false,
-            IsVisible = false,
-            ApprovedBy = "Shafiq"
+            {
+                SchemeId = schemeCode,
+                FundId = fundId,
+                SchemeName = schemeName,
+                IsManagerApproved = false,
+                IsVisible = false,
+                ApprovedBy = "Shafiq"
         });
     }
 
