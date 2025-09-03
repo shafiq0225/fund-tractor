@@ -1,5 +1,6 @@
 ﻿using Core.DTOs;
 using Core.Interfaces;
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -78,60 +79,56 @@ namespace API.Controllers
         }
 
 
-        [HttpPost("funds/{fundId}/approval")]
-        public async Task<IActionResult> UpdateFundApprovalAsync(string fundId, [FromQuery] bool isApproved)
+        //[HttpPost("funds/{fundId}/approval")]
+        //public async Task<IActionResult> UpdateFundApprovalAsync(string fundId, [FromQuery] bool isApproved)
+        //{
+        //    try
+        //    {
+        //        bool success = await amfiRepository.SetFundApprovalAsync(fundId, isApproved);
+
+        //        if (!success)
+        //            return NotFound($"Fund with id {fundId} not found.");
+
+        //        return Ok(new
+        //        {
+        //            FundId = fundId,
+        //            Approved = isApproved,
+        //            Message = isApproved
+        //                ? "Fund approved successfully."
+        //                : "Fund unapproved successfully."
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, new
+        //        {
+        //            FundId = fundId,
+        //            Approved = isApproved,
+        //            Error = "An error occurred while updating fund approval.",
+        //            Details = ex.Message
+        //        });
+        //    }
+        //}
+
+        [HttpPost("schemes/{fundName}/{schemeId}/approval")]
+        public async Task<IActionResult> AddApprovedScheme(string fundName, string schemeId, [FromQuery] bool isApproved)
         {
             try
             {
-                bool success = await amfiRepository.SetFundApprovalAsync(fundId, isApproved);
-
-                if (!success)
-                    return NotFound($"Fund with id {fundId} not found.");
+                var (success, message) = await amfiRepository.AddApprovedSchemeAsync(fundName, schemeId, isApproved);
 
                 return Ok(new
                 {
-                    FundId = fundId,
-                    Approved = isApproved,
-                    Message = isApproved
-                        ? "Fund approved successfully."
-                        : "Fund unapproved successfully."
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    FundId = fundId,
-                    Approved = isApproved,
-                    Error = "An error occurred while updating fund approval.",
-                    Details = ex.Message
-                });
-            }
-        }
-
-        [HttpPost("schemes/{schemeId}/approval")]
-        public async Task<IActionResult> UpdateSchemeApprovalAsync(string schemeId, [FromQuery] bool isApproved)
-        {
-            try
-            {
-                bool success = await amfiRepository.SetSchemeApprovalAsync(schemeId, isApproved);
-
-                if (!success)
-                    return NotFound($"Scheme with id {schemeId} not found.");
-
-                return Ok(new
-                {
+                    FundName = fundName,
                     SchemeId = schemeId,
-                    Approved = isApproved,
-                    Message = isApproved
-                        ? "Scheme approved successfully."
-                        : "Scheme unapproved successfully."
+                    Message = message
                 });
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
+                    FundName = fundName,
                     SchemeId = schemeId,
                     Approved = isApproved,
                     Error = "An error occurred while updating scheme approval.",
@@ -139,5 +136,22 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpPut("schemes/{fundId}/{schemeId}/approval")]
+        public async Task<IActionResult> UpdateApprovedScheme(string fundId, string schemeId, [FromQuery] bool isApproved)
+        {
+            var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(fundId, schemeId, isApproved);
+
+            return Ok(new
+            {
+                FundId = fundId,
+                SchemeId = schemeId,
+                Approved = isApproved,
+                Success = success,
+                Message = message
+            });
+        }
+
+
     }
 }

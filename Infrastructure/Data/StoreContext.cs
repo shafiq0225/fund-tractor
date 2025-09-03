@@ -6,22 +6,22 @@ namespace Infrastructure.Data;
 
 public class StoreContext(DbContextOptions options) : DbContext(options)
 {
-    public DbSet<Fund> Funds { get; set; }
-    public DbSet<Scheme> Schemes { get; set; }
-    public DbSet<AmfiRawData> AmfiRawDatas { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Fund>().HasKey(f => f.FundId);
+        //modelBuilder.Entity<Fund>().HasKey(f => f.FundId);
 
-        modelBuilder.Entity<Scheme>().HasKey(s => s.SchemeId);
-        modelBuilder.Entity<Scheme>()
-            .HasOne(s => s.Fund)
-            .WithMany(f => f.Schemes)
-            .HasForeignKey(s => s.FundId);
+        //modelBuilder.Entity<Scheme>().HasKey(s => s.SchemeId);
+        //modelBuilder.Entity<Scheme>()
+        //    .HasOne(s => s.Fund)
+        //    .WithMany(f => f.Schemes)
+        //    .HasForeignKey(s => s.FundId);
 
-        modelBuilder.Entity<AmfiRawData>()
-            .Property(a => a.NetAssetValue)
+        modelBuilder.Entity<SchemeDetail>()
+            .Property(a => a.Nav)
             .HasPrecision(18, 6);
     }
+
+
+    public DbSet<ApprovedData> ApprovedData { get; set; }
+    public DbSet<SchemeDetail> SchemeDetails { get; set; }
 }
