@@ -78,38 +78,6 @@ namespace API.Controllers
             }
         }
 
-
-        //[HttpPost("funds/{fundId}/approval")]
-        //public async Task<IActionResult> UpdateFundApprovalAsync(string fundId, [FromQuery] bool isApproved)
-        //{
-        //    try
-        //    {
-        //        bool success = await amfiRepository.SetFundApprovalAsync(fundId, isApproved);
-
-        //        if (!success)
-        //            return NotFound($"Fund with id {fundId} not found.");
-
-        //        return Ok(new
-        //        {
-        //            FundId = fundId,
-        //            Approved = isApproved,
-        //            Message = isApproved
-        //                ? "Fund approved successfully."
-        //                : "Fund unapproved successfully."
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(StatusCodes.Status500InternalServerError, new
-        //        {
-        //            FundId = fundId,
-        //            Approved = isApproved,
-        //            Error = "An error occurred while updating fund approval.",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
         [HttpPost("schemes/{fundName}/{schemeId}/approval")]
         public async Task<IActionResult> AddApprovedScheme(string fundName, string schemeId, [FromQuery] bool isApproved)
         {
