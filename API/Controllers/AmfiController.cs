@@ -137,7 +137,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPut("schemes/{fundId}/{schemeId}/approval")]
+        [HttpPut("schemes/{fundId}/{schemeId}")]
         public async Task<IActionResult> UpdateApprovedScheme(string fundId, string schemeId, [FromQuery] bool isApproved)
         {
             var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(fundId, schemeId, isApproved);
@@ -152,6 +152,44 @@ namespace API.Controllers
             });
         }
 
+        [HttpPut("funds/{fundId}")]
+        public async Task<IActionResult> UpdateApprovedFund(string fundId, [FromQuery] bool isApproved)
+        {
+            try
+            {
+                var (success, message) = await amfiRepository.UpdateApprovedFundAsync(fundId, isApproved);
+
+                if (!success && message == "Record not found")
+                {
+                    return NotFound(new
+                    {
+                        FundId = fundId,
+                        Approved = isApproved,
+                        Success = success,
+                        Message = message
+                    });
+                }
+
+                return Ok(new
+                {
+                    FundId = fundId,
+                    Approved = isApproved,
+                    Success = success,
+                    Message = message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    FundId = fundId,
+                    Approved = isApproved,
+                    Success = false,
+                    Error = "An error occurred while updating fund approval.",
+                    Details = ex.Message
+                });
+            }
+        }
 
     }
 }

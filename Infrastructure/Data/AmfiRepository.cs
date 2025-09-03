@@ -73,7 +73,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 existingScheme.SchemeName = schemeName; // optional, if scheme name changes
                 existingScheme.FundName = currentFundName; // optional sync
             }
-               
+
         }
 
         await storeContext.SaveChangesAsync();
@@ -121,6 +121,34 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         var schemaDetails = await storeContext.SchemeDetails.FirstOrDefaultAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId) ?? new SchemeDetail();
         schemaDetails.IsVisible = isApproved;
+
+        await storeContext.SaveChangesAsync();
+
+        return (true, "Updated successfully");
+    }
+
+    public async Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundId, bool isApproved)
+    {
+        var existingRecords = await storeContext.ApprovedData
+            .Where(x => x.FundCode == fundId)
+            .ToListAsync();
+
+        if (existingRecords.Count == 0)
+            return (false, "Record not found");
+
+        foreach (var record in existingRecords)
+        {
+            record.IsApproved = isApproved;
+        }
+
+        var schemeDetails = await storeContext.SchemeDetails
+            .Where(x => x.FundCode == fundId)
+            .ToListAsync();
+
+        foreach (var scheme in schemeDetails)
+        {
+            scheme.IsVisible = isApproved;
+        }
 
         await storeContext.SaveChangesAsync();
 
