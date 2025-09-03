@@ -155,4 +155,12 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         return (true, "Updated successfully");
     }
 
+    public async Task<List<SchemeDetail>> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        return await storeContext.SchemeDetails
+            .Where(x => x.Date >= startDate && x.Date <= endDate && x.IsVisible)
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+    }
+
 }

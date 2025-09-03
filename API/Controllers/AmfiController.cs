@@ -1,6 +1,6 @@
 ﻿using Core.DTOs;
+using Core.Helpers;
 using Core.Interfaces;
-using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -154,6 +154,74 @@ namespace API.Controllers
                     Approved = isApproved,
                     Success = false,
                     Error = "An error occurred while updating fund approval.",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("schemes/by-dates")]
+        public async Task<IActionResult> GetSchemesByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate > endDate)
+            {
+                return BadRequest(new { Error = "Start date must be earlier than end date." });
+            }
+
+            try
+            {
+                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
+
+                if (schemes == null || !schemes.Any())
+                {
+                    return NotFound(new
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        Message = "No schemes found in the given date range."
+                    });
+                }
+
+                return Ok(new
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Count = schemes.Count,
+                    Schemes = schemes
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Error = "An error occurred while fetching schemes.",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("schemes/by-today")]
+        public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
+        {
+            var today = DateTime.Today;
+            var (date1, date2) =AmfiDataHelper.GetLastTwoWorkingDays(today);
+
+            try
+            {
+                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(date2, date1);
+
+                return Ok(new
+                {
+                    Date1 = date2,
+                    Date2 = date1,
+                    Count = schemes.Count,
+                    Schemes = schemes
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Error = "An error occurred while fetching schemes.",
                     Details = ex.Message
                 });
             }

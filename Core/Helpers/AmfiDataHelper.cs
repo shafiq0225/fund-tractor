@@ -38,5 +38,35 @@ namespace Core.Helpers
 
             return result;
         }
+
+        public static (DateTime Date1, DateTime Date2) GetLastTwoWorkingDays(DateTime today)
+        {
+            // Start from yesterday
+            var date1 = today.AddDays(-1);
+            var date2 = today.AddDays(-2);
+
+            // If today is Monday → set to Friday & Thursday
+            if (today.DayOfWeek == DayOfWeek.Monday)
+            {
+                date1 = today.AddDays(-3); // Friday
+                date2 = today.AddDays(-4); // Thursday
+            }
+            // If today is Sunday → Friday & Thursday
+            else if (today.DayOfWeek == DayOfWeek.Sunday)
+            {
+                date1 = today.AddDays(-2); // Friday
+                date2 = today.AddDays(-3); // Thursday
+            }
+            // If today is Saturday → Friday & Thursday
+            else if (today.DayOfWeek == DayOfWeek.Saturday)
+            {
+                date1 = today.AddDays(-1); // Friday
+                date2 = today.AddDays(-2); // Thursday
+            }
+
+            return (date1.Date, date2.Date);
+        }
+
+
     }
 }
