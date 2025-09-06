@@ -167,6 +167,18 @@ namespace API.Controllers
                 return BadRequest(new { Error = "Start date must be earlier than end date." });
             }
 
+            // ✅ Restrict to 10 days max
+            if ((endDate - startDate).TotalDays > 10)
+            {
+                return BadRequest(new
+                {
+                    Error = "One can download historical NAV for a maximum period of 10 days at a time.",
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    DaysRequested = (endDate - startDate).TotalDays
+                });
+            }
+
             try
             {
                 var schemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
