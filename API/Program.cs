@@ -1,12 +1,15 @@
 using Core.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers(); 
+builder.Services.AddScoped<IAmfiNavService, AmfiNavService>();
+builder.Services.AddHostedService<AmfiNavBackgroundService>();
+builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 
 
 builder.Services.AddDbContext<StoreContext>(options =>

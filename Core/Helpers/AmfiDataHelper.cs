@@ -67,6 +67,47 @@ namespace Core.Helpers
             return (date1.Date, date2.Date);
         }
 
+        public static (DateTime Date1, DateTime Date2) GetDateRangeOrLastTwoWorkingDays(DateTime? startDate, DateTime? endDate)
+        {
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                var s = startDate.Value.Date;
+                var e = endDate.Value.Date;
+
+                // Validation: Start must be <= End
+                if (s > e)
+                    throw new ArgumentException("Start date must be earlier than end date.");
+
+                // Validation: Max 10 days
+                if ((e - s).TotalDays > 10)
+                    throw new ArgumentException("One can download historical NAV for a maximum period of 10 days at a time.");
+
+                return (s, e);
+            }
+
+            // ✅ Fallback: Last 2 working days (weekend skip logic)
+            var today = DateTime.Today;
+            var date1 = today.AddDays(-1);
+            var date2 = today.AddDays(-2);
+
+            if (today.DayOfWeek == DayOfWeek.Monday)
+            {
+                date1 = today.AddDays(-3); // Friday
+                date2 = today.AddDays(-4); // Thursday
+            }
+            else if (today.DayOfWeek == DayOfWeek.Sunday)
+            {
+                date1 = today.AddDays(-2); // Friday
+                date2 = today.AddDays(-3); // Thursday
+            }
+            else if (today.DayOfWeek == DayOfWeek.Saturday)
+            {
+                date1 = today.AddDays(-1); // Friday
+                date2 = today.AddDays(-2); // Thursday
+            }
+
+            return (date1.Date, date2.Date);
+        }
 
     }
 }

@@ -160,71 +160,53 @@ namespace API.Controllers
         }
 
         [HttpGet("schemes/by-dates")]
-        public async Task<IActionResult> GetSchemesByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public async Task<IActionResult> GetSchemesByDateRange([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
-            if (startDate > endDate)
-            {
-                return BadRequest(new { Error = "Start date must be earlier than end date." });
-            }
-
-            // ✅ Restrict to 10 days max
-            if ((endDate - startDate).TotalDays > 10)
-            {
-                return BadRequest(new
-                {
-                    Error = "One can download historical NAV for a maximum period of 10 days at a time.",
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    DaysRequested = (endDate - startDate).TotalDays
-                });
-            }
-
             try
             {
-                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
+                var (date1, date2) = AmfiDataHelper.GetDateRangeOrLastTwoWorkingDays(startDate, endDate);
+
+                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(date1, date2);
 
                 if (schemes == null || !schemes.Any())
                 {
                     return NotFound(new
                     {
-                        StartDate = startDate,
-                        EndDate = endDate,
+                        StartDate = date1,
+                        EndDate = date2,
                         Message = "No schemes found in the given date range."
                     });
                 }
 
                 return Ok(new
                 {
-                    StartDate = startDate,
-                    EndDate = endDate,
+                    StartDate = date1,
+                    EndDate = date2,
                     Count = schemes.Count,
                     Schemes = schemes
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Error = "An error occurred while fetching schemes.",
-                    Details = ex.Message
-                });
+                return BadRequest(new { Error = ex.Message });
             }
         }
+
 
         [HttpGet("schemes/by-today")]
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
         {
             var today = DateTime.Today;
-            var (date1, date2) =AmfiDataHelper.GetLastTwoWorkingDays(today);
+            var (startDate, endDate) =AmfiDataHelper.GetLastTwoWorkingDays(today);
 
             try
             {
-                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(date2, date1);
+                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
 
                 return Ok(new
                 {
-                    Date1 = date2,
-                    Date2 = date1,
+                    Date1 = endDate,
+                    Date2 = startDate,
                     Count = schemes.Count,
                     Schemes = schemes
                 });
