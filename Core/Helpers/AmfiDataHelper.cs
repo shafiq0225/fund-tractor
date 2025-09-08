@@ -74,7 +74,7 @@ namespace Core.Helpers
 
             while (marketDays.Count < 3)
             {
-                if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday or DayOfWeek.Monday))
+                if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
                 {
                     marketDays.Add(current.Date);
                 }
