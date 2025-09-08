@@ -69,21 +69,21 @@ namespace Core.Helpers
 
         public static (DateTime Date1, DateTime Date3) GetLastThreeWorkingDays(DateTime today)
         {
-            var workingDays = new List<DateTime>();
+            var marketDays = new List<DateTime>();
             var current = today.AddDays(-1); // start from yesterday
 
-            while (workingDays.Count < 3)
+            while (marketDays.Count < 3)
             {
                 if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday or DayOfWeek.Monday))
                 {
-                    workingDays.Add(current.Date);
+                    marketDays.Add(current.Date);
                 }
 
                 current = current.AddDays(-1);
             }
 
             // Return them sorted (most recent first)
-            return (workingDays[2], workingDays[0]);
+            return (marketDays[2], marketDays[0]);
         }
 
 

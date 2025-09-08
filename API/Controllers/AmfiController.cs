@@ -159,6 +159,30 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("schemes/by-today")]
+        public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
+        {
+            var today = DateTime.Today;
+            var (startDate, endDate) = AmfiDataHelper.GetLastThreeWorkingDays(today);
+
+            try
+            {
+                var rawSchemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
+
+                var result = SchemeTransformer.TransformSchemes(rawSchemes);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Error = "An error occurred while fetching schemes.",
+                    Details = ex.Message
+                });
+            }
+        }
+
         [HttpGet("schemes/by-dates")]
         public async Task<IActionResult> GetSchemesByDateRange([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
@@ -189,31 +213,6 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { Error = ex.Message });
-            }
-        }
-
-
-        [HttpGet("schemes/by-today")]
-        public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
-        {
-            var today = DateTime.Today;
-            var (startDate, endDate) =AmfiDataHelper.GetLastThreeWorkingDays(today);
-
-            try
-            {
-                var rawSchemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
-
-                var result = SchemeTransformer.TransformSchemes(rawSchemes);
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Error = "An error occurred while fetching schemes.",
-                    Details = ex.Message
-                });
             }
         }
 
