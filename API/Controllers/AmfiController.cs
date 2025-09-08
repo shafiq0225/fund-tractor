@@ -197,19 +197,15 @@ namespace API.Controllers
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
         {
             var today = DateTime.Today;
-            var (startDate, endDate) =AmfiDataHelper.GetLastTwoWorkingDays(today);
+            var (startDate, endDate) =AmfiDataHelper.GetLastThreeWorkingDays(today);
 
             try
             {
-                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
+                var rawSchemes = await amfiRepository.GetSchemesByDateRangeAsync(startDate, endDate);
 
-                return Ok(new
-                {
-                    Date1 = endDate,
-                    Date2 = startDate,
-                    Count = schemes.Count,
-                    Schemes = schemes
-                });
+                var result = SchemeTransformer.TransformSchemes(rawSchemes);
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
