@@ -12,35 +12,43 @@ namespace Core.Helpers
     {
         public static TransformedResult TransformSchemes(List<SchemeDetail> schemes)
         {
-            var transformedSchemes = schemes
-                .GroupBy(s => s.SchemeName)
-                .Select(g =>
+            var transformedSchemes = new List<TransformedScheme>();
+
+            var groupedSchemes = schemes.GroupBy(s => s.SchemeName);
+
+            foreach (var group in groupedSchemes)
+            {
+                var lastThree = group.OrderBy(s => s.Date).TakeLast(3).ToList();
+                if (lastThree.Count < 3)
+                    continue; // skip if not enough NAVs
+
+                var beforePrevious = lastThree[0];
+                var previous = lastThree[1];
+                var today = lastThree[2];
+
+                double previousPercent = ((double)(previous.Nav - beforePrevious.Nav) / (double)beforePrevious.Nav) * 100;
+                double todayPercent = ((double)(today.Nav - previous.Nav) / (double)previous.Nav) * 100;
+
+                transformedSchemes.Add(new TransformedScheme
                 {
-                    var ordered = g.OrderBy(s => s.Date).ToList();
-                    if (ordered.Count < 3) return null; // need at least 3 NAVs
+                    SchemeName = today.SchemeName,
 
-                    var before = ordered[ordered.Count - 3];
-                    var previous = ordered[ordered.Count - 2];
-                    var today = ordered[ordered.Count - 1];
+                    BeforePreviousDate = beforePrevious.Date,
+                    BeforePreviousNav = (double)beforePrevious.Nav,
 
-                    double previousPercent = ((double)(previous.Nav - before.Nav) / (double)before.Nav) * 100;
-                    double todayPercent = ((double)(today.Nav - previous.Nav) / (double)previous.Nav) * 100;
+                    PreviousDate = previous.Date,
+                    PreviousNav = (double)previous.Nav,
 
-                    return new TransformedScheme
-                    {
-                        SchemeName = today.SchemeName,
-                        PreviousDate = previous.Date,
-                        PreviousNav = (double)previous.Nav,
-                        TodayDate = today.Date,
-                        TodayNav = (double)today.Nav,
-                        PreviousPercent = $"{previousPercent:0.##}%",
-                        TodayPercent = $"{todayPercent:0.##}%",
-                        IsPreviousIncrease = previous.Nav >= before.Nav,
-                        IsTodayIncrease = today.Nav >= previous.Nav
-                    };
-                })
-                .Where(x => x != null)
-                .ToList();
+                    TodayDate = today.Date,
+                    TodayNav = (double)today.Nav,
+
+                    PreviousPercent = $"{previousPercent:0.##}%",
+                    TodayPercent = $"{todayPercent:0.##}%",
+
+                    IsPreviousIncrease = previous.Nav >= beforePrevious.Nav,
+                    IsTodayIncrease = today.Nav >= previous.Nav
+                });
+            }
 
             return new TransformedResult
             {
@@ -53,3 +61,4 @@ namespace Core.Helpers
     }
 
 }
+
