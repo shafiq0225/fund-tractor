@@ -169,12 +169,9 @@ namespace API.Controllers
             {
                 var allDates = workingResult.Dates;
 
-                var navs = await amfiRepository.GetSchemesByDateRangeAsync(
-                 workingResult.StartWorkingDate,
-                 workingResult.EndWorkingDate);
-
-                var schemes = SchemeTransformer.BuildSchemeHistory(navs, allDates, workingResult.StartWorkingDate,
-                workingResult.EndWorkingDate);
+                var navs = await amfiRepository.GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
+             
+                var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs, workingResult.EndWorkingDate);
 
                 return Ok(new SchemeResponseDto
                 {
@@ -217,7 +214,7 @@ namespace API.Controllers
                 workingResult.EndWorkingDate
             );
 
-            var schemes = SchemeTransformer.BuildSchemeHistory(navs, allDates, startDate, endDate);
+            var schemes = SchemeBuilder.BuildSchemeHistory(navs, allDates, startDate, endDate);
 
             return Ok(new SchemeResponseDto
             {
