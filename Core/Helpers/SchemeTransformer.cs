@@ -10,66 +10,6 @@ namespace Core.Helpers
 {
     public static class SchemeTransformer
     {
-        public static TransformedResult TransformSchemes(List<SchemeDetail> schemes)
-        {
-            var transformedSchemes = new List<TransformedScheme>();
-
-            var groupedSchemes = schemes.GroupBy(s => s.SchemeName);
-
-            foreach (var group in groupedSchemes)
-            {
-                var lastThree = group.OrderBy(s => s.Date).TakeLast(3).ToList();
-                if (lastThree.Count < 3)
-                    continue; // skip if not enough NAVs
-
-                var beforePrevious = lastThree[0];
-                var previous = lastThree[1];
-                var today = lastThree[2];
-
-                double previousPercent = ((double)(previous.Nav - beforePrevious.Nav) / (double)beforePrevious.Nav) * 100;
-                double todayPercent = ((double)(today.Nav - previous.Nav) / (double)previous.Nav) * 100;
-
-                transformedSchemes.Add(new TransformedScheme
-                {
-                    SchemeName = today.SchemeName,
-
-                    BeforePreviousDate = beforePrevious.Date,
-                    BeforePreviousNav = (double)beforePrevious.Nav,
-
-                    PreviousDate = previous.Date,
-                    PreviousNav = (double)previous.Nav,
-
-                    TodayDate = today.Date,
-                    TodayNav = (double)today.Nav,
-
-                    PreviousPercent = $"{previousPercent:0.##}%",
-                    TodayPercent = $"{todayPercent:0.##}%",
-
-                    IsPreviousIncrease = previous.Nav >= beforePrevious.Nav,
-                    IsTodayIncrease = today.Nav >= previous.Nav
-                });
-            }
-
-            if (!transformedSchemes.Any())
-            {
-                return new TransformedResult
-                {
-                    IsSuccess = false,
-                    Message = "Not enough NAV data to transform schemes."
-                };
-            }
-
-            return new TransformedResult
-            {
-                IsSuccess = true,
-                Message = "Success",
-                Date1 = transformedSchemes.Max(s => s.TodayDate),
-                Date2 = transformedSchemes.Min(s => s.PreviousDate),
-                Count = transformedSchemes.Count,
-                Schemes = transformedSchemes
-            };
-        }
-
         public static List<SchemeDto> BuildSchemeHistory(List<SchemeDetail> schemes, List<DateTime> allDates, DateTime startDate, DateTime endDate)
         {
             var result = new List<SchemeDto>();
