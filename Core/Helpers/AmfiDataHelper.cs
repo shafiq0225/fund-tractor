@@ -28,25 +28,43 @@
             return result;
         }
 
-        public static (DateTime Oldest, DateTime Latest) GetLastThreeWorkingDays(DateTime today)
+        public static (bool IsSuccess, string Message, DateTime StartWorkingDate, DateTime EndWorkingDate, List<DateTime> Dates) GetLastTradingDays(int previousDays = 3)
         {
-            var workingDays = new List<DateTime>();
-            var date = today.AddDays(-1); // start checking from yesterday
+            var result = new List<DateTime>();
+            var current = DateTime.Today;
 
-            // Collect last 3 working days
-            while (workingDays.Count < 3)
+            // Always include today if it's not weekend
+            if (current.DayOfWeek != DayOfWeek.Saturday && current.DayOfWeek != DayOfWeek.Sunday)
             {
-                if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
-                {
-                    workingDays.Add(date.Date);
-                }
-                date = date.AddDays(-1);
+                result.Add(current.Date);
             }
 
-            // workingDays is in descending order (latest → oldest)
-            workingDays.Reverse(); // now oldest → latest
+            // Collect previous working days
+            while (result.Count < previousDays + 1) // +1 for today
+            {
+                current = current.AddDays(-1);
 
-            return (workingDays.First(), workingDays.Last());
+                if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday)
+                    continue;
+
+                result.Add(current.Date);
+            }
+
+            if (!result.Any())
+            {
+                return (false, "No trading days found.", default, default, new List<DateTime>());
+            }
+
+            // Sort ascending (oldest first)
+            result = result.OrderBy(d => d).ToList();
+
+            return (
+                true,
+                "Success",
+                result.First(),   // StartWorkingDate
+                result.Last(),    // EndWorkingDate
+                result
+            );
         }
 
         public static (bool IsSuccess, string Message, DateTime StartWorkingDate, DateTime EndWorkingDate, List<DateTime> Dates) GetWorkingDates(DateTime startDate, DateTime endDate)
