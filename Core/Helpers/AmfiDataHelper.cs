@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.Helpers
+﻿namespace Core.Helpers
 {
     public static class AmfiDataHelper
     {
-        public static bool IsHeaderOrSection(string line)
-        {
-            return line.StartsWith("Scheme Code") || line.Contains("Open Ended") || string.IsNullOrWhiteSpace(line);
-        }
-
         public static bool IsFundLine(string line)
         {
             return !line.Contains(";");
@@ -39,95 +28,61 @@ namespace Core.Helpers
             return result;
         }
 
-        public static (DateTime Date1, DateTime Date2) GetLastTwoWorkingDays(DateTime today)
+        public static (DateTime Oldest, DateTime Latest) GetLastThreeWorkingDays(DateTime today)
         {
-            // Start from yesterday
-            var date1 = today.AddDays(-2);
-            var date2 = today.AddDays(-1);
+            var workingDays = new List<DateTime>();
+            var date = today.AddDays(-1); // start checking from yesterday
 
-            // If today is Monday → set to Friday & Thursday
-            if (today.DayOfWeek == DayOfWeek.Monday)
+            // Collect last 3 working days
+            while (workingDays.Count < 3)
             {
-                date1 = today.AddDays(-4); // Friday
-                date2 = today.AddDays(-3); // Thursday
-            }
-            // If today is Sunday → Friday & Thursday
-            else if (today.DayOfWeek == DayOfWeek.Sunday)
-            {
-                date1 = today.AddDays(-3); // Friday
-                date2 = today.AddDays(-2); // Thursday
-            }
-            // If today is Saturday → Friday & Thursday
-            else if (today.DayOfWeek == DayOfWeek.Saturday)
-            {
-                date1 = today.AddDays(-2); // Friday
-                date2 = today.AddDays(-1); // Thursday
-            }
-
-            return (date1.Date, date2.Date);
-        }
-
-        public static (DateTime Date1, DateTime Date3) GetLastThreeWorkingDays(DateTime today)
-        {
-            var marketDays = new List<DateTime>();
-            var current = today.AddDays(-1); // start from yesterday
-
-            while (marketDays.Count < 3)
-            {
-                if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+                if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
                 {
-                    marketDays.Add(current.Date);
+                    workingDays.Add(date.Date);
                 }
-
-                current = current.AddDays(-1);
+                date = date.AddDays(-1);
             }
 
-            // Return them sorted (most recent first)
-            return (marketDays[2], marketDays[0]);
+            // workingDays is in descending order (latest → oldest)
+            workingDays.Reverse(); // now oldest → latest
+
+            return (workingDays.First(), workingDays.Last());
         }
 
-
-        public static (DateTime Date1, DateTime Date2) GetDateRangeOrLastTwoWorkingDays(DateTime? startDate, DateTime? endDate)
+        public static (bool IsSuccess, string Message, DateTime StartWorkingDate, DateTime EndWorkingDate, List<DateTime> Dates) GetWorkingDates(DateTime startDate, DateTime endDate)
         {
-            if (startDate.HasValue && endDate.HasValue)
+            if (endDate > DateTime.Today)
             {
-                var s = startDate.Value.Date;
-                var e = endDate.Value.Date;
-
-                // Validation: Start must be <= End
-                if (s > e)
-                    throw new ArgumentException("Start date must be earlier than end date.");
-
-                // Validation: Max 10 days
-                if ((e - s).TotalDays > 10)
-                    throw new ArgumentException("One can download historical NAV for a maximum period of 10 days at a time.");
-
-                return (s, e);
+                return (false, "End date cannot be a future date.", default, default, new List<DateTime>());
             }
 
-            // ✅ Fallback: Last 2 working days (weekend skip logic)
-            var today = DateTime.Today;
-            var date1 = today.AddDays(-1);
-            var date2 = today.AddDays(-2);
-
-            if (today.DayOfWeek == DayOfWeek.Monday)
+            // 2. Ensure valid range
+            if (startDate > endDate)
             {
-                date1 = today.AddDays(-3); // Friday
-                date2 = today.AddDays(-4); // Thursday
-            }
-            else if (today.DayOfWeek == DayOfWeek.Sunday)
-            {
-                date1 = today.AddDays(-2); // Friday
-                date2 = today.AddDays(-3); // Thursday
-            }
-            else if (today.DayOfWeek == DayOfWeek.Saturday)
-            {
-                date1 = today.AddDays(-1); // Friday
-                date2 = today.AddDays(-2); // Thursday
+                return (false, "Start date must be earlier than or equal to end date.", default, default, new List<DateTime>());
             }
 
-            return (date1.Date, date2.Date);
+            var allDates = Enumerable.Range(0, (endDate - startDate).Days + 1)
+                .Select(offset => startDate.AddDays(offset))
+                .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+                .ToList();
+
+            string message = "";
+
+            if (allDates.Count > 10)
+            {
+                message = $"You selected {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}, " +
+                          "but only first 10 business days are returned.";
+                allDates = allDates.Take(10).ToList();
+            }
+
+            return (
+                IsSuccess: allDates.Count != 0,
+                Message: message,
+                StartWorkingDate: allDates.FirstOrDefault(),
+                EndWorkingDate: allDates.LastOrDefault(),
+                Dates: allDates
+            );
         }
-
     }
 }

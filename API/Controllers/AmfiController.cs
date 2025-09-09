@@ -171,7 +171,22 @@ namespace API.Controllers
 
                 var result = SchemeTransformer.TransformSchemes(rawSchemes);
 
-                return Ok(result);
+                if (!result.IsSuccess)
+                {
+                    return NotFound(new
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        Message = result.Message
+                    });
+                }
+                return Ok(new
+                {
+                    StartDate = result.Date2, // earliest previous date
+                    EndDate = result.Date1,   // latest date (today)
+                    Count = result.Count,
+                    Schemes = result.Schemes
+                });
             }
             catch (Exception ex)
             {
@@ -183,38 +198,38 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("schemes/by-dates")]
-        public async Task<IActionResult> GetSchemesByDateRange([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        [HttpGet("schemes/by-date-range")]
+        public async Task<IActionResult> GetSchemes(DateTime startDate, DateTime endDate)
         {
-            try
+            var workingResult = AmfiDataHelper.GetWorkingDates(startDate, endDate);
+
+            if (!workingResult.IsSuccess)
             {
-                var (date1, date2) = AmfiDataHelper.GetDateRangeOrLastTwoWorkingDays(startDate, endDate);
-
-                var schemes = await amfiRepository.GetSchemesByDateRangeAsync(date1, date2);
-
-                if (schemes == null || !schemes.Any())
+                return Ok(new SchemeResponseDto
                 {
-                    return NotFound(new
-                    {
-                        StartDate = date1,
-                        EndDate = date2,
-                        Message = "No schemes found in the given date range."
-                    });
-                }
-
-                return Ok(new
-                {
-                    StartDate = date1,
-                    EndDate = date2,
-                    Count = schemes.Count,
-                    Schemes = schemes
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Message = "No working days available in the selected range",
+                    Schemes = new List<SchemeDto>()
                 });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
-        }
 
+            var allDates = workingResult.Dates;
+
+            var navs = await amfiRepository.GetSchemesByDateRangeAsync(
+                workingResult.StartWorkingDate,
+                workingResult.EndWorkingDate
+            );
+
+            var schemes = SchemeTransformer.BuildSchemeHistory(navs, allDates, startDate, endDate);
+
+            return Ok(new SchemeResponseDto
+            {
+                StartDate = workingResult.StartWorkingDate,
+                EndDate = workingResult.EndWorkingDate,
+                Schemes = schemes,
+                Message = workingResult.Message
+            });
+        }
     }
 }
