@@ -98,9 +98,11 @@ namespace Core.Helpers
                     decimal? percentChange = null;
                     string percentDisplay = null;
                     bool? isGrowth = null;
+                    decimal? nav = null;
 
                     if (currentRecord != null)
                     {
+                        nav = Math.Round(currentRecord.Nav, 4);
                         var prevDate = date.AddDays(-1);
                         var prevRecord = group.FirstOrDefault(r => r.Date.Date == prevDate.Date);
 
@@ -117,7 +119,7 @@ namespace Core.Helpers
                     schemeDto.History.Add(new SchemeHistoryDto
                     {
                         Date = date,
-                        Nav = currentRecord?.Nav,
+                        Nav = nav,
                         IsGrowth = isGrowth ?? false,
                         Percentage = percentDisplay,
                         IsTradingHoliday = currentRecord == null
