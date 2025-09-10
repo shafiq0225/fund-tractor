@@ -107,27 +107,46 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
     public async Task<(bool Success, string Message)> AddApprovedSchemeAsync(string fundName, string schemeId, bool isApproved)
     {
-        var fundId = AmfiDataHelper.GenerateFundId(fundName);
-
-        // ✅ Check if record already exists
-        var exists = await storeContext.ApprovedData
-            .AnyAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
-
-        if (exists)
-            return (false, "Already exists");
-
-        var approvedFund = new ApprovedData
+        string fundId;
+        try
         {
-            ApprovedName = "Shafiq",
-            FundCode = fundId,
-            IsApproved = isApproved,
-            SchemeCode = schemeId,
-        };
+            fundId = AmfiDataHelper.GenerateFundId(fundName);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Failed to generate FundId. Reason: {ex.Message}");
+        }
 
-        await storeContext.ApprovedData.AddAsync(approvedFund);
-        await storeContext.SaveChangesAsync();
+        try
+        {
+            // ✅ Check if record already exists
+            var exists = await storeContext.ApprovedData
+                .AnyAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
 
-        return (true, "Inserted successfully");
+            if (exists)
+                return (false, "Record already exists.");
+
+            var approvedFund = new ApprovedData
+            {
+                ApprovedName = "Shafiq",
+                FundCode = fundId,
+                IsApproved = isApproved,
+                SchemeCode = schemeId,
+            };
+
+            await storeContext.ApprovedData.AddAsync(approvedFund);
+            await storeContext.SaveChangesAsync();
+
+            return (true, "Inserted successfully.");
+        }
+        catch (DbUpdateException dbEx)
+        {
+            return (false, $"Database update failed. Reason: {dbEx.InnerException?.Message ?? dbEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Unexpected error occurred. Reason: {ex.Message}");
+        }
     }
 
     public async Task<(bool Success, string Message)> UpdateApprovedSchemeAsync(string fundId, string schemeId, bool isApproved)

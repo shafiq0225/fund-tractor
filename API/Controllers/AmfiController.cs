@@ -118,14 +118,32 @@ namespace API.Controllers
         [HttpPost("schemes/{fundName}/{schemeId}/approval")]
         public async Task<IActionResult> AddApprovedScheme(string fundName, string schemeId, [FromQuery] bool isApproved)
         {
+            if (string.IsNullOrWhiteSpace(fundName))
+                return BadRequest(new { Message = "Fund name is required." });
+
+            if (string.IsNullOrWhiteSpace(schemeId))
+                return BadRequest(new { Message = "Scheme ID is required." });
+
             try
             {
                 var (success, message) = await amfiRepository.AddApprovedSchemeAsync(fundName, schemeId, isApproved);
+
+                if (!success)
+                {
+                    return Conflict(new
+                    {
+                        FundName = fundName,
+                        SchemeId = schemeId,
+                        Approved = isApproved,
+                        Message = message
+                    });
+                }
 
                 return Ok(new
                 {
                     FundName = fundName,
                     SchemeId = schemeId,
+                    Approved = isApproved,
                     Message = message
                 });
             }
@@ -136,7 +154,7 @@ namespace API.Controllers
                     FundName = fundName,
                     SchemeId = schemeId,
                     Approved = isApproved,
-                    Error = "An error occurred while updating scheme approval.",
+                    Error = "An unexpected error occurred while updating scheme approval.",
                     Details = ex.Message
                 });
             }
