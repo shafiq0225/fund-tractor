@@ -203,31 +203,50 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
     public async Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundId, bool isApproved)
     {
-        var existingRecords = await storeContext.ApprovedData
-            .Where(x => x.FundCode == fundId)
-            .ToListAsync();
+        if (string.IsNullOrWhiteSpace(fundId))
+            return (false, "FundId is required");
 
-        if (existingRecords.Count == 0)
-            return (false, "Record not found");
-
-        foreach (var record in existingRecords)
+        try
         {
-            record.IsApproved = isApproved;
+            var existingRecords = await storeContext.ApprovedData
+                .Where(x => x.FundCode == fundId)
+                .ToListAsync();
+
+            if (existingRecords.Count == 0)
+                return (false, "Record not found");
+
+            foreach (var record in existingRecords)
+            {
+                record.IsApproved = isApproved;
+            }
+
+            var schemeDetails = await storeContext.SchemeDetails
+                .Where(x => x.FundCode == fundId)
+                .ToListAsync();
+
+            foreach (var scheme in schemeDetails)
+            {
+                scheme.IsVisible = isApproved;
+            }
+
+            await storeContext.SaveChangesAsync();
+
+            return (true, "Updated successfully");
         }
-
-        var schemeDetails = await storeContext.SchemeDetails
-            .Where(x => x.FundCode == fundId)
-            .ToListAsync();
-
-        foreach (var scheme in schemeDetails)
+        catch (DbUpdateConcurrencyException)
         {
-            scheme.IsVisible = isApproved;
+            return (false, "Concurrency conflict: the record was modified by another user. Please retry.");
         }
-
-        await storeContext.SaveChangesAsync();
-
-        return (true, "Updated successfully");
+        catch (DbUpdateException dbEx)
+        {
+            return (false, $"Database update error: {dbEx.InnerException?.Message ?? dbEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Unexpected error: {ex.Message}");
+        }
     }
+
 
     public async Task<List<SchemeDetail>> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {

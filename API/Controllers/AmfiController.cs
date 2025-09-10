@@ -211,17 +211,40 @@ namespace API.Controllers
         [HttpPut("funds/{fundId}")]
         public async Task<IActionResult> UpdateApprovedFund(string fundId, [FromQuery] bool isApproved)
         {
+            if (string.IsNullOrWhiteSpace(fundId))
+            {
+                return BadRequest(new
+                {
+                    FundId = fundId,
+                    Approved = isApproved,
+                    Success = false,
+                    Message = "FundId is required."
+                });
+            }
+
             try
             {
                 var (success, message) = await amfiRepository.UpdateApprovedFundAsync(fundId, isApproved);
 
-                if (!success && message == "Record not found")
+                if (!success)
                 {
-                    return NotFound(new
+                    if (message == "Record not found")
+                    {
+                        return NotFound(new
+                        {
+                            FundId = fundId,
+                            Approved = isApproved,
+                            Success = false,
+                            Message = message
+                        });
+                    }
+
+                    // Generic failure from repo (e.g., "Concurrency conflict" or "Database error")
+                    return BadRequest(new
                     {
                         FundId = fundId,
                         Approved = isApproved,
-                        Success = success,
+                        Success = false,
                         Message = message
                     });
                 }
@@ -230,10 +253,10 @@ namespace API.Controllers
                 {
                     FundId = fundId,
                     Approved = isApproved,
-                    Success = success,
+                    Success = true,
                     Message = message
                 });
-            }
+            }           
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
@@ -241,11 +264,12 @@ namespace API.Controllers
                     FundId = fundId,
                     Approved = isApproved,
                     Success = false,
-                    Error = "An error occurred while updating fund approval.",
+                    Message = "An unexpected error occurred while updating fund approval.",
                     Details = ex.Message
                 });
             }
         }
+
 
         [HttpGet("schemes/by-today")]
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
