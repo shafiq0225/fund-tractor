@@ -237,6 +237,16 @@ namespace API.Controllers
                 });
             }
 
+            // ✅ Reject if both codes are the same
+            if (schemeCode1.Trim().Equals(schemeCode2.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new
+                {
+                    Message = "Comparison not allowed: schemeCode1 and schemeCode2 can be the same."
+                });
+            }
+
+
             var today = DateTime.Today;
             var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
 
