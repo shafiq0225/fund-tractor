@@ -54,43 +54,64 @@ namespace API.Controllers
         [HttpPost("import-amfi-url")]
         public async Task<IActionResult> ImportAmfiFromUrl([FromBody] ImportUrlRequest fileUrl)
         {
-            if (string.IsNullOrWhiteSpace(fileUrl.FileUrl))
-                return BadRequest("File URL is required.");
+            if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
+                return BadRequest(new { Message = "File URL is required." });
 
             try
             {
                 // ✅ Ensure it’s from AMFI domain
                 if (!fileUrl.FileUrl.StartsWith("https://www.amfiindia.com", StringComparison.OrdinalIgnoreCase))
-                    return BadRequest("Invalid URL. Only AMFI URLs are allowed.");
+                    return BadRequest(new { Message = "Invalid URL. Only AMFI URLs are allowed." });
+
+                Uri uri;
+                try
+                {
+                    uri = new Uri(fileUrl.FileUrl);
+                }
+                catch (UriFormatException)
+                {
+                    return BadRequest(new { Message = "Invalid URL format." });
+                }
 
                 // ✅ Ensure it’s a .txt file
-                var extension = Path.GetExtension(new Uri(fileUrl.FileUrl).AbsolutePath).ToLowerInvariant();
+                var extension = Path.GetExtension(uri.AbsolutePath).ToLowerInvariant();
                 if (extension != ".txt")
-                    return BadRequest("Only .txt files are allowed.");
+                    return BadRequest(new { Message = "Only .txt files are allowed." });
 
                 using var httpClient = new HttpClient();
-                var response = await httpClient.GetAsync(fileUrl.FileUrl);
+
+                HttpResponseMessage response;
+                try
+                {
+                    response = await httpClient.GetAsync(uri);
+                }
+                catch (HttpRequestException ex)
+                {
+                    return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                        new { Message = "Unable to reach AMFI server.", Details = ex.Message });
+                }
 
                 if (!response.IsSuccessStatusCode)
-                    return BadRequest("Unable to download the file from the provided URL.");
+                    return BadRequest(new { Message = "Unable to download the file from the provided URL." });
 
-                // ✅ Check MIME type
                 var contentType = response.Content.Headers.ContentType?.MediaType;
                 if (contentType != null && contentType != "text/plain")
-                    return BadRequest("Invalid file type. Only plain text (.txt) files are allowed.");
+                    return BadRequest(new { Message = "Invalid file type. Only plain text (.txt) files are allowed." });
 
-                // ✅ Read content
                 var content = await response.Content.ReadAsStringAsync();
+                if (string.IsNullOrWhiteSpace(content))
+                    return BadRequest(new { Message = "Downloaded file is empty." });
 
                 // ✅ Save in DB via repository
                 await amfiRepository.ImportAmfiDataAsync(content);
 
                 return Ok(new { Message = "Imported successfully from AMFI URL" });
+
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { Message = "An error occurred during import", Details = ex.Message });
+                    new { Message = "An unexpected error occurred during import.", Details = ex.Message });
             }
         }
 
