@@ -248,12 +248,37 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
     }
 
 
-    public async Task<List<SchemeDetail>> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
+    public async Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
-        return await storeContext.SchemeDetails
-            .Where(x => x.Date >= startDate && x.Date <= endDate && x.IsVisible)
-            .OrderBy(x => x.Date)
-            .ToListAsync();
+        if (startDate > endDate)
+        {
+            return (false, "Start date cannot be later than end date.", null);
+        }
+
+        try
+        {
+            var result = await storeContext.SchemeDetails
+                .Where(x => x.Date >= startDate && x.Date <= endDate && x.IsVisible)
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+
+            if (result.Count == 0)
+                return (false, "No records found for the given date range.", new List<SchemeDetail>());
+
+            return (true, "Records retrieved successfully.", result);
+        }
+        catch (OperationCanceledException)
+        {
+            return (false, "The request was canceled before completion.", null);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            return (false, $"Database error occurred: {dbEx.InnerException?.Message ?? dbEx.Message}", null);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Unexpected error: {ex.Message}", null);
+        }
     }
 
 }

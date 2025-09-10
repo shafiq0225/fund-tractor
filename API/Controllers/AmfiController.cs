@@ -274,30 +274,60 @@ namespace API.Controllers
         [HttpGet("schemes/by-today")]
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
         {
-            var today = DateTime.Today;
-            var workingResult = AmfiDataHelper.GetLastTradingDays();
-
             try
             {
-                var allDates = workingResult.Dates;
+                var workingResult = AmfiDataHelper.GetLastTradingDays();
 
-                var navs = await amfiRepository.GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
+                if (!workingResult.Success)
+                {
+                    return BadRequest(new
+                    {
+                        Success = false,
+                        Message = workingResult.Message
+                    });
+                }
 
-                var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs, workingResult.EndWorkingDate);
+                var (success, message, navs) = await amfiRepository
+                    .GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
+
+                if (!success)
+                {
+                    if (message.Contains("No records", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return NotFound(new
+                        {
+                            workingResult.StartWorkingDate,
+                            workingResult.EndWorkingDate,
+                            Success = false,
+                            Message = message
+                        });
+                    }
+
+                    return BadRequest(new
+                    {
+                        workingResult.StartWorkingDate,
+                        workingResult.EndWorkingDate,
+                        Success = false,
+                        Message = message
+                    });
+                }
+
+                // ✅ Success case
+                var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs!, workingResult.EndWorkingDate);
 
                 return Ok(new SchemeResponseDto
                 {
                     StartDate = workingResult.StartWorkingDate,
                     EndDate = workingResult.EndWorkingDate,
                     Schemes = schemes,
-                    Message = workingResult.Message
+                    Message = message
                 });
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    Error = "An error occurred while fetching schemes.",
+                    Error = "An unexpected error occurred while fetching schemes.",
                     Details = ex.Message
                 });
             }
@@ -306,95 +336,129 @@ namespace API.Controllers
         [HttpGet("schemes/by-date-range")]
         public async Task<IActionResult> GetSchemes(DateTime startDate, DateTime endDate)
         {
-            var workingResult = AmfiDataHelper.GetWorkingDates(startDate, endDate);
-
-            if (!workingResult.IsSuccess)
+            try
             {
+                var workingResult = AmfiDataHelper.GetWorkingDates(startDate, endDate);
+
+                if (!workingResult.Success)
+                {
+                    return Ok(new SchemeResponseDto
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        Message = workingResult.Message ?? "No working days available in the selected range",
+                        Schemes = new List<SchemeDto>()
+                    });
+                }
+
+                // Repository call wrapped
+                var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(
+                    workingResult.StartWorkingDate,
+                    workingResult.EndWorkingDate
+                );
+
+                if (!success || navs == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new
+                    {
+                        Error = "Failed to fetch schemes from repository.",
+                        Details = message
+                    });
+                }
+
+                var schemes = SchemeBuilder.BuildSchemeHistory(navs, workingResult.Dates, startDate, endDate);
+
                 return Ok(new SchemeResponseDto
                 {
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    Message = "No working days available in the selected range",
-                    Schemes = new List<SchemeDto>()
+                    StartDate = workingResult.StartWorkingDate,
+                    EndDate = workingResult.EndWorkingDate,
+                    Schemes = schemes,
+                    Message = string.IsNullOrEmpty(workingResult.Message) ? "Success" : workingResult.Message
                 });
             }
-
-            var allDates = workingResult.Dates;
-
-            var navs = await amfiRepository.GetSchemesByDateRangeAsync(
-                workingResult.StartWorkingDate,
-                workingResult.EndWorkingDate
-            );
-
-            var schemes = SchemeBuilder.BuildSchemeHistory(navs, allDates, startDate, endDate);
-
-            return Ok(new SchemeResponseDto
+            catch (Exception ex)
             {
-                StartDate = workingResult.StartWorkingDate,
-                EndDate = workingResult.EndWorkingDate,
-                Schemes = schemes,
-                Message = workingResult.Message
-            });
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Error = "An unexpected error occurred while fetching schemes.",
+                    Details = ex.Message
+                });
+            }
         }
 
         [HttpGet("compare-two-schemes")]
         public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)
         {
-            // ✅ Require both codes
-            if (string.IsNullOrWhiteSpace(schemeCode1) || string.IsNullOrWhiteSpace(schemeCode2))
+            try
             {
-                return BadRequest(new
+                // Validate inputs
+                if (string.IsNullOrWhiteSpace(schemeCode1) || string.IsNullOrWhiteSpace(schemeCode2))
                 {
-                    Message = "Both schemeCode1 and schemeCode2 must be provided."
-                });
-            }
-
-            // ✅ Reject if both codes are the same
-            if (schemeCode1.Trim().Equals(schemeCode2.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest(new
-                {
-                    Message = "Comparison not allowed: schemeCode1 and schemeCode2 can be the same."
-                });
-            }
-
-
-            var today = DateTime.Today;
-            var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
-
-            var navs = await amfiRepository.GetSchemesByDateRangeAsync(validDates.Min(), validDates.Max());
-            var scheme1Records = navs.Where(x => x.SchemeCode == schemeCode1).ToList();
-            var scheme2Records = navs.Where(x => x.SchemeCode == schemeCode2).ToList();
-
-            if (scheme1Records.Count == 0 || scheme2Records.Count == 0)
-            {
-                return NotFound(new
-                {
-                    Message = "One or both scheme codes do not exist or have no NAV records."
-                });
-            }
-
-            var response = new
-            {
-                Scheme1 = new
-                {
-                    SchemeCode = schemeCode1,
-                    SchemeName = scheme1Records.FirstOrDefault()?.SchemeName,
-                    Yesterday = AmfiDataHelper.CalculateChange(scheme1Records, 1),
-                    LastWeek = AmfiDataHelper.CalculateChange(scheme1Records, 5),
-                    Last10Days = AmfiDataHelper.CalculateChange(scheme1Records, 10)
-                },
-                Scheme2 = new
-                {
-                    SchemeCode = schemeCode2,
-                    SchemeName = scheme2Records.FirstOrDefault()?.SchemeName,
-                    Yesterday = AmfiDataHelper.CalculateChange(scheme2Records, 1),
-                    LastWeek = AmfiDataHelper.CalculateChange(scheme2Records, 5),
-                    Last10Days = AmfiDataHelper.CalculateChange(scheme2Records, 10)
+                    return BadRequest(new { Message = "Both schemeCode1 and schemeCode2 must be provided." });
                 }
-            };
 
-            return Ok(response);
+                if (schemeCode1.Trim().Equals(schemeCode2.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { Message = "Comparison not allowed: schemeCode1 and schemeCode2 cannot be the same." });
+                }
+
+                var today = DateTime.Today;
+                var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
+
+                if (validDates == null || validDates.Count == 0)
+                {
+                    return BadRequest(new { Message = "No valid trading days found for comparison." });
+                }
+
+                var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(validDates.Min(), validDates.Max());
+
+                if (!success || navs == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new
+                    {
+                        Message = message ?? "Failed to retrieve NAV records."
+                    });
+                }
+
+                var scheme1Records = navs.Where(x => x.SchemeCode == schemeCode1).ToList();
+                var scheme2Records = navs.Where(x => x.SchemeCode == schemeCode2).ToList();
+
+                if (!scheme1Records.Any() || !scheme2Records.Any())
+                {
+                    return NotFound(new { Message = "One or both scheme codes do not exist or have no NAV records." });
+                }
+
+                var response = new
+                {
+                    Scheme1 = new
+                    {
+                        SchemeCode = schemeCode1,
+                        SchemeName = scheme1Records.FirstOrDefault()?.SchemeName ?? "Unknown",
+                        Yesterday = AmfiDataHelper.CalculateChange(scheme1Records, 1),
+                        LastWeek = AmfiDataHelper.CalculateChange(scheme1Records, 5),
+                        Last10Days = AmfiDataHelper.CalculateChange(scheme1Records, 10)
+                    },
+                    Scheme2 = new
+                    {
+                        SchemeCode = schemeCode2,
+                        SchemeName = scheme2Records.FirstOrDefault()?.SchemeName ?? "Unknown",
+                        Yesterday = AmfiDataHelper.CalculateChange(scheme2Records, 1),
+                        LastWeek = AmfiDataHelper.CalculateChange(scheme2Records, 5),
+                        Last10Days = AmfiDataHelper.CalculateChange(scheme2Records, 10)
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Unexpected error occurred while comparing schemes.",
+                    Details = ex.Message
+                });
+            }
         }
+
     }
 }
