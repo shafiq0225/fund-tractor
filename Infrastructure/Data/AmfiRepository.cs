@@ -107,6 +107,12 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
     public async Task<(bool Success, string Message)> AddApprovedSchemeAsync(string fundName, string schemeId, bool isApproved)
     {
+        if (string.IsNullOrWhiteSpace(fundName))
+            return (false, "Fund name is required.");
+
+        if (string.IsNullOrWhiteSpace(schemeId))
+            return (false, "Scheme ID is required.");
+
         string fundId;
         try
         {
@@ -151,24 +157,48 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
     public async Task<(bool Success, string Message)> UpdateApprovedSchemeAsync(string fundId, string schemeId, bool isApproved)
     {
-        var existingRecord = await storeContext.ApprovedData
-            .FirstOrDefaultAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
+        if (string.IsNullOrWhiteSpace(fundId))
+            return (false, "FundId is required");
 
-        if (existingRecord == null)
-            return (false, "Record not found");
+        if (string.IsNullOrWhiteSpace(schemeId))
+            return (false, "SchemeId is required");
 
-        if (existingRecord.IsApproved == isApproved)
-            return (false, "No changes made");
+        try
+        {
+            var existingRecord = await storeContext.ApprovedData
+                .FirstOrDefaultAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
 
-        existingRecord.IsApproved = isApproved;
-        storeContext.ApprovedData.Update(existingRecord);
+            if (existingRecord == null)
+                return (false, "Record not found");
 
-        var schemaDetails = await storeContext.SchemeDetails.FirstOrDefaultAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId) ?? new SchemeDetail();
-        schemaDetails.IsVisible = isApproved;
+            if (existingRecord.IsApproved == isApproved)
+                return (false, "No changes made");
 
-        await storeContext.SaveChangesAsync();
+            // ✅ Update ApprovedData
+            existingRecord.IsApproved = isApproved;
+            storeContext.ApprovedData.Update(existingRecord);
 
-        return (true, "Updated successfully");
+            // ✅ Sync visibility in SchemeDetails (only if record exists)
+            var schemaDetails = await storeContext.SchemeDetails
+                .FirstOrDefaultAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
+
+            if (schemaDetails != null)
+            {
+                schemaDetails.IsVisible = isApproved;
+                storeContext.SchemeDetails.Update(schemaDetails);
+            }
+
+            await storeContext.SaveChangesAsync();
+            return (true, "Updated successfully");
+        }
+        catch (DbUpdateException dbEx)
+        {
+            return (false, $"Database update error: {dbEx.InnerException?.Message ?? dbEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Unexpected error: {ex.Message}");
+        }    
     }
 
     public async Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundId, bool isApproved)

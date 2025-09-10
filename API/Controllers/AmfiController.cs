@@ -163,16 +163,49 @@ namespace API.Controllers
         [HttpPut("schemes/{fundId}/{schemeId}")]
         public async Task<IActionResult> UpdateApprovedScheme(string fundId, string schemeId, [FromQuery] bool isApproved)
         {
-            var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(fundId, schemeId, isApproved);
+            if (string.IsNullOrWhiteSpace(fundId))
+                return BadRequest(new { Message = "Fund ID is required." });
 
-            return Ok(new
+            if (string.IsNullOrWhiteSpace(schemeId))
+                return BadRequest(new { Message = "Scheme ID is required." });
+
+            try
             {
-                FundId = fundId,
-                SchemeId = schemeId,
-                Approved = isApproved,
-                Success = success,
-                Message = message
-            });
+                var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(fundId, schemeId, isApproved);
+
+                if (!success)
+                {
+                    return NotFound(new
+                    {
+                        FundId = fundId,
+                        SchemeId = schemeId,
+                        Approved = isApproved,
+                        Success = false,
+                        Message = message
+                    });
+                }
+
+                return Ok(new
+                {
+                    FundId = fundId,
+                    SchemeId = schemeId,
+                    Approved = isApproved,
+                    Success = true,
+                    Message = message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    FundId = fundId,
+                    SchemeId = schemeId,
+                    Approved = isApproved,
+                    Success = false,
+                    Error = "An unexpected error occurred while updating scheme approval.",
+                    Details = ex.Message
+                });
+            }
         }
 
         [HttpPut("funds/{fundId}")]
