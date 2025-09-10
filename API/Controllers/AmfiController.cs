@@ -2,6 +2,7 @@
 using Core.Helpers;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -13,25 +14,40 @@ namespace API.Controllers
         public async Task<IActionResult> Import(IFormFile rawdata)
         {
             if (rawdata == null || rawdata.Length == 0)
-                return BadRequest("No file uploaded.");
+                return BadRequest(new { Message = "No file uploaded." });
 
             var extension = Path.GetExtension(rawdata.FileName).ToLowerInvariant();
             if (extension != ".txt")
-                return BadRequest("Only .txt files are allowed.");
+                return BadRequest(new { Message = "Only .txt files are allowed." });
 
             try
             {
-                using var reader = new StreamReader(rawdata.OpenReadStream());
-                var content = await reader.ReadToEndAsync();
+                string content;
+                using (var reader = new StreamReader(rawdata.OpenReadStream()))
+                {
+                    content = await reader.ReadToEndAsync();
+                }
+
+                if (string.IsNullOrWhiteSpace(content))
+                    return BadRequest(new { Message = "Uploaded file is empty." });
 
                 await amfiRepository.ImportAmfiDataAsync(content);
 
                 return Ok(new { Message = "Imported successfully" });
             }
+            catch (FormatException fex)
+            {
+                return BadRequest(new { Message = "File contains invalid data format.", Details = fex.Message });
+            }
+            catch (DbUpdateException dbex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "Database error during import.", Details = dbex.InnerException?.Message ?? dbex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { Message = "An error occurred during import", Details = ex.Message });
+                    new { Message = "An unexpected error occurred during import.", Details = ex.Message });
             }
         }
 
@@ -170,7 +186,7 @@ namespace API.Controllers
                 var allDates = workingResult.Dates;
 
                 var navs = await amfiRepository.GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
-             
+
                 var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs, workingResult.EndWorkingDate);
 
                 return Ok(new SchemeResponseDto

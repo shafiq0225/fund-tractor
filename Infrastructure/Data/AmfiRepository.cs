@@ -19,65 +19,90 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
     public async Task ImportAmfiDataAsync(string rawData)
     {
-        var approvedSchemes = await GetApprovedSchemesAsync();
-        var approvedSchemeCodes = approvedSchemes.Select(x => x.SchemeCode).ToHashSet();
+        if (string.IsNullOrWhiteSpace(rawData))
+            throw new ArgumentException("Raw data cannot be null or empty.", nameof(rawData));
 
+        List<ApprovedData> approvedSchemes;
+        try
+        {
+            approvedSchemes = await GetApprovedSchemesAsync() ?? new List<ApprovedData>();
+        }
+        catch (Exception ex)
+        {
+            // Log and rethrow or wrap
+            throw new InvalidOperationException("Failed to fetch approved schemes.", ex);
+        }
+
+        var approvedSchemeCodes = approvedSchemes.Select(x => x.SchemeCode).ToHashSet();
         var lines = rawData.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        var schemes = new List<SchemeDetail>();
+
         string currentFundName = string.Empty;
         string currentFundId = string.Empty;
 
         foreach (var line in lines)
         {
-            if (line.StartsWith("Scheme Code") || line.StartsWith("Open Ended") || line.StartsWith(" "))
-                continue; // skip headers
-
-            if (AmfiDataHelper.IsFundLine(line))
+            try
             {
-                currentFundName = line.Trim();
-                currentFundId = AmfiDataHelper.GenerateFundId(currentFundName);
-            }
-            var parts = line.Split(';');
-            if (parts.Length < 6) continue;
+                if (line.StartsWith("Scheme Code") || line.StartsWith("Open Ended") || line.StartsWith(" "))
+                    continue; // skip headers
 
-            var schemeCode = parts[0].Trim();
-            if (!approvedSchemeCodes.Contains(schemeCode)) continue; // save only approved
-
-            var schemeName = parts[3].Trim();
-            var nav = decimal.TryParse(parts[4], out var parsedNav) ? parsedNav : 0;
-            var date = DateTime.TryParse(parts[5], out var parsedDate) ? parsedDate : DateTime.Now;
-
-            var existingScheme = await storeContext.SchemeDetails
-           .FirstOrDefaultAsync(x => x.SchemeCode == schemeCode && x.Date == parsedDate);
-
-            if (existingScheme == null)
-            {
-                // Insert new
-                var newScheme = new SchemeDetail
+                if (AmfiDataHelper.IsFundLine(line))
                 {
-                    FundCode = currentFundId,
-                    FundName = currentFundName,
-                    SchemeCode = schemeCode,
-                    SchemeName = schemeName,
-                    Nav = nav,
-                    Date = parsedDate,
-                    IsVisible = true
-                };
+                    currentFundName = line.Trim();
+                    currentFundId = AmfiDataHelper.GenerateFundId(currentFundName);
+                    continue; // move to next line
+                }
 
-                await storeContext.SchemeDetails.AddAsync(newScheme);
+                var parts = line.Split(';');
+                if (parts.Length < 6) continue;
+
+                var schemeCode = parts[0].Trim();
+                if (!approvedSchemeCodes.Contains(schemeCode)) continue;
+
+                var schemeName = parts[3].Trim();
+                var nav = decimal.TryParse(parts[4], out var parsedNav) ? parsedNav : 0;
+                var date = DateTime.TryParse(parts[5], out var parsedDate) ? parsedDate : DateTime.Now;
+
+                var existingScheme = await storeContext.SchemeDetails
+                    .FirstOrDefaultAsync(x => x.SchemeCode == schemeCode && x.Date == parsedDate);
+
+                if (existingScheme == null)
+                {
+                    await storeContext.SchemeDetails.AddAsync(new SchemeDetail
+                    {
+                        FundCode = currentFundId,
+                        FundName = currentFundName,
+                        SchemeCode = schemeCode,
+                        SchemeName = schemeName,
+                        Nav = nav,
+                        Date = parsedDate,
+                        IsVisible = true
+                    });
+                }
+                else
+                {
+                    existingScheme.Nav = nav;
+                    existingScheme.SchemeName = schemeName;
+                    existingScheme.FundName = currentFundName;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Update NAV if changed
-                existingScheme.Nav = nav;
-                existingScheme.SchemeName = schemeName; // optional, if scheme name changes
-                existingScheme.FundName = currentFundName; // optional sync
+                // Log the line that failed, continue with others
+                // e.g., _logger.LogError(ex, "Failed to process line: {Line}", line);
+                continue;
             }
-
         }
 
-        await storeContext.SaveChangesAsync();
-
+        try
+        {
+            await storeContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Log and rethrow/wrap
+            throw new InvalidOperationException("Failed to save scheme details.", ex);
+        }
     }
 
     public async Task<(bool Success, string Message)> AddApprovedSchemeAsync(string fundName, string schemeId, bool isApproved)
