@@ -224,5 +224,55 @@ namespace API.Controllers
                 Message = workingResult.Message
             });
         }
+
+        [HttpGet("compare-two-schemes")]
+        public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)
+        {
+            // ✅ Require both codes
+            if (string.IsNullOrWhiteSpace(schemeCode1) || string.IsNullOrWhiteSpace(schemeCode2))
+            {
+                return BadRequest(new
+                {
+                    Message = "Both schemeCode1 and schemeCode2 must be provided."
+                });
+            }
+
+            var today = DateTime.Today;
+            var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
+
+            var navs = await amfiRepository.GetSchemesByDateRangeAsync(validDates.Min(), validDates.Max());
+            var scheme1Records = navs.Where(x => x.SchemeCode == schemeCode1).ToList();
+            var scheme2Records = navs.Where(x => x.SchemeCode == schemeCode2).ToList();
+
+            if (scheme1Records.Count == 0 || scheme2Records.Count == 0)
+            {
+                return NotFound(new
+                {
+                    Message = "One or both scheme codes do not exist or have no NAV records."
+                });
+            }
+
+            var response = new
+            {
+                Scheme1 = new
+                {
+                    SchemeCode = schemeCode1,
+                    SchemeName = scheme1Records.FirstOrDefault()?.SchemeName,
+                    Yesterday = AmfiDataHelper.CalculateChange(scheme1Records, 1),
+                    LastWeek = AmfiDataHelper.CalculateChange(scheme1Records, 5),
+                    Last10Days = AmfiDataHelper.CalculateChange(scheme1Records, 10)
+                },
+                Scheme2 = new
+                {
+                    SchemeCode = schemeCode2,
+                    SchemeName = scheme2Records.FirstOrDefault()?.SchemeName,
+                    Yesterday = AmfiDataHelper.CalculateChange(scheme2Records, 1),
+                    LastWeek = AmfiDataHelper.CalculateChange(scheme2Records, 5),
+                    Last10Days = AmfiDataHelper.CalculateChange(scheme2Records, 10)
+                }
+            };
+
+            return Ok(response);
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Core.Helpers
+﻿using Core.Entities.AMFI;
+
+namespace Core.Helpers
 {
     public static class AmfiDataHelper
     {
@@ -101,6 +103,49 @@
                 EndWorkingDate: allDates.LastOrDefault(),
                 Dates: allDates
             );
+        }
+
+        public static List<DateTime> GetWorkingDates(DateTime referenceDate, int days)
+        {
+            var result = new List<DateTime>();
+            var date = referenceDate;
+
+            while (result.Count < days)
+            {
+                if (IsWorkingDay(date))
+                {
+                    result.Add(date);
+                }
+                date = date.AddDays(-1);
+            }
+
+            result.Reverse(); // optional: earliest to latest
+            return result;
+        }
+
+        public static bool IsWorkingDay(DateTime date)
+        {
+            return date.DayOfWeek != DayOfWeek.Saturday &&
+                   date.DayOfWeek != DayOfWeek.Sunday;
+        }
+
+        public static decimal? CalculateChange(List<SchemeDetail> records, int days)
+        {
+            var ordered = records
+                .Where(r => r.Nav > 0)
+                .OrderByDescending(r => r.Date)
+                .Take(days + 1) // include current + past
+                .OrderBy(r => r.Date)
+                .ToList();
+
+            if (ordered.Count < 2) return null;
+
+            var start = ordered.First().Nav;
+            var end = ordered.Last().Nav;
+
+            if (start <= 0) return null;
+
+            return Math.Round(((end - start) / start) * 100, 2);
         }
     }
 }
