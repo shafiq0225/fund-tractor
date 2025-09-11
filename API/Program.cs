@@ -1,3 +1,4 @@
+using API.Middleware;
 using Core.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Services;
@@ -20,6 +21,8 @@ builder.Services.AddScoped<IAmfiRepository, AmfiRepository>();
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
 

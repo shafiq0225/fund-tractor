@@ -7,9 +7,13 @@ using System.Threading.Tasks;
 
 namespace Core.DTOs
 {
-    public class ImportUrlRequest
+    public class ApprovedSchemeDto
     {
         [Required]
-        public string FileUrl { get; set; }
+        public string FundName { get; set; }
+        [Required]
+        public string SchemeId { get; set; }
+        [Required]
+        public bool IsApproved { get; set; }
     }
 }

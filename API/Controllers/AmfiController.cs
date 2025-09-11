@@ -10,7 +10,7 @@ namespace API.Controllers
     [ApiController]
     public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
-        [HttpPost("import")]
+        [HttpPost("import/file")]
         public async Task<IActionResult> Import(IFormFile rawdata)
         {
             if (rawdata == null || rawdata.Length == 0)
@@ -51,7 +51,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("import-amfi-url")]
+        [HttpPost("import/url")]
         public async Task<IActionResult> ImportAmfiFromUrl([FromBody] ImportUrlRequest fileUrl)
         {
             if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
@@ -115,35 +115,35 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("schemes/{fundName}/{schemeId}/approval")]
-        public async Task<IActionResult> AddApprovedScheme(string fundName, string schemeId, [FromQuery] bool isApproved)
+        [HttpPost("addapprovedscheme")]
+        public async Task<IActionResult> AddApprovedScheme([FromBody] ApprovedSchemeDto approvedSchemeDto)
         {
-            if (string.IsNullOrWhiteSpace(fundName))
+            if (string.IsNullOrWhiteSpace(approvedSchemeDto.FundName))
                 return BadRequest(new { Message = "Fund name is required." });
 
-            if (string.IsNullOrWhiteSpace(schemeId))
+            if (string.IsNullOrWhiteSpace(approvedSchemeDto.SchemeId))
                 return BadRequest(new { Message = "Scheme ID is required." });
 
             try
             {
-                var (success, message) = await amfiRepository.AddApprovedSchemeAsync(fundName, schemeId, isApproved);
+                var (success, message) = await amfiRepository.AddApprovedSchemeAsync(approvedSchemeDto.FundName, approvedSchemeDto.SchemeId, approvedSchemeDto.IsApproved);
 
                 if (!success)
                 {
                     return Conflict(new
                     {
-                        FundName = fundName,
-                        SchemeId = schemeId,
-                        Approved = isApproved,
+                        approvedSchemeDto.FundName,
+                        approvedSchemeDto.SchemeId,
+                        approvedSchemeDto.IsApproved,
                         Message = message
                     });
                 }
 
                 return Ok(new
                 {
-                    FundName = fundName,
-                    SchemeId = schemeId,
-                    Approved = isApproved,
+                    approvedSchemeDto.FundName,
+                    approvedSchemeDto.SchemeId,
+                    approvedSchemeDto.IsApproved,
                     Message = message
                 });
             }
@@ -151,35 +151,35 @@ namespace API.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    FundName = fundName,
-                    SchemeId = schemeId,
-                    Approved = isApproved,
+                    approvedSchemeDto.FundName,
+                    approvedSchemeDto.SchemeId,
+                    approvedSchemeDto.IsApproved,
                     Error = "An unexpected error occurred while updating scheme approval.",
                     Details = ex.Message
                 });
             }
         }
 
-        [HttpPut("schemes/{fundId}/{schemeId}")]
-        public async Task<IActionResult> UpdateApprovedScheme(string fundId, string schemeId, [FromQuery] bool isApproved)
+        [HttpPut("updateapprovedscheme")]
+        public async Task<IActionResult> UpdateApprovedScheme([FromBody] UpdateSchemeRequest schemeApprovalDto)
         {
-            if (string.IsNullOrWhiteSpace(fundId))
+            if (string.IsNullOrWhiteSpace(schemeApprovalDto.FundId))
                 return BadRequest(new { Message = "Fund ID is required." });
 
-            if (string.IsNullOrWhiteSpace(schemeId))
+            if (string.IsNullOrWhiteSpace(schemeApprovalDto.SchemeId))
                 return BadRequest(new { Message = "Scheme ID is required." });
 
             try
             {
-                var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(fundId, schemeId, isApproved);
+                var (success, message) = await amfiRepository.UpdateApprovedSchemeAsync(schemeApprovalDto.FundId, schemeApprovalDto.SchemeId, schemeApprovalDto.IsApproved);
 
                 if (!success)
                 {
                     return NotFound(new
                     {
-                        FundId = fundId,
-                        SchemeId = schemeId,
-                        Approved = isApproved,
+                        schemeApprovalDto.FundId,
+                        schemeApprovalDto.SchemeId,
+                        schemeApprovalDto.IsApproved,
                         Success = false,
                         Message = message
                     });
@@ -187,9 +187,9 @@ namespace API.Controllers
 
                 return Ok(new
                 {
-                    FundId = fundId,
-                    SchemeId = schemeId,
-                    Approved = isApproved,
+                    schemeApprovalDto.FundId,
+                    schemeApprovalDto.SchemeId,
+                    schemeApprovalDto.IsApproved,
                     Success = true,
                     Message = message
                 });
@@ -198,9 +198,9 @@ namespace API.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    FundId = fundId,
-                    SchemeId = schemeId,
-                    Approved = isApproved,
+                    schemeApprovalDto.FundId,
+                    schemeApprovalDto.SchemeId,
+                    schemeApprovalDto.IsApproved,
                     Success = false,
                     Error = "An unexpected error occurred while updating scheme approval.",
                     Details = ex.Message
@@ -208,15 +208,15 @@ namespace API.Controllers
             }
         }
 
-        [HttpPut("funds/{fundId}")]
-        public async Task<IActionResult> UpdateApprovedFund(string fundId, [FromQuery] bool isApproved)
+        [HttpPut("updateapprovedfund")]
+        public async Task<IActionResult> UpdateApprovedFund([FromBody] UpdateFundRequest updateFundRequest)
         {
-            if (string.IsNullOrWhiteSpace(fundId))
+            if (string.IsNullOrWhiteSpace(updateFundRequest.FundId))
             {
                 return BadRequest(new
                 {
-                    FundId = fundId,
-                    Approved = isApproved,
+                    updateFundRequest.FundId,
+                    updateFundRequest.IsApproved,
                     Success = false,
                     Message = "FundId is required."
                 });
@@ -224,7 +224,7 @@ namespace API.Controllers
 
             try
             {
-                var (success, message) = await amfiRepository.UpdateApprovedFundAsync(fundId, isApproved);
+                var (success, message) = await amfiRepository.UpdateApprovedFundAsync(updateFundRequest.FundId, updateFundRequest.IsApproved);
 
                 if (!success)
                 {
@@ -232,8 +232,8 @@ namespace API.Controllers
                     {
                         return NotFound(new
                         {
-                            FundId = fundId,
-                            Approved = isApproved,
+                            updateFundRequest.FundId,
+                            updateFundRequest.IsApproved,
                             Success = false,
                             Message = message
                         });
@@ -242,8 +242,8 @@ namespace API.Controllers
                     // Generic failure from repo (e.g., "Concurrency conflict" or "Database error")
                     return BadRequest(new
                     {
-                        FundId = fundId,
-                        Approved = isApproved,
+                        updateFundRequest.FundId,
+                        updateFundRequest.IsApproved,
                         Success = false,
                         Message = message
                     });
@@ -251,8 +251,8 @@ namespace API.Controllers
 
                 return Ok(new
                 {
-                    FundId = fundId,
-                    Approved = isApproved,
+                    updateFundRequest.FundId,
+                    updateFundRequest.IsApproved,
                     Success = true,
                     Message = message
                 });
@@ -261,8 +261,8 @@ namespace API.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    FundId = fundId,
-                    Approved = isApproved,
+                    updateFundRequest.FundId,
+                    updateFundRequest.IsApproved,
                     Success = false,
                     Message = "An unexpected error occurred while updating fund approval.",
                     Details = ex.Message
@@ -271,7 +271,7 @@ namespace API.Controllers
         }
 
 
-        [HttpGet("schemes/by-today")]
+        [HttpGet("schemes/today")]
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
         {
             try
@@ -333,8 +333,8 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("schemes/by-date-range")]
-        public async Task<IActionResult> GetSchemes(DateTime startDate, DateTime endDate)
+        [HttpGet("schemes")]
+        public async Task<IActionResult> GetSchemes([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             try
             {
@@ -386,7 +386,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("compare-two-schemes")]
+        [HttpGet("schemes/compare")]
         public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)
         {
             try
