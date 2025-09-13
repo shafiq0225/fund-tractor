@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.nav-item-active {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid #3b82f6;
+  color: #1e40af;
+  font-weight: 500;
+}
+.nav-item-active .material-icons {
+  color: #2563eb;
+}
