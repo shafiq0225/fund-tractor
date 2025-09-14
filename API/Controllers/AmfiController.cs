@@ -115,6 +115,19 @@ namespace API.Controllers
             }
         }
 
+        [HttpPost("import-excel")]
+        public async Task<IActionResult> ImportExcel(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+
+            await amfiRepository.ImportAmfiDataFromExcelAsync(memoryStream.ToArray());
+            return Ok(new { message = "AMFI Excel data imported successfully." });
+        }
+
         [HttpPost("addapprovedscheme")]
         public async Task<IActionResult> AddApprovedScheme([FromBody] ApprovedSchemeDto approvedSchemeDto)
         {

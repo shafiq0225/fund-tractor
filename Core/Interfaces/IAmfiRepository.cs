@@ -6,6 +6,7 @@ namespace Core.Interfaces;
 public interface IAmfiRepository
 {
     Task ImportAmfiDataAsync(string rawData);
+    Task ImportAmfiDataFromExcelAsync(byte[] excelData);
     Task<(bool Success, string Message)> AddApprovedSchemeAsync(string fundName, string schemeId, bool isApproved);
     Task<(bool Success, string Message)> UpdateApprovedSchemeAsync(string fundId, string schemeId, bool isApproved);
     Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundName, bool isApproved);

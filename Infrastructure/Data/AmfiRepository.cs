@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Globalization;
+using ClosedXML.Excel;
 using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace Infrastructure.Data;
 
@@ -198,7 +201,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         catch (Exception ex)
         {
             return (false, $"Unexpected error: {ex.Message}");
-        }    
+        }
     }
 
     public async Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundId, bool isApproved)
@@ -281,4 +284,74 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
     }
 
+    public async Task ImportAmfiDataFromExcelAsync(byte[] excelData)
+    {
+        if (excelData == null || excelData.Length == 0)
+            throw new ArgumentException("Excel data cannot be null or empty.", nameof(excelData));
+
+        List<ApprovedData> approvedSchemes = await GetApprovedSchemesAsync() ?? new List<ApprovedData>();
+        var approvedSchemeCodes = approvedSchemes.Select(x => x.SchemeCode).ToHashSet();
+        approvedSchemeCodes.Add("149319");
+        using var stream = new MemoryStream(excelData);
+        using var workbook = new XLWorkbook(stream);
+        var worksheet = workbook.Worksheets.First();
+        var rowCount = worksheet.LastRowUsed().RowNumber();
+
+        string currentFundName = string.Empty;
+        string currentFundId = string.Empty;
+
+        for (int row = 2; row <= rowCount; row++) // skip header
+        {
+            try
+            {
+                var schemeCode = worksheet.Cell(row, 9).GetString().Trim();
+                if (string.IsNullOrWhiteSpace(schemeCode)) continue;
+                if (!approvedSchemeCodes.Contains(schemeCode)) continue;
+
+                var schemeName = worksheet.Cell(row, 2).GetString().Trim();
+                var navText = worksheet.Cell(row, 12).GetString().Trim();
+                var dateText = worksheet.Cell(row, 11).GetString().Trim();
+
+                decimal nav = decimal.TryParse(navText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedNav)
+                    ? parsedNav : 0;
+
+                DateTime date = DateTime.TryParse(dateText, out var parsedDate) ? parsedDate : DateTime.Now;
+
+                if (AmfiDataHelper.IsFundLine(schemeName))
+                {
+                    currentFundName = schemeName;
+                    currentFundId = AmfiDataHelper.GenerateFundId(currentFundName);
+                }
+
+                var existingScheme = await storeContext.SchemeDetails
+                    .FirstOrDefaultAsync(x => x.SchemeCode == schemeCode && x.Date == date);
+
+                if (existingScheme == null)
+                {
+                    await storeContext.SchemeDetails.AddAsync(new SchemeDetail
+                    {
+                        FundCode = currentFundId,
+                        FundName = currentFundName,
+                        SchemeCode = schemeCode,
+                        SchemeName = schemeName,
+                        Nav = nav,
+                        Date = date,
+                        IsVisible = true
+                    });
+                }
+                else
+                {
+                    existingScheme.Nav = nav;
+                    existingScheme.SchemeName = schemeName;
+                    existingScheme.FundName = currentFundName;
+                }
+            }
+            catch
+            {
+                continue; // log if needed
+            }
+        }
+
+        await storeContext.SaveChangesAsync();
+    }
 }
