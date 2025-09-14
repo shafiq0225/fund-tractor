@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddScoped<AmfiDownloader>();
+builder.Services.AddScoped<IAmfiExcelDownloadService, AmfiExcelDownloadService>();
 builder.Services.AddHostedService<DailyNavDownloaderService>();
 
 builder.Services.AddScoped<IAmfiNavService, AmfiNavService>();

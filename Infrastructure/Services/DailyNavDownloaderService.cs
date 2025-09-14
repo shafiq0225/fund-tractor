@@ -1,11 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
@@ -61,7 +57,7 @@ namespace Infrastructure.Services
                     var marketDate = runIst.AddDays(-1);
 
                     using var scope = _services.CreateScope();
-                    var downloader = scope.ServiceProvider.GetRequiredService<AmfiDownloader>();
+                    var downloader = scope.ServiceProvider.GetRequiredService<IAmfiExcelDownloadService>();
 
                     _logger.LogInformation("Running AMFI NAV job for market date {Date}", marketDate.ToString("yyyy-MM-dd"));
                     await downloader.DownloadAndSaveAsync(marketDate);

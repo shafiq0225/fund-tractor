@@ -1,35 +1,27 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Core.Interfaces;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
-    public class AmfiDownloader
+    public class AmfiExcelDownloadService : IAmfiExcelDownloadService
     {
-        private readonly ILogger<AmfiDownloader> _logger;
+        private readonly ILogger<AmfiExcelDownloadService> _logger;
         private readonly HttpClient _httpClient;
         private readonly IHostEnvironment _hostEnv;
-        //private readonly string _dataFolder;
 
-        public AmfiDownloader(ILogger<AmfiDownloader> logger, IHostEnvironment hostEnv)
+        public AmfiExcelDownloadService(ILogger<AmfiExcelDownloadService> logger, IHostEnvironment hostEnv)
         {
             _logger = logger;
             _httpClient = new HttpClient();
-
-            // Save inside API project under api/datafiles
-            //_dataFolder = Path.Combine(AppContext.BaseDirectory, "datafiles");
-            //if (!Directory.Exists(_dataFolder))
-            //{
-            //    Directory.CreateDirectory(_dataFolder);
-            //}
-
             _hostEnv = hostEnv;
         }
-
         public async Task DownloadAndSaveAsync(DateTime marketDate)
         {
             string formattedDate = marketDate.ToString("yyyy-MM-dd");
