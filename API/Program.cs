@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddScoped<AmfiDownloader>();
+builder.Services.AddHostedService<DailyNavDownloaderService>();
+
 builder.Services.AddScoped<IAmfiNavService, AmfiNavService>();
 builder.Services.AddHostedService<AmfiNavBackgroundService>();
 builder.Services.AddControllers();
