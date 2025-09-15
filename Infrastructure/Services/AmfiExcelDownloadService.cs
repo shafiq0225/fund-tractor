@@ -25,11 +25,11 @@ namespace Infrastructure.Services
         public async Task DownloadAndSaveAsync(DateTime marketDate)
         {
             string formattedDate = marketDate.ToString("yyyy-MM-dd");
-            //string url =
-            //    $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate={formattedDate}&ToDate={formattedDate}";
-
             string url =
-                $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate=2025-09-12&ToDate=2025-09-12";
+                $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate={formattedDate}&ToDate={formattedDate}";
+
+            //string url =
+            //    $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate=2025-09-12&ToDate=2025-09-12";
 
             _logger.LogInformation("Downloading NAV Excel for {Date} from {Url}", formattedDate, url);
 

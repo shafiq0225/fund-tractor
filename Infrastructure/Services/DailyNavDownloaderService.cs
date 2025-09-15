@@ -42,7 +42,6 @@ namespace Infrastructure.Services
                     //_logger.LogInformation("Next AMFI NAV job scheduled in 5 seconds (Test Mode)");
                     //await Task.Delay(delay, stoppingToken);
 
-
                     // Refresh current time in IST at run
                     var runIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _indiaTimeZone);
 
@@ -57,7 +56,16 @@ namespace Infrastructure.Services
                     var marketDate = runIst.AddDays(-1);
 
                     using var scope = _services.CreateScope();
+
+                    var holidayProvider = scope.ServiceProvider.GetRequiredService<IMarketHolidayProvider>();
+
                     var downloader = scope.ServiceProvider.GetRequiredService<IAmfiExcelDownloadService>();
+
+                    if (await holidayProvider.IsHolidayAsync(marketDate))
+                    {
+                        _logger.LogInformation("Skipping NAV job for {Date} (Market Holiday)", marketDate.ToString("yyyy-MM-dd"));
+                        continue;
+                    }
 
                     _logger.LogInformation("Running AMFI NAV job for market date {Date}", marketDate.ToString("yyyy-MM-dd"));
                     await downloader.DownloadAndSaveAsync(marketDate);
