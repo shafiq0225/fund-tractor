@@ -291,7 +291,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         List<ApprovedData> approvedSchemes = await GetApprovedSchemesAsync() ?? new List<ApprovedData>();
         var approvedSchemeCodes = approvedSchemes.Select(x => x.SchemeCode).ToHashSet();
-        approvedSchemeCodes.Add("149319");
         using var stream = new MemoryStream(excelData);
         using var workbook = new XLWorkbook(stream);
         var worksheet = workbook.Worksheets.First();
@@ -311,6 +310,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 var schemeName = worksheet.Cell(row, 2).GetString().Trim();
                 var navText = worksheet.Cell(row, 12).GetString().Trim();
                 var dateText = worksheet.Cell(row, 11).GetString().Trim();
+                currentFundName = worksheet.Cell(row, 10).GetString().Trim();
 
                 decimal nav = decimal.TryParse(navText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedNav)
                     ? parsedNav : 0;
@@ -319,8 +319,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
                 if (AmfiDataHelper.IsFundLine(schemeName))
                 {
-                    currentFundName = schemeName;
-                    currentFundId = AmfiDataHelper.GenerateFundId(currentFundName);
+                    currentFundId = AmfiDataHelper.GenerateFundId(schemeName);
                 }
 
                 var existingScheme = await storeContext.SchemeDetails
