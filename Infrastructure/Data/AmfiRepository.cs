@@ -330,9 +330,9 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                     await storeContext.SchemeDetails.AddAsync(new SchemeDetail
                     {
                         FundCode = currentFundId,
-                        FundName = currentFundName,
+                        FundName = schemeName,
                         SchemeCode = schemeCode,
-                        SchemeName = schemeName,
+                        SchemeName = currentFundName,
                         Nav = nav,
                         Date = date,
                         IsVisible = true
@@ -341,8 +341,8 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 else
                 {
                     existingScheme.Nav = nav;
-                    existingScheme.SchemeName = schemeName;
-                    existingScheme.FundName = currentFundName;
+                    existingScheme.SchemeName = currentFundName;
+                    existingScheme.FundName = schemeName;
                 }
             }
             catch
