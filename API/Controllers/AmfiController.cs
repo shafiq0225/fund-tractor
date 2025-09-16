@@ -10,6 +10,7 @@ namespace API.Controllers
     [ApiController]
     public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
+        // clean up is required
         [HttpPost("import/file")]
         public async Task<IActionResult> Import(IFormFile rawdata)
         {
@@ -115,6 +116,7 @@ namespace API.Controllers
             }
         }
 
+        // clean up is required
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportExcel(IFormFile file)
         {
@@ -127,6 +129,61 @@ namespace API.Controllers
             await amfiRepository.ImportAmfiDataFromExcelAsync(memoryStream.ToArray());
             return Ok(new { message = "AMFI Excel data imported successfully." });
         }
+
+        [HttpPost("ImportFile")]
+        public async Task<IActionResult> ImportFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { Message = "No file uploaded." });
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            try
+            {
+                switch (extension)
+                {
+                    case ".txt":
+                        string content;
+                        using (var reader = new StreamReader(file.OpenReadStream()))
+                        {
+                            content = await reader.ReadToEndAsync();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(content))
+                            return BadRequest(new { Message = "Uploaded file is empty." });
+
+                        await amfiRepository.ImportAmfiDataAsync(content);
+                        return Ok(new { Message = "TXT file imported successfully." });
+
+                    case ".xls":
+                    case ".xlsx":
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await file.CopyToAsync(memoryStream);
+                            await amfiRepository.ImportAmfiDataFromExcelAsync(memoryStream.ToArray());
+                        }
+                        return Ok(new { Message = "Excel file imported successfully." });
+
+                    default:
+                        return BadRequest(new { Message = "Unsupported file type. Please upload .txt or .xlsx file." });
+                }
+            }
+            catch (FormatException fex)
+            {
+                return BadRequest(new { Message = "File contains invalid data format.", Details = fex.Message });
+            }
+            catch (DbUpdateException dbex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "Database error during import.", Details = dbex.InnerException?.Message ?? dbex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "An unexpected error occurred during import.", Details = ex.Message });
+            }
+        }
+
 
         [HttpPost("addapprovedscheme")]
         public async Task<IActionResult> AddApprovedScheme([FromBody] ApprovedSchemeDto approvedSchemeDto)
