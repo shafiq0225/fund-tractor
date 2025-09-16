@@ -58,18 +58,20 @@ namespace Core.Helpers
 
 
         // 🔹 Shared grouping logic
-        private static List<SchemeDto> BuildSchemes(List<SchemeDetail> schemes, Func<IGrouping<object, SchemeDetail>, List<SchemeHistoryDto>> buildHistory)
+        private static List<SchemeDto> BuildSchemes(List<SchemeDetail> schemes, Func<IGrouping<string, SchemeDetail>, List<SchemeHistoryDto>> buildHistory)
         {
-            return schemes
-                .GroupBy(s => new { s.SchemeCode, s.FundName, s.SchemeName })
+            var schemesList = schemes
+                .GroupBy(s => s.SchemeCode) // string key
                 .Select(group => new SchemeDto
                 {
-                    FundName = group.Key.FundName,
-                    SchemeCode = group.Key.SchemeCode,
-                    SchemeName = group.Key.SchemeName,
+                    SchemeCode = group.Key, // string
+                    FundName = group.First().FundName,
+                    SchemeName = group.First().SchemeName,
                     History = buildHistory(group)
                 })
                 .ToList();
+
+            return schemesList;
         }
 
         private static SchemeDetail FindRecord(IGrouping<object, SchemeDetail> group, DateTime date)

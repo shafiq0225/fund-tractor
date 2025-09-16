@@ -28,55 +28,62 @@ namespace Infrastructure.Services
                     var nowUtc = DateTime.UtcNow;
                     var nowIst = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, _indiaTimeZone);
 
-                    // Schedule next 6 AM IST
-                    var nextRunIst = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 6, 0, 0);
-                    if (nowIst > nextRunIst)
-                        nextRunIst = nextRunIst.AddDays(1);
+                    // Today’s scheduled time = 6 AM IST
+                    var todayRunIst = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 6, 0, 0);
 
-                    var delay = nextRunIst - nowIst;
-                    _logger.LogInformation("Next AMFI NAV job scheduled at {Time} IST", nextRunIst);
-                    await Task.Delay(delay, stoppingToken);
+                    // If already past 6 AM, schedule next run for tomorrow
+                    if (nowIst > todayRunIst)
+                        todayRunIst = todayRunIst.AddDays(1);
 
-                    //Test Mode
-                    //var delay = TimeSpan.FromSeconds(5);
-                    //_logger.LogInformation("Next AMFI NAV job scheduled in 5 seconds (Test Mode)");
-                    //await Task.Delay(delay, stoppingToken);
-
-                    // Refresh current time in IST at run
+                    // Refresh current time in IST
                     var runIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _indiaTimeZone);
 
                     // ⛔ Skip if Sunday or Monday
-                    if (runIst.DayOfWeek == DayOfWeek.Sunday || runIst.DayOfWeek == DayOfWeek.Monday)
+                    if (runIst.DayOfWeek is DayOfWeek.Sunday or DayOfWeek.Monday)
                     {
                         _logger.LogInformation("Skipping NAV job on {Day}", runIst.DayOfWeek);
-                        continue;
                     }
-
-                    // ✅ Calculate correct market date (yesterday)
-                    var marketDate = runIst.AddDays(-1);
-
-                    using var scope = _services.CreateScope();
-
-                    var holidayProvider = scope.ServiceProvider.GetRequiredService<IMarketHolidayProvider>();
-
-                    var downloader = scope.ServiceProvider.GetRequiredService<IAmfiExcelDownloadService>();
-
-                    if (await holidayProvider.IsHolidayAsync(marketDate))
+                    else
                     {
-                        _logger.LogInformation("Skipping NAV job for {Date} (Market Holiday)", marketDate.ToString("yyyy-MM-dd"));
-                        continue;
+                        // ✅ Calculate correct market date (yesterday)
+                        var marketDate = runIst.AddDays(-1);
+
+                        using var scope = _services.CreateScope();
+                        var holidayProvider = scope.ServiceProvider.GetRequiredService<IMarketHolidayProvider>();
+                        var downloader = scope.ServiceProvider.GetRequiredService<IAmfiExcelDownloadService>();
+                        string formattedDate = marketDate.ToString("yyyy-MM-dd");
+                        // ✅ Check if already processed today (file exists)
+                        string filePath = Path.Combine("DataFiles", $"nav-{formattedDate:yyyyMMdd}.xlsx");
+                        if (File.Exists(filePath))
+                        {
+                            _logger.LogInformation("Skipping NAV job for {Date} - File already exists", marketDate.ToString("yyyy-MM-dd"));
+                        }
+                        else if (await holidayProvider.IsHolidayAsync(marketDate))
+                        {
+                            _logger.LogInformation("Skipping NAV job for {Date} (Market Holiday)", marketDate.ToString("yyyy-MM-dd"));
+                        }
+                        else
+                        {
+                            // ✅ Run job
+                            _logger.LogInformation("Running AMFI NAV job for market date {Date}", marketDate.ToString("yyyy-MM-dd"));
+                            await downloader.DownloadAndSaveAsync(marketDate);                         
+                        }
                     }
 
-                    _logger.LogInformation("Running AMFI NAV job for market date {Date}", marketDate.ToString("yyyy-MM-dd"));
-                    await downloader.DownloadAndSaveAsync(marketDate);
+                    // ⏰ Always wait until next day 6 AM
+                    var delay = todayRunIst - nowIst;
+                    if (delay < TimeSpan.Zero) delay = TimeSpan.FromHours(24);
+
+                    _logger.LogInformation("Next AMFI NAV job scheduled at {Time} IST", todayRunIst);
+                    await Task.Delay(delay, stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error in Daily NAV background service.");
                 }
             }
-
         }
+
         private DateTime GetMarketDate(DateTime todayIst)
         {
             // If today is Sunday → last Friday

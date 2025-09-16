@@ -60,7 +60,7 @@ namespace API.Controllers
             try
             {
                 // ✅ Ensure it’s from AMFI domain
-                if (!fileUrl.FileUrl.StartsWith("https://www.amfiindia.com", StringComparison.OrdinalIgnoreCase))
+                if (!fileUrl.FileUrl.StartsWith("https://portal.amfiindia.com", StringComparison.OrdinalIgnoreCase))
                     return BadRequest(new { Message = "Invalid URL. Only AMFI URLs are allowed." });
 
                 Uri uri;

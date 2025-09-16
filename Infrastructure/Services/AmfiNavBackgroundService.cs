@@ -30,35 +30,45 @@ namespace Infrastructure.Services
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
                     TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
 
-                // Skip Sat, Sun, Mon
-                if (nowIst.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday or DayOfWeek.Monday)
+                var todayDate = nowIst.Date;
+                var runTimeToday = todayDate.AddHours(6).AddMinutes(30); // 6:30 AM IST
+
+                // Check if file already exists for today
+                // $"NAVAll_{nowIst:yyyyMMdd}.txt"
+                string filePath = Path.Combine("DataFiles", $"NAVAll_{todayDate:yyyyMMdd}.txt");
+
+                if (!File.Exists(filePath) && nowIst >= runTimeToday)
                 {
-                    _logger.LogInformation("Skipping job on {Day}", nowIst.DayOfWeek);
+                    if (nowIst.DayOfWeek is DayOfWeek.Sunday or DayOfWeek.Monday)
+                    {
+                        _logger.LogInformation("Skipping job on {Day}", nowIst.DayOfWeek);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            _logger.LogInformation("Downloading AMFI NAV at {Time}", nowIst);
+
+                            using var scope = _scopeFactory.CreateScope();
+                            var amfiNavService = scope.ServiceProvider.GetRequiredService<IAmfiNavService>();
+                            await amfiNavService.DownloadAndSaveAsync();                          
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error in AMFI NAV download");
+                        }
+                    }
                 }
                 else
                 {
-                    try
-                    {
-                        _logger.LogInformation("Downloading AMFI NAV at {Time}", nowIst);
-
-                        using var scope = _scopeFactory.CreateScope();
-                        var amfiNavService = scope.ServiceProvider.GetRequiredService<IAmfiNavService>();
-                        await amfiNavService.DownloadAndSaveAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in AMFI NAV download");
-                    }
+                    _logger.LogInformation("Skipping execution — file already exists for today: {File}", filePath);
                 }
 
-                // Calculate next run at 6:30 AM IST tomorrow
-                var tomorrowIst = nowIst.Date.AddDays(1).AddHours(6).AddMinutes(30);
-                var delay = tomorrowIst - nowIst;
+                // Next check is tomorrow 6:30 AM IST
+                var nextRunIst = todayDate.AddDays(1).AddHours(6).AddMinutes(30);
+                var delay = nextRunIst - nowIst;
 
-                if (delay < TimeSpan.Zero) delay = TimeSpan.FromHours(24); // fallback
-
-                _logger.LogInformation("Next run scheduled after {Delay}", delay);
-
+                _logger.LogInformation("Next check scheduled after {Delay}", delay);
                 await Task.Delay(delay, stoppingToken);
             }
         }
