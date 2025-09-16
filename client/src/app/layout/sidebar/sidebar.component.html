@@ -1,59 +1,67 @@
-  <aside class="w-64 bg-white shadow-lg flex flex-col">
-    <!-- Logo -->
-    <div class="flex items-center justify-center py-6 border-b border-gray-200 bg-white">
-      <div class="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
-        FT
-      </div>
-      <span class="ml-3 font-extrabold text-lg tracking-wide text-blue-800">FundTrackr</span>
+<aside class="w-64 bg-white shadow-lg flex flex-col">
+  <!-- Logo -->
+  <div class="flex items-center justify-center py-6 border-b border-gray-200 bg-white">
+    <div
+      class="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
+      FT
     </div>
+    <span class="ml-3 font-extrabold text-lg tracking-wide text-blue-800">FundTrackr</span>
+  </div>
 
-    <!-- User Profile -->
-    <div class="p-6 flex flex-col items-center border-b border-gray-200 text-center">
-      <div class="h-16 w-16 bg-blue-200 rounded-full flex items-center justify-center text-blue-700 text-lg font-bold shadow-md mb-3">SA</div>
-      <h2 class="font-semibold text-base text-gray-800">Shafiq Ahamed</h2>
-      <div class="flex items-center mt-1 text-gray-500 text-xs">
-        <span class="material-icons mr-1">location_on</span>Toronto, Canada
-      </div>
+  <!-- User Profile -->
+  <div class="p-6 flex flex-col items-center border-b border-gray-200 text-center">
+    <div
+      class="h-16 w-16 bg-blue-200 rounded-full flex items-center justify-center text-blue-700 text-lg font-bold shadow-md mb-3">
+      SA</div>
+    <h2 class="font-semibold text-base text-gray-800">Shafiq Ahamed</h2>
+    <div class="flex items-center mt-1 text-gray-500 text-xs">
+      <span class="material-icons mr-1">location_on</span>Toronto, Canada
     </div>
+  </div>
 
-    <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto pt-5 pb-4">
-      <div class="px-4 space-y-1">
-        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md nav-item-active">
-          <span class="material-icons mr-3 text-gray-500">dashboard</span>Dashboard
-        </a>
-        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-          <span class="material-icons mr-3 text-gray-500">account_balance</span>Portfolio
-        </a>
-        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-          <span class="material-icons mr-3 text-gray-500">pie_chart</span>My Funds
-        </a>
-        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-          <span class="material-icons mr-3 text-gray-500">receipt</span>Transactions
-        </a>
-        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-          <span class="material-icons mr-3 text-gray-500">trending_up</span>Performance
-        </a>
-      </div>
-
-      <div class="mt-10">
-        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reports</p>
-        <div class="mt-2 px-4 space-y-1">
-          <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <span class="material-icons mr-3 text-gray-500">summarize</span>Statements
-          </a>
-          <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <span class="material-icons mr-3 text-gray-500">description</span>Tax Documents
-          </a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Bottom Settings -->
-    <div class="flex-shrink-0 border-t border-gray-200 p-4">
-      <a href="#" class="flex items-center w-full">
-        <span class="material-icons text-gray-500">settings</span>
-        <span class="ml-3 text-sm font-medium text-gray-700">Settings</span>
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto pt-5 pb-4">
+    <div class="px-4 space-y-1">
+      <a routerLink="/" routerLinkActive="nav-item-active" [routerLinkActiveOptions]="{ exact: true }" class="flex items-center px-3 py-2 text-sm font-medium rounded-md">
+        <span class="material-icons mr-3 text-gray-500">dashboard</span>Dashboard
+      </a>
+      <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+        <span class="material-icons mr-3 text-gray-500">account_balance</span>Portfolio
+      </a>
+      <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+        <span class="material-icons mr-3 text-gray-500">pie_chart</span>My Funds
+      </a>
+      <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+        <span class="material-icons mr-3 text-gray-500">receipt</span>Transactions
+      </a>
+      <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+        <span class="material-icons mr-3 text-gray-500">trending_up</span>Performance
+      </a>
+      <a routerLink="/nav" routerLinkActive="nav-item-active"
+        class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+        <span class="material-icons mr-3 text-gray-500">table_chart</span>
+        NAV
       </a>
     </div>
-  </aside>
+
+    <div class="mt-10">
+      <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reports</p>
+      <div class="mt-2 px-4 space-y-1">
+        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+          <span class="material-icons mr-3 text-gray-500">summarize</span>Statements
+        </a>
+        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+          <span class="material-icons mr-3 text-gray-500">description</span>Tax Documents
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Bottom Settings -->
+  <div class="flex-shrink-0 border-t border-gray-200 p-4">
+    <a href="#" class="flex items-center w-full">
+      <span class="material-icons text-gray-500">settings</span>
+      <span class="ml-3 text-sm font-medium text-gray-700">Settings</span>
+    </a>
+  </div>
+</aside>
