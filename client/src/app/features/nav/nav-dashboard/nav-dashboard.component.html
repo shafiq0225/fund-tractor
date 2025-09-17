@@ -1,0 +1,18 @@
+<h2 class="text-2xl font-bold mb-4">Welcome to FundTrackr</h2>
+<p>Your dashboard content is rendered here from AppComponent.</p>
+
+<div class="flex flex-wrap gap-6 p-6">
+  <mat-card
+    *ngFor="let tile of tiles"
+    class="w-40 h-40 flex items-center justify-center cursor-pointer hover:shadow-xl transition duration-300 rounded-2xl"
+    [routerLink]="tile.route"
+  >
+    <div
+      class="flex flex-col items-center justify-center w-full h-full rounded-2xl text-white"
+      [ngClass]="tile.color"
+    >
+      <mat-icon class="text-4xl mb-2">{{ tile.icon }}</mat-icon>
+      <h3 class="text-sm font-semibold text-center">{{ tile.title }}</h3>
+    </div>
+  </mat-card>
+</div>
