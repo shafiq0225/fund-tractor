@@ -22,31 +22,44 @@ namespace Infrastructure.Services
             _httpClient = new HttpClient();
             _hostEnv = hostEnv;
         }
-        public async Task DownloadAndSaveAsync(DateTime marketDate)
+        public async Task<bool> DownloadAndSaveAsync(DateTime marketDate)
         {
             string formattedDate = marketDate.ToString("yyyy-MM-dd");
             string url =
                 $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate={formattedDate}&ToDate={formattedDate}";
 
-            //string url =
-            //    $"https://www.amfiindia.com/api/download-nav-history?strMFID=all&schemeTypeDesc=all&FromDate=2025-09-12&ToDate=2025-09-12";
+            try
+            {
+                _logger.LogInformation("Downloading NAV Excel for {Date} from {Url}", formattedDate, url);
 
-            _logger.LogInformation("Downloading NAV Excel for {Date} from {Url}", formattedDate, url);
+                var response = await _httpClient.GetAsync(url);
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to download NAV Excel for {Date}. StatusCode: {StatusCode}",
+                        formattedDate, response.StatusCode);
+                    return false;
+                }
 
-            var bytes = await response.Content.ReadAsByteArrayAsync();
-            string fileName = $"nav-{formattedDate}.xlsx";
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                string fileName = $"nav-{formattedDate}.xlsx";
 
-            var folderPath = Path.Combine(_hostEnv.ContentRootPath, "DataFiles");
-            Directory.CreateDirectory(folderPath);
+                var folderPath = Path.Combine(_hostEnv.ContentRootPath, "DataFiles");
+                Directory.CreateDirectory(folderPath);
 
-            string filePath = Path.Combine(folderPath, fileName);
+                string filePath = Path.Combine(folderPath, fileName);
 
-            await File.WriteAllBytesAsync(filePath, bytes);
+                await File.WriteAllBytesAsync(filePath, bytes);
 
-            _logger.LogInformation("Saved NAV file: {FilePath}", filePath);
+                _logger.LogInformation("Saved NAV file: {FilePath}", filePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while downloading NAV Excel for {Date}", formattedDate);
+                return false;
+            }
         }
+
     }
 }

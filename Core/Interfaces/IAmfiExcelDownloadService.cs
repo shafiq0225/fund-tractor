@@ -8,6 +8,6 @@ namespace Core.Interfaces
 {
     public interface IAmfiExcelDownloadService
     {
-        Task DownloadAndSaveAsync(DateTime marketDate);
+        Task<bool> DownloadAndSaveAsync(DateTime marketDate);
     }
 }
