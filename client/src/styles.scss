@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+// @tailwind base;
+// @tailwind components;
+// @tailwind utilities;
+
+@use "@angular/material" as mat;
 
 .nav-item-active {
   background-color: rgba(59, 130, 246, 0.1);
@@ -10,4 +12,24 @@
 }
 .nav-item-active .material-icons {
   color: #2563eb;
+}
+
+.snack-error {
+  @include mat.snack-bar-overrides(
+    (
+      button-color: white,
+      container-color: red,
+      supporting-text-color: white,
+    )
+  );
+}
+
+.snack-success {
+  @include mat.snack-bar-overrides(
+    (
+      button-color: white,
+      container-color: green,
+      supporting-text-color: white,
+    )
+  );
 }

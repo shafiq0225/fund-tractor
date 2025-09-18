@@ -5,6 +5,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AmfiService } from '../../../core/services/amfi.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  file: File;
+}
 
 @Component({
   selector: 'app-nav-import',
@@ -13,153 +22,125 @@ import { ActivatedRoute, Router } from '@angular/router';
     FormsModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './nav-import.component.html',
   styleUrl: './nav-import.component.scss'
 })
+
 export class NavImportComponent {
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  uploadedFile: File | null = null;
+  uploadProgress: number = 0;
+  uploading: boolean = false;
+  loading: boolean = false;   // For API calls (fetch/import)
+  isDragging: boolean = false;
+  private uploadInterval: any;
+  importLoading = false;   // For Import button
+  fetchLoading = false;    // For Fetch button
+
+  fileUrl: string = 'https://portal.amfiindia.com/spages/NAVAll.txt';
+
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private amfiService: AmfiService,
+    private snackBarService: SnackbarService
+  ) { }
 
   goToDashboard() {
-    // Navigate to the default child of /nav
     this.router.navigate(['../'], { relativeTo: this.route });
   }
 
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('dropZone') dropZone!: ElementRef<HTMLDivElement>;
-
-  isDragging = false;
-  uploadedFile: File | null = null;
-  uploadProgress = 0; // Default progress for demo
-  fileUrl = '';
-  uploading = false;
-  uploadInterval: any;
-
-  onDragOver(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = true;
-  }
-
-  onDragLeave(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = false;
-  }
-
-  onDrop(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = false;
-
-    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      this.handleFile(event.dataTransfer.files[0]);
-      event.dataTransfer.clearData();
-    }
-  }
-
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.uploadedFile = file;
+  // Select file manually
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.uploadedFile = input.files[0];
       this.startUploadSimulation();
     }
   }
 
-  startUploadSimulation() {
-    this.uploadProgress = 0;
+  // Simulate upload progress
+  private startUploadSimulation(): void {
     this.uploading = true;
-    clearInterval(this.uploadInterval);
+    this.uploadProgress = 0;
+
+    if (this.uploadInterval) clearInterval(this.uploadInterval);
 
     this.uploadInterval = setInterval(() => {
-      if (this.uploadProgress < 100) {
-        this.uploadProgress += 10;
-      } else {
-        clearInterval(this.uploadInterval);
-        this.uploading = false;
-      }
-    }, 500);
-  }
-
-
-  handleFile(file: File) {
-    // Check file type
-    const validExtensions = ['.csv', '.xls', '.xlsx', '.txt'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-
-    if (!validExtensions.includes(fileExtension)) {
-      alert('Please select a CSV, XLS, XLSX, or TXT file');
-      return;
-    }
-
-    // Check file size (4MB max)
-    if (file.size > 4 * 1024 * 1024) {
-      alert('File size exceeds 4MB limit');
-      return;
-    }
-
-    // Replace any existing file with the new one
-    this.uploadedFile = file;
-
-    // Simulate upload progress
-    this.simulateUploadProgress();
-  }
-
-  uploadFromUrl() {
-    if (!this.fileUrl) {
-      alert('Please enter a valid URL');
-      return;
-    }
-
-    // Extract filename from URL for display
-    const fileName = this.fileUrl.split('/').pop() || 'downloaded_file.csv';
-
-    // Create a mock file object
-    this.uploadedFile = new File([], fileName, { type: 'text/csv' });
-
-    // Simulate upload progress
-    this.simulateUploadProgress();
-  }
-
-  simulateUploadProgress() {
-    this.uploadProgress = 0;
-    const interval = setInterval(() => {
-      this.uploadProgress += 5;
       if (this.uploadProgress >= 100) {
-        this.uploadProgress = 100;
-        clearInterval(interval);
+        clearInterval(this.uploadInterval);
+        this.uploading = false; // hide discard after completion
+      } else {
+        this.uploadProgress += 10; // increase by 10% every 300ms
       }
-    }, 100);
+    }, 300);
   }
 
-  discard() {
-    clearInterval(this.uploadInterval);
+  // Discard file and reset
+  discard(): void {
     this.uploadedFile = null;
-    this.uploadProgress = 0;
     this.uploading = false;
+    this.uploadProgress = 0;
+    if (this.uploadInterval) clearInterval(this.uploadInterval);
   }
 
-  /** 🟥 Delete removes file completely */
-  deleteFile() {
-    clearInterval(this.uploadInterval);
-    this.uploadedFile = null;
-    this.uploadProgress = 0;
-    this.uploading = false;
+  deleteFile(): void {
+    this.discard();
   }
 
-  importFile() {
+  // Import after upload completed (fake API for now)
+  importFile(): void {
     if (this.uploadProgress === 100 && this.uploadedFile) {
-      console.log('Importing file:', this.uploadedFile.name);
+      this.importLoading = true;
 
-      // ✅ Here you call your backend API to process the file
-      // this.fileService.import(this.uploadedFile).subscribe(...);
-
-      // Reset UI after import
-      alert(`File "${this.uploadedFile.name}" imported successfully!`);
-      this.uploadedFile = null;
-      this.uploadProgress = 0;
+      // Simulated API delay (remove later)
+      setTimeout(() => {
+        this.importLoading = false;
+        this.snackBarService.success('File ready for import (API not implemented yet).');
+      }, 2000);
     }
   }
-  
+
+
+
+  // Drag & Drop
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = false;
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      this.uploadedFile = event.dataTransfer.files[0];
+      this.startUploadSimulation();
+    }
+  }
+
+  // Fetch data from AMFI portal
+  fetchFromUrl(): void {
+    const confirmed = confirm('Are you sure you want to fetch the latest AMFI data?');
+    if (!confirmed) return;
+
+    this.fetchLoading = true;
+    this.amfiService.ImportNavFromUrl(this.fileUrl).subscribe({
+      next: (res) => {
+        this.fetchLoading = false;
+        this.snackBarService.success(res?.message || 'Data fetched successfully!');
+      },
+      error: (err) => {
+        this.fetchLoading = false;
+        this.snackBarService.error(err?.error?.message || 'Error fetching data');
+      }
+    });
+  }
+
 }

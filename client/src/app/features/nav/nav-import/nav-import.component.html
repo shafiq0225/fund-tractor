@@ -1,97 +1,118 @@
 <!-- Breadcrumb -->
-<nav class="flex items-center text-gray-500 text-sm mb-4">
-    <a class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800" (click)="goToDashboard()">
-        <mat-icon class="text-gray-400 text-base">arrow_back</mat-icon>
-        Nav
-    </a>
-    <span class="mx-2">/</span>
-    <span class="font-medium text-gray-800">Import AMFI</span>
+<nav class="flex items-center text-gray-500 text-sm mb-6">
+  <a class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800" (click)="goToDashboard()">
+    <mat-icon class="text-gray-400 text-base">arrow_back</mat-icon>
+    Nav
+  </a>
+  <span class="mx-2">/</span>
+  <span class="font-medium text-gray-800">AMFI Data Import</span>
 </nav>
-<div class="w-[900px] p-8 bg-white rounded-2xl shadow-lg">
-    <!-- Header -->
-    <h2 class="text-2xl font-bold mb-2 text-gray-800">Import AMFI</h2>
-    <p class="text-gray-500 mb-6">
-        Upload a <span class="font-medium">.txt</span> or <span class="font-medium">.xlsx</span> file
-        to import AMFI data into your app.
+
+<!-- Card -->
+<div class="w-[900px] p-8 bg-white rounded-2xl shadow-md border border-gray-100">
+  <!-- Header -->
+  <h2 class="text-2xl font-bold mb-2 text-blue-700">AMFI Data Import</h2>
+  <p class="text-gray-600 mb-6">
+    Import AMFI data into the system. You can either upload a local file or fetch data directly from the official AMFI
+    portal.
+  </p>
+
+  <!-- Section 1: Upload -->
+  <div class="mb-8">
+    <p class="text-gray-700 mb-2 font-semibold text-lg">Upload AMFI Data from System</p>
+    <p class="text-gray-500 text-sm mb-4">
+      Supported formats: <span class="font-medium">.txt</span>, <span class="font-medium">.xls</span>, <span
+        class="font-medium">.xlsx</span>. Max size: <span class="font-medium">4MB</span>.
     </p>
 
-    <!-- Drop zone -->
-    <div class="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200 ease-in-out"
-        [ngClass]="{
+    <!-- Drop Zone -->
+    <div
+      class="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200 ease-in-out mb-4"
+      [ngClass]="{
         'border-blue-500 bg-blue-50': isDragging,
         'border-gray-300 hover:border-blue-400 hover:bg-gray-50': !isDragging
       }" (click)="fileInput.click()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <p class="text-gray-700 font-medium">Drag & Drop file here</p>
-        <p class="text-gray-400 text-sm">(Or click to browse, 4MB max)</p>
+      (drop)="onDrop($event)">
+      <mat-icon class="text-[64px] text-gray-400 mb-4">cloud_upload</mat-icon>
+      <p class="text-gray-700 font-medium">Drag & Drop file here</p>
+      <p class="text-gray-400 text-sm">(Or click to browse)</p>
     </div>
 
     <!-- Hidden file input -->
-    <input #fileInput type="file" class="hidden" (change)="onFileSelected($event)" accept=".txt,.xls,.xlsx,.csv" />
-
-    <!-- OR Divider -->
-    <div class="flex items-center my-6">
-        <div class="flex-grow border-t border-gray-200"></div>
-        <span class="px-3 text-gray-400 text-sm">OR</span>
-        <div class="flex-grow border-t border-gray-200"></div>
-    </div>
-
-    <!-- URL upload section -->
-    <div class="mb-6">
-        <p class="text-gray-700 mb-2 font-medium">Upload from URL</p>
-        <div class="flex">
-            <input type="text" [(ngModel)]="fileUrl" placeholder="http://www.example.com/file/..."
-                class="flex-grow border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-            <button
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r-lg text-sm font-medium transition-colors"
-                (click)="uploadFromUrl()">
-                Upload
-            </button>
-        </div>
-    </div>
+    <input type="file" (change)="onFileSelected($event)" class="hidden" #fileInput />
 
     <!-- Uploaded file preview -->
     <div *ngIf="uploadedFile"
-        class="mb-6 flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
-        <div class="flex items-center space-x-3">
-            <mat-icon class="text-blue-500">description</mat-icon>
-            <div>
-                <p class="text-sm font-medium text-gray-800">{{ uploadedFile.name }}</p>
-                <p class="text-xs text-gray-500">
-                    {{ (uploadedFile.size / 1024 | number : '1.0-0') }} KB
-                </p>
-            </div>
+      class="mb-4 flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
+      <div class="flex items-center space-x-3">
+        <mat-icon class="text-blue-500">description</mat-icon>
+        <div>
+          <p class="text-sm font-medium text-gray-800">{{ uploadedFile.name }}</p>
+          <p class="text-xs text-gray-500">{{ (uploadedFile.size / 1024 | number:'1.0-0') }} KB</p>
         </div>
-        <button mat-icon-button color="warn" (click)="deleteFile()">
-            <mat-icon>delete</mat-icon>
-        </button>
+      </div>
+      <button mat-icon-button (click)="deleteFile()">
+        <mat-icon class="!text-red-500">delete</mat-icon>
+      </button>
     </div>
 
     <!-- Progress bar -->
-    <div *ngIf="uploading && uploadProgress < 100" class="mb-6">
-        <div class="flex justify-between items-center mb-1">
-            <span class="text-sm text-gray-600">{{ uploadedFile?.name }}</span>
-            <span class="text-sm text-blue-500 font-medium">{{ uploadProgress }}%</span>
-        </div>
-        <mat-progress-bar mode="determinate" [value]="uploadProgress" color="primary"
-            class="rounded-full h-2"></mat-progress-bar>
+    <div *ngIf="uploading && uploadProgress < 100" class="mb-4">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-sm text-gray-600">{{ uploadedFile?.name }}</span>
+        <span class="text-sm text-blue-500 font-medium">{{ uploadProgress }}%</span>
+      </div>
+      <mat-progress-bar mode="determinate" [value]="uploadProgress" color="primary"
+        class="rounded-full h-2"></mat-progress-bar>
     </div>
 
-    <!-- Buttons -->
-    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-        <button class="text-gray-600 font-medium px-4 py-2 hover:text-gray-800 transition-colors" (click)="discard()"
-            [disabled]="!uploading">
-            Discard
-        </button>
-        <button
-            class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            [disabled]="uploadProgress < 100" (click)="importFile()">
-            Import
-        </button>
+    <!-- Action buttons -->
+    <div class="flex justify-end space-x-3">
+      <button class="text-gray-600 font-medium px-4 py-2 hover:text-gray-800 transition-colors" (click)="discard()"
+        [disabled]="!uploading">
+        Discard
+      </button>
+      <button
+        class="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm"
+        [disabled]="uploadProgress < 100 || importLoading" (click)="importFile()">
+        <ng-container *ngIf="!importLoading; else importTpl">Import</ng-container>
+        <ng-template #importTpl>
+          <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
+            class="!w-4 !h-4 !text-white"></mat-progress-spinner>
+          <span class="text-sm">Processing...</span>
+        </ng-template>
+      </button>
     </div>
+  </div>
+
+  <!-- Divider -->
+  <div class="flex items-center my-6">
+    <div class="flex-grow border-t border-gray-200"></div>
+    <span class="px-3 text-gray-400 text-sm">OR</span>
+    <div class="flex-grow border-t border-gray-200"></div>
+  </div>
+
+  <!-- Section 2: Fetch from AMFI Portal -->
+  <div>
+    <p class="text-gray-700 mb-2 font-semibold text-lg">Fetch AMFI Data from Portal</p>
+    <p class="text-gray-500 text-sm mb-4">
+      Data will be fetched from the official AMFI portal:
+      <span class="font-medium text-blue-600 break-all">{{ fileUrl }}</span>
+    </p>
+
+    <button
+      class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]"
+      (click)="fetchFromUrl()" [disabled]="fetchLoading">
+      <ng-container *ngIf="!fetchLoading; else fetchTpl">Fetch & Save Data</ng-container>
+      <ng-template #fetchTpl>
+        <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
+          class="!w-4 !h-4 !text-white"></mat-progress-spinner>
+        <span class="text-sm">Processing...</span>
+      </ng-template>
+    </button>
+
+    <p class="text-yellow-700 text-xs mt-2" *ngIf="fetchLoading">
+      ⚠ Fetching data from AMFI portal and saving into the database. Please wait…
+    </p>
+  </div>
 </div>
