@@ -1,0 +1,28 @@
+<nav class="flex items-center text-gray-500 text-sm mb-6">
+  <a class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800" (click)="goToDashboard()">
+    <mat-icon class="text-gray-400 text-base">arrow_back</mat-icon>
+    Nav
+  </a>
+  <span class="mx-2">/</span>
+  <span class="font-medium text-gray-800">Scheme Manage</span>
+</nav>
+
+<div class="p-6">
+  <!-- Page Title -->
+  <h1 class="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+    Scheme Management
+    <mat-icon matTooltipPosition="above" matTooltip="Manage schemes here. Use toggles to activate/deactivate schemes."
+      class="text-gray-400 text-base cursor-pointer">
+      info
+    </mat-icon>
+  </h1>
+
+  <!-- Hint Card -->
+  <div class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm shadow-sm">
+    Here you can manage all schemes. Use the toggle to activate/deactivate a scheme. Hover over buttons for more
+    actions.
+  </div>
+
+  <!-- Scheme List Component -->
+  <app-scheme-list [schemes]="schemes" (toggle)="onSchemeToggle($event)"></app-scheme-list>
+</div>
