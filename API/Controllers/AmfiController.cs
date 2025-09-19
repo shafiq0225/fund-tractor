@@ -53,7 +53,7 @@ namespace API.Controllers
         }
 
         [HttpPost("import/url")]
-        public async Task<IActionResult> ImportAmfiFromUrl([FromBody] ImportUrlRequest fileUrl)
+        public async Task<IActionResult> DownloadAndSaveFromUrlAsync([FromBody] ImportUrlRequest fileUrl)
         {
             if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
                 return BadRequest(new { Message = "File URL is required." });
@@ -131,7 +131,7 @@ namespace API.Controllers
         }
 
         [HttpPost("import/file")]
-        public async Task<IActionResult> ImportFile(IFormFile file)
+        public async Task<IActionResult> UploadAndSaveFromFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new { Message = "No file uploaded." });
@@ -183,7 +183,6 @@ namespace API.Controllers
                     new { Message = "An unexpected error occurred during import.", Details = ex.Message });
             }
         }
-
 
         [HttpPost("addapprovedscheme")]
         public async Task<IActionResult> AddApprovedScheme([FromBody] ApprovedSchemeDto approvedSchemeDto)

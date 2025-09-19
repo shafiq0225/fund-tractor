@@ -13,4 +13,11 @@ export class AmfiService {
   downloadAndSaveFromUrl(fileUrl: string): Observable<ImportResponse> {
     return this.http.post<ImportResponse>(this.baseUrl + 'import/url', { fileUrl: fileUrl });
   }
+
+  uploadAndSaveFromFile(file: File): Observable<ImportResponse> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<ImportResponse>(this.baseUrl + 'import/file', formData);
+  }
+
 }
