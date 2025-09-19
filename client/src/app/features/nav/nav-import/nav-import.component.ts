@@ -97,25 +97,24 @@ export class NavImportComponent {
     this.discard();
   }
 
-  // Import after upload completed (fake API for now)
   importFile(): void {
-  if (!this.uploadedFile) return;
+    if (!this.uploadedFile) return;
 
-  this.importLoading = true;
-  console.log(this.uploadedFile);
-  
-  this.amfiService.uploadAndSaveFromFile(this.uploadedFile).subscribe({
-    next: (response) => {
-      this.importLoading = false;
-      this.snackBarService.success(response.message || 'File imported successfully');
-      this.discard(); // clear after success
-    },
-    error: (err) => {
-      this.importLoading = false;
-      this.snackBarService.error(err?.error?.message || 'Error importing file');
-    }
-  });
-}
+    this.importLoading = true;
+    console.log(this.uploadedFile);
+
+    this.amfiService.uploadAndSaveFromFile(this.uploadedFile).subscribe({
+      next: (response) => {
+        this.importLoading = false;
+        this.snackBarService.success(response.message || 'File imported successfully');
+        this.discard(); // clear after success
+      },
+      error: (err) => {
+        this.importLoading = false;
+        this.snackBarService.error(err?.error?.message || 'Error importing file');
+      }
+    });
+  }
 
 
   // Drag & Drop
@@ -161,6 +160,4 @@ export class NavImportComponent {
       },
     });
   }
-
-
 }

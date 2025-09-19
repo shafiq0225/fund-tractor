@@ -9,7 +9,8 @@ export const routes: Routes = [
         component: NavComponent,
         children: [
             { path: '', component: NavDashboardComponent },   
-            { path: 'import', component: NavImportComponent }
+            { path: 'import', component: NavImportComponent },
+            // { path: 'manage', component: ManageSchemesComponent }
         ]
     }
 ];

@@ -14,7 +14,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 export class NavDashboardComponent {
   tiles = [
   { title: 'Import Nav', icon: 'upload_file', route: 'import', color: 'bg-blue-500' },
-  { title: 'Reports', icon: 'bar_chart', route: '/reports', color: 'bg-green-500' },
+  { title: 'Scheme Management', icon: 'list_alt', route: 'manage', color: 'bg-green-500' },
   { title: 'Users', icon: 'group', route: '/users', color: 'bg-purple-500' },
   { title: 'Settings', icon: 'settings', route: '/settings', color: 'bg-orange-500' },
   { title: 'Billing', icon: 'payments', route: '/billing', color: 'bg-pink-500' },
