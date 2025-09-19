@@ -38,6 +38,7 @@ export class NavImportComponent {
   private uploadInterval: any;
   importLoading = false;   // For Import button
   fetchLoading = false;    // For Fetch button
+  activeMode: 'upload' | 'fetch' | null = null;
 
   fileUrl: string = 'https://portal.amfiindia.com/spages/NAVAll.txt';
 
@@ -54,12 +55,16 @@ export class NavImportComponent {
 
   // Select file manually
   onFileSelected(event: Event): void {
+    if (this.activeMode === 'fetch') return; // block upload when fetching
+
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.uploadedFile = input.files[0];
       this.startUploadSimulation();
+      this.activeMode = 'upload';
     }
   }
+
 
   // Simulate upload progress
   private startUploadSimulation(): void {
@@ -71,24 +76,29 @@ export class NavImportComponent {
     this.uploadInterval = setInterval(() => {
       if (this.uploadProgress >= 100) {
         clearInterval(this.uploadInterval);
-        this.uploading = false; // hide discard after completion
+        this.uploading = false;
+        // keep activeMode = 'upload' until user discards or imports
       } else {
-        this.uploadProgress += 10; // increase by 10% every 300ms
+        this.uploadProgress += 10;
       }
     }, 300);
   }
+
 
   // Discard file and reset
   discard(): void {
     this.uploadedFile = null;
     this.uploading = false;
     this.uploadProgress = 0;
+    this.activeMode = null;
+
     if (this.uploadInterval) clearInterval(this.uploadInterval);
   }
 
   deleteFile(): void {
     this.discard();
   }
+
 
   // Import after upload completed (fake API for now)
   importFile(): void {
@@ -108,39 +118,46 @@ export class NavImportComponent {
   // Drag & Drop
   onDragOver(event: DragEvent): void {
     event.preventDefault();
-    this.isDragging = true;
   }
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
-    this.isDragging = false;
   }
 
   onDrop(event: DragEvent): void {
+    if (this.activeMode === 'fetch') return; // block when fetching
+
     event.preventDefault();
-    this.isDragging = false;
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       this.uploadedFile = event.dataTransfer.files[0];
       this.startUploadSimulation();
+      this.activeMode = 'upload';
     }
   }
 
+
   // Fetch data from AMFI portal
-  fetchFromUrl(): void {
-    const confirmed = confirm('Are you sure you want to fetch the latest AMFI data?');
-    if (!confirmed) return;
+  fetchFromUrl() {
+    if (this.activeMode === 'upload') return; // block fetch when uploading
 
     this.fetchLoading = true;
+    this.activeMode = 'fetch';
+
     this.amfiService.ImportNavFromUrl(this.fileUrl).subscribe({
-      next: (res) => {
+      next: (response) => {
         this.fetchLoading = false;
-        this.snackBarService.success(res?.message || 'Data fetched successfully!');
+        this.activeMode = null;
+        if (response?.message) {
+          this.snackBarService.success(response.message);
+        }
       },
       error: (err) => {
         this.fetchLoading = false;
-        this.snackBarService.error(err?.error?.message || 'Error fetching data');
-      }
+        this.activeMode = null;
+        this.snackBarService.error(err?.error?.message || 'Error Fetching Data');
+      },
     });
   }
+
 
 }

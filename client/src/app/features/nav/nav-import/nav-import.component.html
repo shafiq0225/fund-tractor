@@ -39,7 +39,7 @@
     </div>
 
     <!-- Hidden file input -->
-    <input type="file" (change)="onFileSelected($event)" class="hidden" #fileInput />
+    <input type="file" (change)="onFileSelected($event)" class="hidden" #fileInput [disabled]="activeMode==='fetch'" />
 
     <!-- Uploaded file preview -->
     <div *ngIf="uploadedFile"
@@ -74,9 +74,9 @@
       </button>
       <button
         class="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm"
-        [disabled]="uploadProgress < 100 || importLoading" (click)="importFile()">
-        <ng-container *ngIf="!importLoading; else importTpl">Import</ng-container>
-        <ng-template #importTpl>
+        [disabled]="uploadProgress < 100 || importLoading || activeMode==='fetch'" (click)="importFile()">
+        <ng-container *ngIf="!importLoading; else loadingTpl">Import</ng-container>
+        <ng-template #loadingTpl>
           <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
             class="!w-4 !h-4 !text-white"></mat-progress-spinner>
           <span class="text-sm">Processing...</span>
@@ -99,10 +99,10 @@
       Data will be fetched from the official AMFI portal:
       <span class="font-medium text-blue-600 break-all">{{ fileUrl }}</span>
     </p>
-
+    
     <button
       class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]"
-      (click)="fetchFromUrl()" [disabled]="fetchLoading">
+      (click)="fetchFromUrl()" [disabled]="fetchLoading || activeMode==='upload'">
       <ng-container *ngIf="!fetchLoading; else fetchTpl">Fetch & Save Data</ng-container>
       <ng-template #fetchTpl>
         <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
