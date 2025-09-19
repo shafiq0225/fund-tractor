@@ -10,7 +10,7 @@ export class AmfiService {
   baseUrl = 'https://localhost:5001/api/amfi/';
   private http = inject(HttpClient);
 
-  ImportNavFromUrl(fileUrl: string): Observable<ImportResponse> {
+  downloadAndSaveFromUrl(fileUrl: string): Observable<ImportResponse> {
     return this.http.post<ImportResponse>(this.baseUrl + 'import/url', { fileUrl: fileUrl });
   }
 }

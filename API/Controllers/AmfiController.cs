@@ -11,7 +11,7 @@ namespace API.Controllers
     public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
         // clean up is required
-        [HttpPost("import/file")]
+        [HttpPost("importfile")]
         public async Task<IActionResult> Import(IFormFile rawdata)
         {
             if (rawdata == null || rawdata.Length == 0)
@@ -130,7 +130,7 @@ namespace API.Controllers
             return Ok(new { message = "AMFI Excel data imported successfully." });
         }
 
-        [HttpPost("ImportFile")]
+        [HttpPost("import/file")]
         public async Task<IActionResult> ImportFile(IFormFile file)
         {
             if (file == null || file.Length == 0)

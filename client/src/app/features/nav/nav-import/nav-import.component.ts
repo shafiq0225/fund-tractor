@@ -65,7 +65,6 @@ export class NavImportComponent {
     }
   }
 
-
   // Simulate upload progress
   private startUploadSimulation(): void {
     this.uploading = true;
@@ -84,7 +83,6 @@ export class NavImportComponent {
     }, 300);
   }
 
-
   // Discard file and reset
   discard(): void {
     this.uploadedFile = null;
@@ -99,7 +97,6 @@ export class NavImportComponent {
     this.discard();
   }
 
-
   // Import after upload completed (fake API for now)
   importFile(): void {
     if (this.uploadProgress === 100 && this.uploadedFile) {
@@ -112,8 +109,6 @@ export class NavImportComponent {
       }, 2000);
     }
   }
-
-
 
   // Drag & Drop
   onDragOver(event: DragEvent): void {
@@ -143,7 +138,7 @@ export class NavImportComponent {
     this.fetchLoading = true;
     this.activeMode = 'fetch';
 
-    this.amfiService.ImportNavFromUrl(this.fileUrl).subscribe({
+    this.amfiService.downloadAndSaveFromUrl(this.fileUrl).subscribe({
       next: (response) => {
         this.fetchLoading = false;
         this.activeMode = null;
