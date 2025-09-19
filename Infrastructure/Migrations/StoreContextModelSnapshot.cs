@@ -34,6 +34,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FundCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -41,7 +44,14 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime>("LastUpdatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("SchemeCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SchemeName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

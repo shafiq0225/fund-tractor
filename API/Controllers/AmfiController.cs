@@ -195,7 +195,7 @@ namespace API.Controllers
 
             try
             {
-                var (success, message) = await amfiRepository.AddApprovedSchemeAsync(approvedSchemeDto.FundName, approvedSchemeDto.SchemeId, approvedSchemeDto.IsApproved);
+                var (success, message) = await amfiRepository.AddApprovedSchemeAsync(approvedSchemeDto);
 
                 if (!success)
                 {
@@ -338,7 +338,6 @@ namespace API.Controllers
                 });
             }
         }
-
 
         [HttpGet("schemes/today")]
         public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()

@@ -14,6 +14,8 @@ namespace Core.DTOs
         [Required]
         public string SchemeId { get; set; }
         [Required]
+        public string SchemeName { get; set; }
+        [Required]
         public bool IsApproved { get; set; }
     }
 }

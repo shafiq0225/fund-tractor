@@ -19,8 +19,11 @@ namespace Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FundCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SchemeCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SchemeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false),
-                    ApprovedName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ApprovedName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {

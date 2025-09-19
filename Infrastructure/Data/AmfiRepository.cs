@@ -1,11 +1,10 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using ClosedXML.Excel;
+using Core.DTOs;
 using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using OfficeOpenXml;
 
 namespace Infrastructure.Data;
 
@@ -108,18 +107,18 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
     }
 
-    public async Task<(bool Success, string Message)> AddApprovedSchemeAsync(string fundName, string schemeId, bool isApproved)
+    public async Task<(bool Success, string Message)> AddApprovedSchemeAsync(ApprovedSchemeDto addSchemeDto)
     {
-        if (string.IsNullOrWhiteSpace(fundName))
+        if (string.IsNullOrWhiteSpace(addSchemeDto.FundName))
             return (false, "Fund name is required.");
 
-        if (string.IsNullOrWhiteSpace(schemeId))
+        if (string.IsNullOrWhiteSpace(addSchemeDto.SchemeId))
             return (false, "Scheme ID is required.");
 
         string fundId;
         try
         {
-            fundId = AmfiDataHelper.GenerateFundId(fundName);
+            fundId = AmfiDataHelper.GenerateFundId(addSchemeDto.FundName);
         }
         catch (Exception ex)
         {
@@ -130,7 +129,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         {
             // ✅ Check if record already exists
             var exists = await storeContext.ApprovedData
-                .AnyAsync(x => x.FundCode == fundId && x.SchemeCode == schemeId);
+                .AnyAsync(x => x.FundCode == fundId && x.SchemeCode == addSchemeDto.SchemeId);
 
             if (exists)
                 return (false, "Record already exists.");
@@ -139,8 +138,11 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             {
                 ApprovedName = "Shafiq",
                 FundCode = fundId,
-                IsApproved = isApproved,
-                SchemeCode = schemeId,
+                IsApproved = addSchemeDto.IsApproved,
+                SchemeCode = addSchemeDto.SchemeId,
+                SchemeName= addSchemeDto.SchemeName,
+                CreatedAt = DateTime.UtcNow,
+                LastUpdatedDate = DateTime.UtcNow
             };
 
             await storeContext.ApprovedData.AddAsync(approvedFund);
@@ -179,6 +181,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
             // ✅ Update ApprovedData
             existingRecord.IsApproved = isApproved;
+            existingRecord.LastUpdatedDate = DateTime.UtcNow;
             storeContext.ApprovedData.Update(existingRecord);
 
             // ✅ Sync visibility in SchemeDetails (only if record exists)
@@ -221,6 +224,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             foreach (var record in existingRecords)
             {
                 record.IsApproved = isApproved;
+                record.LastUpdatedDate = DateTime.UtcNow;
             }
 
             var schemeDetails = await storeContext.SchemeDetails
@@ -249,7 +253,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             return (false, $"Unexpected error: {ex.Message}");
         }
     }
-
 
     public async Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
