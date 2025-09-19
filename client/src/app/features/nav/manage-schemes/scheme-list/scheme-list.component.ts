@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { MatIcon } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-scheme-list',
-  imports: [CommonModule, MatSlideToggleModule, MatTooltip],
+  imports: [CommonModule, MatSlideToggleModule, MatTooltip, MatIcon],
   templateUrl: './scheme-list.component.html',
   styleUrl: './scheme-list.component.scss'
 })
