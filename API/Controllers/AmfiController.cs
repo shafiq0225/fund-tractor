@@ -54,7 +54,7 @@ namespace API.Controllers
 
         [HttpPost("import/url")]
         public async Task<IActionResult> DownloadAndSaveFromUrlAsync([FromBody] ImportUrlRequest fileUrl)
-        {
+            {
             if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
                 return BadRequest(new { Message = "File URL is required." });
 
@@ -528,7 +528,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("approveschemes")]
+        [HttpGet("schemeslist")]
         public async Task<IActionResult> GetSchemes()
         {
             try

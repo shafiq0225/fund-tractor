@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
+import { Scheme } from '../../../../shared/models/Amfi/Scheme';
 
 @Component({
   selector: 'app-scheme-list',
@@ -11,11 +12,11 @@ import { MatTooltip } from '@angular/material/tooltip';
   styleUrl: './scheme-list.component.scss'
 })
 export class SchemeListComponent {
-  @Input() schemes: any[] = [];
-  @Output() toggle = new EventEmitter<any>();
+  @Input() schemes: Scheme[] = [];
+  @Output() toggle = new EventEmitter<Scheme>();
 
   onToggle(scheme: any) {
-    scheme.status = !scheme.status;
+    scheme.isApproved = !scheme.isApproved;
     this.toggle.emit(scheme);
   }
 
