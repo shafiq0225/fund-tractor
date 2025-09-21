@@ -55,7 +55,6 @@ namespace API.Controllers
         [HttpPost("import/url")]
         public async Task<IActionResult> DownloadAndSaveFromUrlAsync([FromBody] ImportUrlRequest fileUrl)
         {
-            fileUrl = null;
             if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
                 return BadRequest(new { Message = "File URL is required." });
 
