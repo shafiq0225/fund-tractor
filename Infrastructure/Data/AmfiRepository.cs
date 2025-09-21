@@ -356,4 +356,24 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         await storeContext.SaveChangesAsync();
     }
+
+    public async Task<(bool Success, string Message, List<ApprovedData>? Data)> GetSchemesListAsync()
+    {
+        try
+        {
+            var result = await storeContext.ApprovedData.ToListAsync();
+
+            if (result == null || result.Count == 0)
+            {
+                return (false, "No records found.", null);
+            }
+
+            return (true, "Records retrieved successfully.", result);
+        }
+        catch (Exception ex)
+        {
+           return (false, $"An error occurred while retrieving records: {ex.Message}", null);
+        }
+    }
+
 }

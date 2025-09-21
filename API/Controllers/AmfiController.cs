@@ -528,5 +528,34 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("approveschemes")]
+        public async Task<IActionResult> GetSchemes()
+        {
+            try
+            {
+                var response = await amfiRepository.GetSchemesListAsync();
+
+                if (!response.Success)
+                {
+                    return BadRequest(new { message = response.Message });
+                }
+
+                if (response.Data == null || !response.Data.Any())
+                {
+                    return NotFound(new { message = "No schemes found." });
+                }
+
+                return Ok(new
+                {
+                    message = response.Message,
+                    data = response.Data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "An unexpected error occurred.", details = ex.Message });
+            }
+        }
     }
 }

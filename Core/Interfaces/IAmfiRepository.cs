@@ -11,6 +11,7 @@ public interface IAmfiRepository
     Task<(bool Success, string Message)> UpdateApprovedSchemeAsync(string fundId, string schemeId, bool isApproved);
     Task<(bool Success, string Message)> UpdateApprovedFundAsync(string fundName, bool isApproved);
     Task<List<ApprovedData>> GetApprovedSchemesAsync();
+    Task<(bool Success, string Message, List<ApprovedData>? Data)> GetSchemesListAsync();
     Task AddSchemeDetailsAsync(List<SchemeDetail> schemes);
     Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate);
 }
