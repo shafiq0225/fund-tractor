@@ -2,10 +2,13 @@
     <app-sidebar></app-sidebar>
 
     <div class="flex-1 flex flex-col overflow-hidden">
+        @if (busyService.loading) {
+        <mat-progress-bar class="fixed top-20 z-50" mode="indeterminate"></mat-progress-bar>
+        }
         <app-header></app-header>
         <main class="flex-1 overflow-y-auto p-6">
-           <ng-content></ng-content>
+            <ng-content></ng-content>
         </main>
     </div>
-    
+
 </div>

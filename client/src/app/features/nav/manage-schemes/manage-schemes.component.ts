@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SchemeListComponent } from "./scheme-list/scheme-list.component";
@@ -15,7 +15,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
   styleUrl: './manage-schemes.component.scss'
 })
 export class ManageSchemesComponent implements OnInit {
-  constructor(private router: Router, private route: ActivatedRoute, private amfiService: AmfiService) { }
+  amfiService = inject(AmfiService);
+  constructor(private router: Router, private route: ActivatedRoute) { }
   schemes: Scheme[] = [];
   loading = true;
   errorMessage: string | null = null;

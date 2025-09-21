@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,6 +30,8 @@ interface UploadedFile {
 })
 
 export class NavImportComponent {
+  amfiService = inject(AmfiService);
+  snackBarService = inject(SnackbarService);
   uploadedFile: File | null = null;
   uploadProgress: number = 0;
   uploading: boolean = false;
@@ -44,9 +46,7 @@ export class NavImportComponent {
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute,
-    private amfiService: AmfiService,
-    private snackBarService: SnackbarService
+    private route: ActivatedRoute
   ) { }
 
   goToDashboard() {
