@@ -7,6 +7,7 @@ export interface Scheme {
   approvedName: string;
   createdAt: string;
   lastUpdatedDate: string;
+  isUpdating?: boolean;
 }
 
 export interface ApiResponse<T> {

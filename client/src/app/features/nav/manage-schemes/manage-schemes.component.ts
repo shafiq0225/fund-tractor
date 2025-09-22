@@ -7,6 +7,7 @@ import { Scheme } from '../../../shared/models/Amfi/Scheme';
 import { AmfiService } from '../../../core/services/amfi.service';
 import { CommonModule } from '@angular/common';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 
 @Component({
   selector: 'app-manage-schemes',
@@ -16,6 +17,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 })
 export class ManageSchemesComponent implements OnInit {
   amfiService = inject(AmfiService);
+  snackBarService = inject(SnackbarService);
   constructor(private router: Router, private route: ActivatedRoute) { }
   schemes: Scheme[] = [];
   loading = true;
@@ -35,7 +37,7 @@ export class ManageSchemesComponent implements OnInit {
       next: (res) => {
         this.schemes = res.data;
         console.log(this.schemes);
-        
+
         this.loading = false;
       },
       error: (err) => {
@@ -45,111 +47,39 @@ export class ManageSchemesComponent implements OnInit {
     });
   }
 
-
-
-  // this.schemes = [
-  //   {
-  //           "id": 1,
-  //           "fundCode": "CanaraRobeco_MF",
-  //           "schemeCode": "150504",
-  //           "schemeName": "Canara Robeco Banking and PSU Debt Fund- Regular Plan- IDCW (Payout/ Reinvestment)",
-  //           "isApproved": false,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 2,
-  //           "fundCode": "DSP_MF",
-  //           "schemeCode": "124175",
-  //           "schemeName": "DSP Banking & PSU Debt Fund - Direct Plan - Growth",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 3,
-  //           "fundCode": "DSP_MF",
-  //           "schemeCode": "124172",
-  //           "schemeName": "DSP Banking & PSU Debt Fund - Regular Plan - Growth",
-  //           "isApproved": false,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 4,
-  //           "fundCode": "FranklinTempleton_MF",
-  //           "schemeCode": "129008",
-  //           "schemeName": "Franklin India Banking & PSU Debt Fund - Direct - Growth",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 5,
-  //           "fundCode": "FranklinTempleton_MF",
-  //           "schemeCode": "129006",
-  //           "schemeName": "Franklin India Banking & PSU Debt Fund - Growth",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 6,
-  //           "fundCode": "FranklinTempleton_MF",
-  //           "schemeCode": "129009",
-  //           "schemeName": "Franklin India Banking and PSU Debt Fund - Direct - IDCW",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 7,
-  //           "fundCode": "FranklinTempleton_MF",
-  //           "schemeCode": "129007",
-  //           "schemeName": "Franklin India Banking and PSU Debt Fund - IDCW",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 8,
-  //           "fundCode": "NipponIndia_MF",
-  //           "schemeCode": "118650",
-  //           "schemeName": "Nippon India Multi Cap Fund - Direct Plan Growth Plan - Growth Option",
-  //           "isApproved": true,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:28:17.14",
-  //           "lastUpdatedDate": "2025-09-19T09:28:17.14"
-  //       },
-  //       {
-  //           "id": 9,
-  //           "fundCode": "TestFund",
-  //           "schemeCode": "Test123",
-  //           "schemeName": "Test xxx",
-  //           "isApproved": false,
-  //           "approvedName": "Shafiq",
-  //           "createdAt": "2025-09-19T09:34:02.5468492",
-  //           "lastUpdatedDate": "2025-09-19T09:47:10.8654769"
-  //       },
-  // ];
-
   toggleStatus(scheme: any) {
     scheme.status = !scheme.status;
   }
-  openAddSchemeModal() {
 
+  onSchemeToggle(scheme: Scheme) {
+    const newStatus = scheme.isApproved;
+    const prevStatus = !scheme.isApproved;
+
+    scheme.isApproved = newStatus;
+    scheme.isUpdating = true; // lock toggle while API call is in progress
+
+    this.amfiService.updateSchemeApproval(scheme.fundCode, scheme.schemeCode, newStatus).subscribe({
+      next: (res) => {
+        scheme.isApproved = res.isApproved;
+        scheme.lastUpdatedDate = new Date().toISOString();
+        scheme.isUpdating = false;
+
+        // Use backend message OR custom friendly message
+        const msg = res.isApproved
+          ? `${res.fundId} - Scheme ${res.schemeId} approved successfully.`
+          : `${res.fundId} - Scheme ${res.schemeId} approval revoked.`;
+
+        this.snackBarService.success(msg || res.message);
+      },
+      error: (err) => {
+        // rollback if API failed
+        scheme.isApproved = prevStatus;
+        scheme.isUpdating = false;
+
+        this.snackBarService.error(err.error.messgae || 'Failed to update scheme status.');
+      }
+    });
   }
 
-  onSchemeToggle(scheme: any) {
-    console.log('Toggled:', scheme);
-    // here you could call API to persist
-  }
 
 }

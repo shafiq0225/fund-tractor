@@ -75,15 +75,24 @@
 
         <!-- Toggle with Tooltip -->
         <td class="px-6 py-4">
-          <button type="button" (click)="onToggle(scheme)"
+          <button type="button" (click)="onToggle(scheme)" [disabled]="scheme.isUpdating"
             matTooltip="{{ scheme.isApproved ? 'Click to deactivate' : 'Click to activate' }}"
             class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none shadow"
             [ngClass]="scheme.isApproved ? 'bg-indigo-600' : 'bg-gray-300'">
+
+            <!-- Spinner overlay if updating -->
+            <div *ngIf="scheme.isUpdating" class="absolute inset-0 flex items-center justify-center">
+              <mat-progress-spinner diameter="18" mode="indeterminate" color="accent">
+              </mat-progress-spinner>
+            </div>
+
+            <!-- Normal toggle circle -->
             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow"
               [ngClass]="scheme.isApproved ? 'translate-x-6' : 'translate-x-1'">
             </span>
           </button>
         </td>
+
 
       </tr>
     </tbody>

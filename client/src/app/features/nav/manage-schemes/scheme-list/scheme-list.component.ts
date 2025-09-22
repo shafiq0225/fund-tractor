@@ -4,10 +4,11 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Scheme } from '../../../../shared/models/Amfi/Scheme';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-scheme-list',
-  imports: [CommonModule, MatSlideToggleModule, MatTooltip, MatIcon],
+  imports: [CommonModule, MatSlideToggleModule, MatTooltip, MatIcon, MatProgressSpinner],
   templateUrl: './scheme-list.component.html',
   styleUrl: './scheme-list.component.scss'
 })

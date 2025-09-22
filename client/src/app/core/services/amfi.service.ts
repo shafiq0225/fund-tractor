@@ -25,4 +25,8 @@ export class AmfiService {
     return this.http.get<ApiResponse<Scheme[]>>(this.baseUrl + 'schemeslist');
   }
 
+  updateSchemeApproval(fundId: string, schemeId: string, isApproved: boolean): Observable<any> {
+    const body = { fundId, schemeId, isApproved };
+    return this.http.put<any>(this.baseUrl + 'updateapprovedscheme', body);
+  }
 }
