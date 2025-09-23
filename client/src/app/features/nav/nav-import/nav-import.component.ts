@@ -30,6 +30,8 @@ interface UploadedFile {
 })
 
 export class NavImportComponent {
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   amfiService = inject(AmfiService);
   snackBarService = inject(SnackbarService);
   uploadedFile: File | null = null;
@@ -63,6 +65,9 @@ export class NavImportComponent {
       this.startUploadSimulation();
       this.activeMode = 'upload';
     }
+
+    // ✅ Reset so same file can be re-selected later
+    input.value = '';
   }
 
   // Simulate upload progress
@@ -91,6 +96,11 @@ export class NavImportComponent {
     this.activeMode = null;
 
     if (this.uploadInterval) clearInterval(this.uploadInterval);
+
+    // ✅ Reset file input
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 
   deleteFile(): void {

@@ -310,7 +310,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 if (string.IsNullOrWhiteSpace(schemeCode)) continue;
                 if (!approvedSchemeCodes.Contains(schemeCode)) continue;
 
-                var schemeName = worksheet.Cell(row, 2).GetString().Trim();
+                var schemeName = worksheet.Cell(row, 1).GetString().Trim();
                 var navText = worksheet.Cell(row, 12).GetString().Trim();
                 var dateText = worksheet.Cell(row, 11).GetString().Trim();
                 currentFundName = worksheet.Cell(row, 10).GetString().Trim();
@@ -343,6 +343,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 }
                 else
                 {
+                    existingScheme.FundCode = currentFundId;
                     existingScheme.Nav = nav;
                     existingScheme.SchemeName = currentFundName;
                     existingScheme.FundName = schemeName;
