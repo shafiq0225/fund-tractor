@@ -8,21 +8,60 @@
 </nav>
 
 <div class="p-6">
-  <!-- Page Title -->
-  <h1 class="text-2xl font-bold mb-2 text-blue-700 flex items-center gap-2">
-    Scheme Management
-    <mat-icon matTooltipPosition="above" matTooltip="Manage schemes here. Use toggles to activate/deactivate schemes."
-      class="text-gray-400 text-base cursor-pointer">
-      info
-    </mat-icon>
-  </h1>
+  <!-- Page Title Row -->
+  <div class="flex items-center justify-between mb-2">
+    <!-- Left: Title -->
+    <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-2">
+      Scheme Management
+      <mat-icon matTooltipPosition="above" matTooltip="Manage schemes here. Use toggles to activate/deactivate schemes."
+        class="text-gray-400 text-base cursor-pointer">
+        info
+      </mat-icon>
+    </h1>
+    <!-- Add Scheme Button -->
+    <button class="flex items-center gap-2 px-4 py-2 rounded-lg 
+           bg-green-600 hover:bg-green-700 
+           text-white font-medium shadow transition-all duration-300">
+      <mat-icon>add</mat-icon>
+      Add Scheme
+    </button>
+
+  </div>
 
   <!-- Hint Card -->
   <div class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm shadow-sm">
-    Here you can manage all schemes. Use the toggle to activate/deactivate a scheme. Hover over buttons for more
-    actions.
+    Here you can manage all schemes. Use the toggle to activate/deactivate a scheme.
+    Hover over buttons for more actions.
   </div>
 
-  <!-- Scheme List Component -->
-  <app-scheme-list [schemes]="schemes" (toggle)="onSchemeToggle($event)" (fundUpdate)="onFundUpdate($event)"></app-scheme-list>
+  <!-- Parent-level check -->
+  <ng-container *ngIf="schemes && schemes.length > 0; else emptyParent">
+    <app-scheme-list [schemes]="schemes" (toggle)="onSchemeToggle($event)" (fundUpdate)="onFundUpdate($event)">
+    </app-scheme-list>
+  </ng-container>
+
+  <!-- Parent empty state -->
+  <ng-template #emptyParent>
+    <div class="flex flex-col items-center justify-center py-20 px-6 
+            bg-gradient-to-br from-red-50 to-rose-50 
+            border-2 border-dashed border-red-300 
+            rounded-2xl shadow text-center">
+
+      <!-- Icon inside soft red circle -->
+      <div class="flex items-center justify-center w-20 h-20 
+              rounded-full bg-red-100 shadow mb-4">
+        <mat-icon class="text-red-600 text-5xl">error_outline</mat-icon>
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-xl font-semibold text-red-700 mb-2">
+        No Schemes Available
+      </h2>
+      <!-- Subtitle -->
+      <p class="text-red-600/70 text-sm max-w-md">
+        Once schemes are added, you’ll see them listed here and can manage them
+        with fund-level and scheme-level toggles.
+      </p>
+    </div>
+  </ng-template>
 </div>
