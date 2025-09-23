@@ -4,6 +4,19 @@ import { Observable } from 'rxjs';
 import { ImportResponse } from '../../shared/models/Amfi/ImportResponse';
 import { ApiResponse, Scheme } from '../../shared/models/Amfi/Scheme';
 
+interface UpdateFundRequest {
+  fundId: string;
+  isApproved: boolean;
+}
+
+interface UpdateFundResponse {
+  fundId: string;
+  isApproved: boolean;
+  success: boolean;
+  message: string;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -29,4 +42,10 @@ export class AmfiService {
     const body = { fundId, schemeId, isApproved };
     return this.http.put<any>(this.baseUrl + 'updateapprovedscheme', body);
   }
+
+  updateApprovedFund(fundId: string, isApproved: boolean): Observable<UpdateFundResponse> {
+    const payload: UpdateFundRequest = { fundId, isApproved };
+    return this.http.put<UpdateFundResponse>(this.baseUrl + 'updateapprovedfund', payload);
+  }
+
 }

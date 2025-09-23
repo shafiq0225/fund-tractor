@@ -52,34 +52,55 @@ export class ManageSchemesComponent implements OnInit {
   }
 
   onSchemeToggle(scheme: Scheme) {
-    const newStatus = scheme.isApproved;
-    const prevStatus = !scheme.isApproved;
+    const newStatus = !scheme.isApproved; // invert here
+    const prevStatus = scheme.isApproved;
 
-    scheme.isApproved = newStatus;
-    scheme.isUpdating = true; // lock toggle while API call is in progress
+    scheme.isUpdating = true;
 
     this.amfiService.updateSchemeApproval(scheme.fundCode, scheme.schemeCode, newStatus).subscribe({
       next: (res) => {
-        scheme.isApproved = res.isApproved;
+        scheme.isApproved = res.isApproved; // set based on API
         scheme.lastUpdatedDate = new Date().toISOString();
         scheme.isUpdating = false;
-
-        // Use backend message OR custom friendly message
         const msg = res.isApproved
           ? `${res.fundId} - Scheme ${res.schemeId} approved successfully.`
           : `${res.fundId} - Scheme ${res.schemeId} approval revoked.`;
-
         this.snackBarService.success(msg || res.message);
       },
       error: (err) => {
-        // rollback if API failed
-        scheme.isApproved = prevStatus;
+        scheme.isApproved = prevStatus; // rollback
         scheme.isUpdating = false;
-
-        this.snackBarService.error(err.error.messgae || 'Failed to update scheme status.');
+        this.snackBarService.error(err.error?.message || 'Failed to update scheme status.');
       }
     });
   }
 
+  // Fund-level update event handler
+onFundUpdate(event: { fundId: string; isApproved: boolean }) {
+  const fundSchemes = this.schemes.filter(s => s.fundCode === event.fundId);
+  fundSchemes.forEach(s => s.isUpdating = true);
+
+  this.amfiService.updateApprovedFund(event.fundId, event.isApproved).subscribe({
+    next: (res) => {
+      if (res.success) {
+        fundSchemes.forEach(s => {
+          s.isApproved = event.isApproved;
+          s.isUpdating = false;
+          s.lastUpdatedDate = new Date().toISOString();
+        });
+        this.snackBarService.success(event.isApproved
+          ? `All schemes under fund ${event.fundId} approved successfully.`
+          : `All schemes under fund ${event.fundId} deactivated.`);
+      } else {
+        fundSchemes.forEach(s => s.isUpdating = false);
+        this.snackBarService.error(res.message || 'Failed to update fund.');
+      }
+    },
+    error: (err) => {
+      fundSchemes.forEach(s => s.isUpdating = false);
+      this.snackBarService.error(err.error?.message || 'Failed to update fund.');
+    }
+  });
+}
 
 }
