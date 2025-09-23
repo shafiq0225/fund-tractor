@@ -8,6 +8,8 @@ import { AmfiService } from '../../../core/services/amfi.service';
 import { CommonModule } from '@angular/common';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SnackbarService } from '../../../core/services/snackbar.service';
+import { MatDialog } from '@angular/material/dialog';
+import { AddSchemeModalComponent } from './add-scheme-modal/add-scheme-modal.component';
 
 @Component({
   selector: 'app-manage-schemes',
@@ -22,6 +24,7 @@ export class ManageSchemesComponent implements OnInit {
   schemes: Scheme[] = [];
   loading = true;
   errorMessage: string | null = null;
+  dialog = inject(MatDialog);
 
 
   ngOnInit(): void {
@@ -76,31 +79,42 @@ export class ManageSchemesComponent implements OnInit {
   }
 
   // Fund-level update event handler
-onFundUpdate(event: { fundId: string; isApproved: boolean }) {
-  const fundSchemes = this.schemes.filter(s => s.fundCode === event.fundId);
-  fundSchemes.forEach(s => s.isUpdating = true);
+  onFundUpdate(event: { fundId: string; isApproved: boolean }) {
+    const fundSchemes = this.schemes.filter(s => s.fundCode === event.fundId);
+    fundSchemes.forEach(s => s.isUpdating = true);
 
-  this.amfiService.updateApprovedFund(event.fundId, event.isApproved).subscribe({
-    next: (res) => {
-      if (res.success) {
-        fundSchemes.forEach(s => {
-          s.isApproved = event.isApproved;
-          s.isUpdating = false;
-          s.lastUpdatedDate = new Date().toISOString();
-        });
-        this.snackBarService.success(event.isApproved
-          ? `All schemes under fund ${event.fundId} approved successfully.`
-          : `All schemes under fund ${event.fundId} deactivated.`);
-      } else {
+    this.amfiService.updateApprovedFund(event.fundId, event.isApproved).subscribe({
+      next: (res) => {
+        if (res.success) {
+          fundSchemes.forEach(s => {
+            s.isApproved = event.isApproved;
+            s.isUpdating = false;
+            s.lastUpdatedDate = new Date().toISOString();
+          });
+          this.snackBarService.success(event.isApproved
+            ? `All schemes under fund ${event.fundId} approved successfully.`
+            : `All schemes under fund ${event.fundId} deactivated.`);
+        } else {
+          fundSchemes.forEach(s => s.isUpdating = false);
+          this.snackBarService.error(res.message || 'Failed to update fund.');
+        }
+      },
+      error: (err) => {
         fundSchemes.forEach(s => s.isUpdating = false);
-        this.snackBarService.error(res.message || 'Failed to update fund.');
+        this.snackBarService.error(err.error?.message || 'Failed to update fund.');
       }
-    },
-    error: (err) => {
-      fundSchemes.forEach(s => s.isUpdating = false);
-      this.snackBarService.error(err.error?.message || 'Failed to update fund.');
-    }
-  });
-}
+    });
+  }
+
+  onAddScheme() {
+    const dialogRef = this.dialog.open(AddSchemeModalComponent, { width: '750px' });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.schemes.push(result); // Add to schemes list
+      }
+    });
+  }
+
 
 }
