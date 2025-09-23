@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, delay, Observable, retryWhen, tap, throwError } from 'rxjs';
 import { ImportResponse } from '../../shared/models/Amfi/ImportResponse';
 import { ApiResponse, Scheme } from '../../shared/models/Amfi/Scheme';
 
@@ -37,6 +37,23 @@ export class AmfiService {
   getSchemes(): Observable<ApiResponse<Scheme[]>> {
     return this.http.get<ApiResponse<Scheme[]>>(this.baseUrl + 'schemeslist');
   }
+
+  // future will go thisapproach to handle retries and errors
+  // getSchemes() {
+  //   return this.http.get<ApiResponse<Scheme[]>>(this.baseUrl + 'schemeslist').pipe(
+  //     retryWhen(errors =>
+  //       errors.pipe(
+  //         tap(err => console.log('API failed, retrying in 3s...', err)),
+  //         delay(3000) // wait 3 seconds before retry
+  //       )
+  //     ),
+  //     catchError(err => {
+  //       console.error('Still failing', err);
+  //       return throwError(() => err); // handle or show error to UI
+  //     })
+  //   );
+  // }
+
 
   updateSchemeApproval(fundId: string, schemeId: string, isApproved: boolean): Observable<any> {
     const body = { fundId, schemeId, isApproved };
