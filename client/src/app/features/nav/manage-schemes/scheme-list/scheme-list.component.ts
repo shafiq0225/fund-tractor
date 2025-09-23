@@ -1,14 +1,13 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { Scheme } from '../../../../shared/models/Amfi/Scheme';
 
 @Component({
   selector: 'app-scheme-list',
   standalone: true,
-  imports: [CommonModule, MatIcon, MatTooltip, MatProgressSpinner],
+  imports: [CommonModule, MatIcon, MatProgressSpinner],
   templateUrl: './scheme-list.component.html',
   styleUrls: ['./scheme-list.component.scss']
 })
