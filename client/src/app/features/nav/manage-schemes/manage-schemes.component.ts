@@ -107,14 +107,17 @@ export class ManageSchemesComponent implements OnInit {
   }
 
   onAddScheme() {
-    const dialogRef = this.dialog.open(AddSchemeModalComponent, { width: '750px' });
+    const dialogRef = this.dialog.open(AddSchemeModalComponent, {
+      width: '500px',
+      panelClass: 'custom-dialog-container'
+    });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.schemes.push(result); // Add to schemes list
+        console.log('New Scheme:', result);
+        // push to list or call API
       }
     });
   }
-
 
 }

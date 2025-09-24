@@ -1,70 +1,44 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'app-add-scheme-modal',
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSlideToggleModule,
-    MatButtonModule,
-    MatIcon
-  ],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatIcon],
   templateUrl: './add-scheme-modal.component.html',
   styleUrl: './add-scheme-modal.component.scss'
 })
 export class AddSchemeModalComponent {
-  fundName = '';
-  schemeId = '';
-  schemeName = '';
-  isApproved = true;
+  schemeForm: FormGroup;
 
-  constructor(private dialogRef: MatDialogRef<AddSchemeModalComponent>) { }
-
-  isValid() {
-    return this.fundName.trim() && this.schemeId.trim() && this.schemeName.trim();
+  constructor(
+    private fb: FormBuilder,
+    private dialogRef: MatDialogRef<AddSchemeModalComponent>
+  ) {
+    this.schemeForm = this.fb.group({
+      schemeName: ['', [Validators.required]],
+      fundName: ['', Validators.required],
+      schemeCode: ['', Validators.required],
+      isActive: [true],
+    });
   }
 
-  onSubmit() {
-    if (this.isValid()) {
-      this.dialogRef.close({
-        fundName: this.fundName,
-        schemeId: this.schemeId,
-        schemeName: this.schemeName,
-        isApproved: this.isApproved,
-        createdAt: new Date(),
-        lastUpdatedDate: new Date(),
-        approvedName: 'Admin'
-      });
+  save() {
+    if (this.schemeForm.valid) {
+      this.dialogRef.close(this.schemeForm.value);
+    } else {
+      this.schemeForm.markAllAsTouched();
     }
   }
 
-  onCancel() {
+  cancel() {
     this.dialogRef.close();
   }
-
-  isActive = true;   // Current toggle status
-  isUpdating = false;
-
-  toggleStatus() {
-    this.isUpdating = true;
-
-    // Simulate API call
-    setTimeout(() => {
-      this.isActive = !this.isActive; // Toggle state
-      this.isUpdating = false;
-    }, 200); // API response delay
-  }
-
 
 }
