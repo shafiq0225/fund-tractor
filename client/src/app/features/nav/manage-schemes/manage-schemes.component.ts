@@ -113,9 +113,9 @@ export class ManageSchemesComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        console.log('New Scheme:', result);
-        // push to list or call API
+      if (result) {        
+        this.fetchSchemes();
+        this.snackBarService.success(`Scheme "${result.fundName}" added successfully!`);
       }
     });
   }

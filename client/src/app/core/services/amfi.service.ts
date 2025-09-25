@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, delay, Observable, retryWhen, tap, throwError } from 'rxjs';
 import { ImportResponse } from '../../shared/models/Amfi/ImportResponse';
 import { ApiResponse, Scheme } from '../../shared/models/Amfi/Scheme';
+import { AddSchemeRequest } from '../../shared/models/Amfi/AddSchemeRequest';
 
 interface UpdateFundRequest {
   fundId: string;
@@ -65,4 +66,7 @@ export class AmfiService {
     return this.http.put<UpdateFundResponse>(this.baseUrl + 'updateapprovedfund', payload);
   }
 
+  addScheme(addSchemeRequest: AddSchemeRequest): Observable<AddSchemeRequest> {
+    return this.http.post<AddSchemeRequest>(this.baseUrl + 'addapprovedscheme', addSchemeRequest);
+  }
 }

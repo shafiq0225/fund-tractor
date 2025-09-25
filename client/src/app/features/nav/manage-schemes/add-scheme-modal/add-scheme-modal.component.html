@@ -45,11 +45,11 @@
         <mat-icon class="text-blue-500 text-base">qr_code</mat-icon>
         Scheme Code
       </label>
-      <input type="text" formControlName="schemeCode" class="w-full rounded-lg border border-gray-300 px-3 py-2 
+      <input type="text" formControlName="schemeId" class="w-full rounded-lg border border-gray-300 px-3 py-2 
                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
         placeholder="Enter scheme code" />
       <div class="h-5">
-        <p *ngIf="schemeForm.get('schemeCode')?.touched && schemeForm.get('schemeCode')?.invalid"
+        <p *ngIf="schemeForm.get('schemeId')?.touched && schemeForm.get('schemeId')?.invalid"
           class="text-red-500 text-xs">Scheme Code is required</p>
       </div>
     </div>
@@ -60,7 +60,7 @@
 
       <!-- Toggle with text -->
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" formControlName="isActive" class="sr-only peer" />
+        <input type="checkbox" formControlName="isApproved" class="sr-only peer" />
 
         <!-- Switch track -->
         <div class="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-indigo-600 transition"></div>
@@ -70,8 +70,8 @@
 
         <!-- ON/OFF text -->
         <span class="ml-3 text-sm font-medium"
-          [ngClass]="schemeForm.get('isActive')?.value ? 'text-indigo-600' : 'text-gray-300'">
-          {{ schemeForm.get('isActive')?.value ? 'ON' : 'OFF' }}
+          [ngClass]="schemeForm.get('isApproved')?.value ? 'text-indigo-600' : 'text-gray-300'">
+          {{ schemeForm.get('isApproved')?.value ? 'ON' : 'OFF' }}
         </span>
       </label>
     </div>
@@ -85,7 +85,7 @@
       <mat-icon class="text-gray-500 text-base">close</mat-icon>
       Cancel
     </button>
-    <button (click)="save()" class="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold 
+    <button (click)="onSave()" class="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold 
                    hover:bg-green-700 shadow-sm transition flex items-center gap-1">
       <mat-icon class="text-white text-base">save</mat-icon>
       Save
