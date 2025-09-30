@@ -2,8 +2,6 @@
 export interface MutualFund {
   id: number;
   name: string;
-  type: string;
-  scheme: string;
   rate1: number;
   percent1: number;
   rate2: number;

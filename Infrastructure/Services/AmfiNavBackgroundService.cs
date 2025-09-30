@@ -23,7 +23,9 @@ public class AmfiNavBackgroundService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _indiaTimeZone);
-            var todayRunTime = nowIst.Date.AddHours(6).AddMinutes(30);
+
+            // ✅ Today’s run time = 12:05 AM IST
+            var todayRunTime = nowIst.Date.AddMinutes(5);
 
             // Run immediately if past scheduled time
             if (nowIst >= todayRunTime)

@@ -29,7 +29,7 @@ namespace Infrastructure.Services
                     var nowIst = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, _indiaTimeZone);
 
                     // Today’s scheduled time = 6 AM IST
-                    var todayRunIst = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 6, 0, 0);
+                    var todayRunIst = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 0, 5, 0);
 
                     // If already past 6 AM, schedule next run for tomorrow
                     if (nowIst > todayRunIst)

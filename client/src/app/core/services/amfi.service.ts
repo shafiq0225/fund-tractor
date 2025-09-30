@@ -17,6 +17,30 @@ interface UpdateFundResponse {
   message: string;
 }
 
+export interface SchemeResponseDto {
+  startDate: string;   // ISO date string
+  endDate: string;     // ISO date string
+  message: string;
+  schemes: SchemeDto[];
+}
+
+export interface SchemeDto {
+  fundName: string;
+  schemeCode: string;
+  schemeName: string;
+  history: SchemeHistoryDto[];
+  rank: number;
+}
+
+export interface SchemeHistoryDto {
+  date: string;          // ISO date string
+  nav: number;
+  percentage: string;    // string because backend sends formatted values like "0.07" or "-1.36"
+  isTradingHoliday: boolean;
+  isGrowth: boolean;
+}
+
+
 
 @Injectable({
   providedIn: 'root'
@@ -68,5 +92,9 @@ export class AmfiService {
 
   addScheme(addSchemeRequest: AddSchemeRequest): Observable<AddSchemeRequest> {
     return this.http.post<AddSchemeRequest>(this.baseUrl + 'addapprovedscheme', addSchemeRequest);
+  }
+
+  GetTodayAndPreviousWorkingDaySchemes(): Observable<SchemeResponseDto> {
+    return this.http.get<SchemeResponseDto>(this.baseUrl + 'schemes/today');
   }
 }

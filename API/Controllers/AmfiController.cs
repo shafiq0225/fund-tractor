@@ -383,11 +383,32 @@ namespace API.Controllers
                 // ✅ Success case
                 var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs!, workingResult.EndWorkingDate);
 
+                var schemesWithRank = schemes
+            .Select(s => new
+            {
+                Scheme = s,
+                LatestPercentage = s.History
+                    .OrderByDescending(h => h.Date)
+                    .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+                    .FirstOrDefault()
+            })
+            .OrderByDescending(s => s.LatestPercentage)
+            .Select((s, index) =>
+            {
+                // Rank logic: top 3 = 1,2,3; all others = 4
+                s.Scheme.Rank = index < 3 ? index + 1 : 4;
+                return s.Scheme;
+            })
+            // --- Order by rank ascending before returning ---
+            .OrderBy(s => s.Rank)
+            .ToList();
+
+                // Return response
                 return Ok(new SchemeResponseDto
                 {
-                    StartDate = workingResult.StartWorkingDate,
-                    EndDate = workingResult.EndWorkingDate,
-                    Schemes = schemes,
+                    StartDate = schemesWithRank.FirstOrDefault().History.FirstOrDefault().Date,
+                    EndDate = schemesWithRank.FirstOrDefault().History.LastOrDefault().Date,
+                    Schemes = schemesWithRank,
                     Message = message
                 });
             }
