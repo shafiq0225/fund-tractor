@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AmfiService } from '../../../core/services/amfi.service';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
 
 interface UploadedFile {
   name: string;
@@ -23,7 +24,8 @@ interface UploadedFile {
     MatIconModule,
     MatButtonModule,
     MatProgressBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    BreadcrumbComponent
   ],
   templateUrl: './nav-import.component.html',
   styleUrl: './nav-import.component.scss'
@@ -50,10 +52,6 @@ export class NavImportComponent {
     private router: Router,
     private route: ActivatedRoute
   ) { }
-
-  goToDashboard() {
-    this.router.navigate(['../'], { relativeTo: this.route });
-  }
 
   // Select file manually
   onFileSelected(event: Event): void {

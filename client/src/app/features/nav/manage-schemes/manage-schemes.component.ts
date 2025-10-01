@@ -10,10 +10,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AddSchemeModalComponent } from './add-scheme-modal/add-scheme-modal.component';
+import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
 
 @Component({
   selector: 'app-manage-schemes',
-  imports: [CommonModule, MatIcon, SchemeListComponent, MatTooltip, MatProgressBarModule],
+  imports: [CommonModule, MatIcon, SchemeListComponent, MatTooltip, MatProgressBarModule, BreadcrumbComponent],
   templateUrl: './manage-schemes.component.html',
   styleUrl: './manage-schemes.component.scss'
 })
@@ -29,10 +30,6 @@ export class ManageSchemesComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSchemes();
-  }
-
-  goToDashboard() {
-    this.router.navigate(['../'], { relativeTo: this.route });
   }
 
   fetchSchemes() {
@@ -113,7 +110,7 @@ export class ManageSchemesComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {        
+      if (result) {
         this.fetchSchemes();
         this.snackBarService.success(`Scheme "${result.fundName}" added successfully!`);
       }

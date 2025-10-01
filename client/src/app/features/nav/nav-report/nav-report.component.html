@@ -1,115 +1,284 @@
 <!-- Breadcrumb -->
-<nav class="flex items-center text-gray-500 text-sm mb-6">
-    <a (click)="goToDashboard()" class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800">
-        <mat-icon>dashboard</mat-icon>
-        Nav
-    </a>
-    <mat-icon class="mx-2 text-gray-400 text-sm">chevron_right</mat-icon>
-    <span class="font-medium text-gray-800">AMFI Report</span>
-</nav>
+<app-breadcrumb [links]="[{ label: 'Nav', route: '/dashboard', icon: 'dashboard' }]" current="AMFI Performance Report">
+</app-breadcrumb>
 
-<div class="p-6 bg-gray-50 min-h-screen">
-    <!-- Header -->
-    <div class="mb-6 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Mutual Fund Performance Report</h1>
-                <p class="text-gray-600 mt-1">Comprehensive analysis of all schemes and top performers</p>
-            </div>
+<div class="p-6 bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen">
+  <!-- Header Card -->
+  <div
+    class="mb-8 bg-white rounded-2xl shadow-lg p-8 border border-blue-100/50 hover:shadow-xl transition-shadow duration-300">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-3">
+          <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-2">
+            Mutual Fund Performance
+            <mat-icon matTooltipPosition="above"
+              matTooltip="This report shows NAV-based performance of mutual funds for the selected date range, along with ranking and change percentage."
+              class="text-gray-400 cursor-help hover:text-blue-500 transition-colors."
+              class="text-gray-400 text-base cursor-pointer">
+              info
+            </mat-icon>
+          </h1>
         </div>
 
-        <div class="flex flex-wrap items-center gap-4 mt-4 text-sm">
-            <span class="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                <mat-icon class="mr-1 text-base">calendar_today</mat-icon>
-                {{startDate | date:'dd-MM-yyyy'}} → {{endDate | date:'dd-MM-yyyy'}}
-            </span>
-            <span class="flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                <mat-icon class="mr-1 text-base">update</mat-icon>
-                Last Updated: {{currentTime | date:'medium'}}
-            </span>
+        <!-- Stats Cards -->
+        <div class="flex flex-wrap gap-4 mb-4">
+          <div class="bg-green-50 text-green-700 px-4 py-2 rounded-xl flex items-center gap-2 border border-green-200">
+            <mat-icon class="text-green-600 text-lg">trending_up</mat-icon>
+            <span class="font-semibold">{{getPositiveFundsCount()}} Growing</span>
+          </div>
+          <div class="bg-red-50 text-red-700 px-4 py-2 rounded-xl flex items-center gap-2 border border-red-200">
+            <mat-icon class="text-red-600 text-lg">trending_down</mat-icon>
+            <span class="font-semibold">{{getNegativeFundsCount()}} Declining</span>
+          </div>
         </div>
+
+        <!-- Date Range -->
+        <div class="flex items-center gap-3 text-sm">
+          <span
+            class="flex items-center bg-blue-100 text-blue-700 px-4 py-2 rounded-xl shadow-sm border border-blue-200">
+            <mat-icon class="mr-2 text-blue-600">date_range</mat-icon>
+            <span class="font-medium">{{startDate | date:'MMM dd, yyyy'}}</span>
+            <mat-icon class="mx-2 text-blue-500">arrow_forward</mat-icon>
+            <span class="font-medium">{{endDate | date:'MMM dd, yyyy'}}</span>
+          </span>
+          <span class="text-gray-500 text-xs">
+            {{getDateRangeDays()}} days period
+          </span>
+        </div>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg min-w-[200px]">
+        <div class="text-center">
+          <div class="text-3xl font-bold mb-1">{{allFunds.length}}</div>
+          <div class="text-blue-100 text-sm uppercase tracking-wide">Total Funds</div>
+          <div class="text-blue-200 text-xs mt-2">Analyzed</div>
+        </div>
+      </div>
     </div>
 
+    <!-- Performance Legend -->
+    <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+      <div class="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <div class="flex items-center gap-4">
+          <span class="font-semibold text-gray-700">Performance Legend:</span>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span class="text-green-700 font-medium">Positive Growth</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+            <span class="text-red-700 font-medium">Negative Growth</span>
+          </div>
+        </div>
 
-    <!-- Complete Fund List -->
-    <mat-card>
-        <mat-card-header>
-            <mat-card-title class="flex items-center">
-                <span class="material-icons text-blue-600 mr-2">list_alt</span>
-                Complete Fund Performance List
+      </div>
+    </div>
+  </div>
+
+  <!-- Fund List -->
+  <mat-card *ngIf="allFunds && allFunds.length > 0; else emptyState"
+    class="rounded-2xl shadow-lg border-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+
+    <!-- Enhanced Header -->
+    <mat-card-header class="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-8 py-6 text-white">
+      <div class="flex items-center justify-between w-full">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="absolute inset-0 bg-white/20 rounded-full"></div>
+            <div class="relative bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/20">
+              <mat-icon class="text-white">analytics</mat-icon>
+            </div>
+          </div>
+          <div>
+            <mat-card-title class="text-white text-2xl font-bold mb-1">
+              Performance Ranking
             </mat-card-title>
-            <mat-card-subtitle>All funds sorted by performance ranking</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fund Name</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{startDate |
-                                date:'dd-MM-yyyy'}}</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{endDate |
-                                date:'dd-MM-yyyy'}}</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Change</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr *ngFor="let fund of allFunds" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span
-                                    class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded-full"
-                                    [class]="getFundRankClass(fund)">
-                                    {{fund.rank}}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{fund.name}}</td>
+            <mat-card-subtitle class="text-blue-100 flex items-center gap-4">
+              <span class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                {{allFunds.length}} Active Funds
+              </span>
+            </mat-card-subtitle>
+          </div>
+        </div>
+      </div>
+    </mat-card-header>
 
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <div class="flex flex-col items-end leading-tight">
-                                    <span class="font-medium text-gray-900">
-                                        {{ fund.rate1 | number:'1.2-2' }}
-                                    </span>
-                                    <span class="text-xs text-gray-500">
-                                        ({{ fund.percent1 | number:'1.2-2' }}%)
-                                    </span>
-                                </div>
-                            </td>
+    <mat-card-content class="p-0">
+      <div class="overflow-x-auto relative">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50 sticky top-0 z-20 border-b border-gray-300 shadow-sm">
+            <tr>
+              <th
+                class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 bg-white">
+                <div class="flex items-center justify-center gap-1">
+                  <span>Rank</span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider bg-white">
+                <div class="flex items-center gap-1">
+                  <span>Scheme Name</span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider bg-white">
+                <div class="flex flex-col items-end">
+                  <span>Start Date</span>
+                  <span class="text-gray-500 text-xs font-normal mt-1">{{startDate | date:'MMM dd, yy'}}</span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider bg-white">
+                <div class="flex flex-col items-end">
+                  <span>End Date</span>
+                  <span class="text-gray-500 text-xs font-normal mt-1">{{endDate | date:'MMM dd, yy'}}</span>
+                </div>
+              </th>
+              <th
+                class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider bg-blue-50 border-l border-gray-200">
+                <div class="flex items-center justify-end gap-1">
+                  <mat-icon class="text-blue-600 text-base">show_chart</mat-icon>
+                  <span>Performance</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-100">
+            <tr *ngFor="let fund of allFunds; let i = index"
+              class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer group">
 
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <div class="flex flex-col items-end leading-tight">
-                                    <span class="font-medium text-gray-900">
-                                        {{ fund.rate2 | number:'1.2-2' }}
-                                    </span>
-                                    <span class="text-xs text-gray-500">
-                                        ({{ fund.percent2 | number:'1.2-2' }}%)
-                                    </span>
-                                </div>
-                            </td>
+              <!-- Rank with top performer highlights -->
+              <td class="px-6 py-4 whitespace-nowrap text-center">
+                <ng-container *ngIf="i < 3; else normalRank">
+                  <div class="flex flex-col items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                      {{fund.rank}}
+                    </div>
+                    <div class="text-amber-600 text-xs font-bold mt-1">TOP {{fund.rank}}</div>
+                  </div>
+                </ng-container>
+                <ng-template #normalRank>
+                  <span
+                    class="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 font-semibold rounded-full group-hover:bg-blue-200 group-hover:text-blue-800 transition-colors">
+                    {{fund.rank}}
+                  </span>
+                </ng-template>
+              </td>
 
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <span [ngClass]="fund.change >= 0 
-    ? 'bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center gap-1' 
-    : 'bg-red-100 text-red-700 px-2 py-1 rounded-full flex items-center gap-1'">
-                                    <mat-icon class="text-xs">{{ fund.change >= 0 ? 'north_east' : 'south_east'
-                                        }}</mat-icon>
-                                    {{fund.change >= 0 ? '+' : ''}}{{fund.change | number:'1.2-2'}}%
-                                </span>
+              <!-- Fund Name -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full" [class]="fund.change >= 0 ? 'bg-green-500' : 'bg-red-500'"></div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold text-gray-900 max-w-xs">
+                      {{ fund.name.length > 60 ? (fund.name | slice:0:60) + '...' : fund.name }}
+                    </div>
+                  </div>
+                </div>
+              </td>
 
+              <!-- Start NAV -->
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-semibold text-gray-900 text-sm">
+                    {{ fund.rate1 | number:'1.2-2' }}
+                  </span>
+                  <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mt-1">
+                    {{ fund.percent1 | number:'1.2-2' }}%
+                  </span>
+                </div>
+              </td>
 
-                            </td>
+              <!-- End NAV -->
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-semibold text-gray-900 text-sm">
+                    {{ fund.rate2 | number:'1.2-2' }}
+                  </span>
+                  <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mt-1">
+                    {{ fund.percent2 | number:'1.2-2' }}%
+                  </span>
+                </div>
+              </td>
 
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </mat-card-content>
-    </mat-card>
+              <!-- Performance Badge -->
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="flex justify-end">
+                  <span
+                    class="inline-flex items-center gap-1 px-3 py-2 rounded-full text-sm font-semibold shadow-sm transition-all duration-200 hover:scale-105"
+                    [ngClass]="fund.change >= 0 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-200' 
+                      : 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-200'"
+                    matTooltip="Absolute Change: ₹{{ fund.rate2 - fund.rate1 | number:'1.2-2' }} | Period Return">
+                    <mat-icon class="text-sm">
+                      {{ fund.change >= 0 ? 'trending_up' : 'trending_down' }}
+                    </mat-icon>
+                    {{fund.change >= 0 ? '+' : ''}}{{fund.change | number:'1.2-2'}}%
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
-    <!-- Footer -->
-    <div class="mt-10 border-t pt-4 text-center text-gray-500 text-sm italic">
-        Report generated on {{currentTime | date:'fullDate'}} • Data is for informational purposes only
+  <!-- Enhanced Empty State -->
+  <ng-template #emptyState>
+    <div class="flex flex-col items-center justify-center py-20 px-6 
+            bg-gradient-to-br from-red-50 to-rose-50 
+            border-2 border-dashed border-red-300 
+            rounded-2xl shadow text-center">
+      <!-- Animated Icon -->
+      <div class="relative mb-6">
+        <div class="flex items-center justify-center w-20 h-20 
+              rounded-full bg-red-100 shadow mb-4">
+          <mat-icon class="text-red-600 text-5xl">error_outline</mat-icon>
+        </div>
+      </div>
+
+      <h2 class="text-xl font-semibold text-red-700 mb-2">No Fund Data Available</h2>
+      <p class="text-red-700 text-lg max-w-md mb-2">
+        We're ready to analyze mutual fund performance data.
+      </p>
+      <p class="text-gray-500 text-sm max-w-md mb-8">
+        Once data is loaded, you'll see detailed performance rankings, and growth analysis here.
+      </p>
+    </div>
+  </ng-template>
+
+  <!-- Enhanced Footer -->
+  <div *ngIf="allFunds && allFunds.length > 0" class="mt-12 pt-8 border-t border-gray-200">
+    <div class="flex flex-col lg:flex-row justify-between items-center gap-4 text-sm">
+      <div class="flex items-center gap-4 text-gray-600">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-gray-400 text-base">schedule</mat-icon>
+          <span>Generated: {{currentTime | date:'MMM dd, yyyy'}} at {{currentTime | date:'shortTime'}}</span>
+        </div>
+        <div class="w-px h-4 bg-gray-300"></div>
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-gray-400 text-base">source</mat-icon>
+          <span>Source: AMFI Official Data</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <span class="text-gray-500 text-xs bg-gray-100 px-3 py-2 rounded-full">
+          {{allFunds.length}} Funds Analyzed
+        </span>
+        <span class="text-gray-500 text-xs bg-blue-100 px-3 py-2 rounded-full">
+          Data Updated Daily
+        </span>
+      </div>
     </div>
 
-
+    <!-- Disclaimer -->
+    <div class="mt-4 text-center">
+      <p class="text-xs text-gray-400 max-w-2xl mx-auto">
+        This report is for informational purposes only. Mutual fund investments are subject to market risks.
+        Past performance is not indicative of future results. Please read all scheme related documents carefully.
+      </p>
+    </div>
+  </div>
 </div>

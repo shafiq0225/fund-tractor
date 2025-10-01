@@ -1,11 +1,6 @@
-<nav class="flex items-center text-gray-500 text-sm mb-6">
-  <a class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800" (click)="goToDashboard()">
-    <mat-icon class="text-gray-400 text-base">arrow_back</mat-icon>
-    Nav
-  </a>
-  <span class="mx-2">/</span>
-  <span class="font-medium text-gray-800">Scheme Manage</span>
-</nav>
+<!-- Breadcrumb -->
+<app-breadcrumb [links]="[{ label: 'Nav', route: '/dashboard', icon: 'dashboard' }]" current="Scheme Manage">
+</app-breadcrumb>
 
 <div class="p-6">
   <!-- Page Title Row -->

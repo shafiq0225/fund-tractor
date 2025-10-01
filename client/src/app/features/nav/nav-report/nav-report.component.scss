@@ -9,3 +9,69 @@ thead th {
   background-color: #f9fafb; /* same as bg-gray-50 */
   z-index: 10;
 }
+
+:host {
+  display: block;
+}
+
+// Custom scrollbar for table
+.table-container {
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+// Animation for loading state
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Hover effects
+.fund-row {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Responsive table
+@media (max-width: 768px) {
+  .mobile-card {
+    .fund-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .performance-badge {
+      margin-top: 8px;
+    }
+  }
+}

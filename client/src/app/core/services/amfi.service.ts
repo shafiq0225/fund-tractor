@@ -1,45 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, delay, Observable, retryWhen, tap, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ImportResponse } from '../../shared/models/Amfi/ImportResponse';
 import { ApiResponse, Scheme } from '../../shared/models/Amfi/Scheme';
 import { AddSchemeRequest } from '../../shared/models/Amfi/AddSchemeRequest';
-
-interface UpdateFundRequest {
-  fundId: string;
-  isApproved: boolean;
-}
-
-interface UpdateFundResponse {
-  fundId: string;
-  isApproved: boolean;
-  success: boolean;
-  message: string;
-}
-
-export interface SchemeResponseDto {
-  startDate: string;   // ISO date string
-  endDate: string;     // ISO date string
-  message: string;
-  schemes: SchemeDto[];
-}
-
-export interface SchemeDto {
-  fundName: string;
-  schemeCode: string;
-  schemeName: string;
-  history: SchemeHistoryDto[];
-  rank: number;
-}
-
-export interface SchemeHistoryDto {
-  date: string;          // ISO date string
-  nav: number;
-  percentage: string;    // string because backend sends formatted values like "0.07" or "-1.36"
-  isTradingHoliday: boolean;
-  isGrowth: boolean;
-}
-
+import { SchemeResponseDto } from '../../shared/models/Amfi/SchemeResponseDto';
 
 
 @Injectable({
@@ -94,7 +59,7 @@ export class AmfiService {
     return this.http.post<AddSchemeRequest>(this.baseUrl + 'addapprovedscheme', addSchemeRequest);
   }
 
-  GetTodayAndPreviousWorkingDaySchemes(): Observable<SchemeResponseDto> {
+  getDailySchemesWithRank(): Observable<SchemeResponseDto> {
     return this.http.get<SchemeResponseDto>(this.baseUrl + 'schemes/today');
   }
 }

@@ -1,13 +1,6 @@
 <!-- Breadcrumb -->
-<nav class="flex items-center text-gray-500 text-sm mb-6">
-  <a class="flex items-center gap-1 cursor-pointer text-blue-600 hover:text-blue-800" (click)="goToDashboard()">
-    <mat-icon class="text-gray-400 text-base">arrow_back</mat-icon>
-    Nav
-  </a>
-  <span class="mx-2">/</span>
-  <span class="font-medium text-gray-800">AMFI Data Import</span>
-</nav>
-
+<app-breadcrumb [links]="[{ label: 'Nav', route: '/dashboard', icon: 'dashboard' }]" current="AMFI Data Import">
+</app-breadcrumb>
 <!-- Card -->
 <div class="w-[900px] p-8 bg-white rounded-2xl shadow-md border border-gray-100">
   <!-- Header -->
@@ -99,7 +92,7 @@
       Data will be fetched from the official AMFI portal:
       <span class="font-medium text-blue-600 break-all">{{ fileUrl }}</span>
     </p>
-    
+
     <button
       class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]"
       (click)="fetchFromUrl()" [disabled]="fetchLoading || activeMode==='upload'">

@@ -340,7 +340,7 @@ namespace API.Controllers
         }
 
         [HttpGet("schemes/today")]
-        public async Task<IActionResult> GetTodayAndPreviousWorkingDaySchemes()
+        public async Task<IActionResult> GetDailySchemesWithRank()
         {
             try
             {
@@ -380,34 +380,33 @@ namespace API.Controllers
                     });
                 }
 
-                // ✅ Success case
+                // Success case
                 var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs!, workingResult.EndWorkingDate);
 
                 var schemesWithRank = schemes
-            .Select(s => new
-            {
-                Scheme = s,
-                LatestPercentage = s.History
-                    .OrderByDescending(h => h.Date)
-                    .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
-                    .FirstOrDefault()
-            })
-            .OrderByDescending(s => s.LatestPercentage)
-            .Select((s, index) =>
-            {
-                // Rank logic: top 3 = 1,2,3; all others = 4
-                s.Scheme.Rank = index < 3 ? index + 1 : 4;
-                return s.Scheme;
-            })
-            // --- Order by rank ascending before returning ---
-            .OrderBy(s => s.Rank)
-            .ToList();
+                    .Select(s => new
+                    {
+                        Scheme = s,
+                        LatestPercentage = s.History
+                            .OrderByDescending(h => h.Date)
+                            .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+                            .FirstOrDefault()
+                    })
+                    .OrderByDescending(s => s.LatestPercentage)
+                    .ThenBy(s => s.Scheme.FundName) // ensure stable ordering
+                    .Select((s, index) =>
+                    {
+                        // Rank logic: top 3 = 1,2,3; all others = 4
+                        s.Scheme.Rank = index < 3 ? index + 1 : 4;
+                        return s.Scheme;
+                    })
+                    .OrderBy(s => s.Rank) // Final rank-based ordering
+                    .ToList();
 
-                // Return response
                 return Ok(new SchemeResponseDto
                 {
-                    StartDate = schemesWithRank.FirstOrDefault().History.FirstOrDefault().Date,
-                    EndDate = schemesWithRank.FirstOrDefault().History.LastOrDefault().Date,
+                    StartDate = schemesWithRank.SelectMany(s => s.History).Min(h => h.Date),
+                    EndDate = schemesWithRank.SelectMany(s => s.History).Max(h => h.Date),
                     Schemes = schemesWithRank,
                     Message = message
                 });
