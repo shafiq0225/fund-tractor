@@ -170,8 +170,8 @@
                 <div class="flex items-center gap-3">
                   <div class="w-2 h-2 rounded-full" [class]="fund.change >= 0 ? 'bg-green-500' : 'bg-red-500'"></div>
                   <div class="min-w-0 flex-1">
-                    <div class="text-sm font-semibold text-gray-900 max-w-xs">
-                      {{ fund.name.length > 60 ? (fund.name | slice:0:60) + '...' : fund.name }}
+                    <div class="text-sm font-semibold text-gray-900 max-w-xs" matTooltip="{{ fund.name }}">
+                      {{ fund.name | truncate:60 }}
                     </div>
                   </div>
                 </div>

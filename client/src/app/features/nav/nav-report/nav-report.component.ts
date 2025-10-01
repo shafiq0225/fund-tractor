@@ -8,6 +8,7 @@ import { AmfiService } from '../../../core/services/amfi.service';
 import { SchemeDto, SchemeResponseDto } from '../../../shared/models/Amfi/SchemeResponseDto';
 import { Subject, takeUntil } from 'rxjs';
 import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
+import { TruncatePipe } from "../../../shared/pipes/truncate-pipe";
 
 interface FundUI {
   rank: number;
@@ -31,8 +32,9 @@ interface FundUI {
     MatCardContent,
     CommonModule,
     MatTooltip,
-    BreadcrumbComponent
-  ],
+    BreadcrumbComponent,
+    TruncatePipe
+],
   templateUrl: './nav-report.component.html',
   styleUrls: ['./nav-report.component.scss']
 })
