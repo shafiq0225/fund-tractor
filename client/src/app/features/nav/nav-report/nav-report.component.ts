@@ -105,8 +105,8 @@ export class NavReportComponent implements OnInit, OnDestroy {
           this.startDate = res.startDate;
           this.endDate = res.endDate;
           this.allFunds = res.schemes
-            .map((s: SchemeDto) => this.mapSchemeToFundUI(s))
-            .sort((a, b) => b.change - a.change); // Sort by performance descending
+            .map((s: SchemeDto) => this.mapSchemeToFundUI(s));
+            // .sort((a, b) => b.change - a.change); // Sort by performance descending
 
           this.calculateStatistics();
           this.isLoading = false;
@@ -123,10 +123,10 @@ export class NavReportComponent implements OnInit, OnDestroy {
     this.positiveFunds = this.allFunds.filter(fund => fund.change > 0).length;
     this.negativeFunds = this.allFunds.filter(fund => fund.change < 0).length;
 
-    if (this.allFunds.length > 0) {
-      this.bestPerformer = [...this.allFunds].sort((a, b) => b.change - a.change)[0];
-      this.worstPerformer = [...this.allFunds].sort((a, b) => a.change - b.change)[0];
-    }
+    // if (this.allFunds.length > 0) {
+    //   this.bestPerformer = [...this.allFunds].sort((a, b) => b.change - a.change)[0];
+    //   this.worstPerformer = [...this.allFunds].sort((a, b) => a.change - b.change)[0];
+    // }
   }
 
   getDateRangeDays(): number {
