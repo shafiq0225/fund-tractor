@@ -9,6 +9,7 @@ import { SchemeDto, SchemeResponseDto } from '../../../shared/models/Amfi/Scheme
 import { Subject, takeUntil } from 'rxjs';
 import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
 import { TruncatePipe } from "../../../shared/pipes/truncate-pipe";
+import { SnackbarService } from '../../../core/services/snackbar.service';
 
 interface FundUI {
   rank: number;
@@ -40,11 +41,7 @@ interface FundUI {
 })
 export class NavReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute
-  ) { }
+  snackBarService = inject(SnackbarService);
 
   allFunds: FundUI[] = [];
   filteredFunds: FundUI[] = [];
@@ -115,8 +112,7 @@ export class NavReportComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (err) => {
-          console.error('Error fetching schemes:', err);
-          this.errorMessage = 'Failed to load fund data. Please try again later.';
+          this.snackBarService.error(err.error.error || "Failed to load fund data. Please try again later.")
           this.isLoading = false;
         }
       });
