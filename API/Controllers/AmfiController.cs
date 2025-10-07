@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -339,87 +340,87 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("schemes/today")]
-        public async Task<IActionResult> GetDailySchemesWithRank()
-        {
-            try
-            {
-                var workingResult = AmfiDataHelper.GetLastTradingDays();
+        //[HttpGet("schemes/today")]
+        //public async Task<IActionResult> GetDailySchemesWithRank()
+        //{
+        //    try
+        //    {
+        //        var workingResult = AmfiDataHelper.GetLastTradingDays();
 
-                if (!workingResult.Success)
-                {
-                    return BadRequest(new
-                    {
-                        Success = false,
-                        Message = workingResult.Message
-                    });
-                }
+        //        if (!workingResult.Success)
+        //        {
+        //            return BadRequest(new
+        //            {
+        //                Success = false,
+        //                Message = workingResult.Message
+        //            });
+        //        }
 
-                var (success, message, navs) = await amfiRepository
-                    .GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
+        //        var (success, message, navs) = await amfiRepository
+        //            .GetSchemesByDateRangeAsync(workingResult.StartWorkingDate, workingResult.EndWorkingDate);
 
-                if (!success)
-                {
-                    if (message.Contains("No records", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return NotFound(new
-                        {
-                            workingResult.StartWorkingDate,
-                            workingResult.EndWorkingDate,
-                            Success = false,
-                            Message = message
-                        });
-                    }
+        //        if (!success)
+        //        {
+        //            if (message.Contains("No records", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                return NotFound(new
+        //                {
+        //                    workingResult.StartWorkingDate,
+        //                    workingResult.EndWorkingDate,
+        //                    Success = false,
+        //                    Message = message
+        //                });
+        //            }
 
-                    return BadRequest(new
-                    {
-                        workingResult.StartWorkingDate,
-                        workingResult.EndWorkingDate,
-                        Success = false,
-                        Message = message
-                    });
-                }
+        //            return BadRequest(new
+        //            {
+        //                workingResult.StartWorkingDate,
+        //                workingResult.EndWorkingDate,
+        //                Success = false,
+        //                Message = message
+        //            });
+        //        }
 
-                // Success case
-                var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs!, workingResult.EndWorkingDate);
+        //        // Success case
+        //        var schemes = SchemeBuilder.BuildSchemeHistoryForDaily(navs!, workingResult.EndWorkingDate);
 
-                var schemesWithRank = schemes
-                    .Select(s => new
-                    {
-                        Scheme = s,
-                        LatestPercentage = s.History
-                            .OrderByDescending(h => h.Date)
-                            .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
-                            .FirstOrDefault()
-                    })
-                    .OrderByDescending(s => s.LatestPercentage)
-                    .ThenBy(s => s.Scheme.FundName) // ensure stable ordering
-                    .Select((s, index) =>
-                    {
-                        // Rank logic: top 3 = 1,2,3; all others = 4
-                        s.Scheme.Rank = index < 3 ? index + 1 : 4;
-                        return s.Scheme;
-                    })
-                    .OrderBy(s => s.Rank) // Final rank-based ordering
-                    .ToList();
+        //        var schemesWithRank = schemes
+        //            .Select(s => new
+        //            {
+        //                Scheme = s,
+        //                LatestPercentage = s.History
+        //                    .OrderByDescending(h => h.Date)
+        //                    .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+        //                    .FirstOrDefault()
+        //            })
+        //            .OrderByDescending(s => s.LatestPercentage)
+        //            .ThenBy(s => s.Scheme.FundName) // ensure stable ordering
+        //            .Select((s, index) =>
+        //            {
+        //                // Rank logic: top 3 = 1,2,3; all others = 4
+        //                s.Scheme.Rank = index < 3 ? index + 1 : 4;
+        //                return s.Scheme;
+        //            })
+        //            .OrderBy(s => s.Rank) // Final rank-based ordering
+        //            .ToList();
 
-                return Ok(new SchemeResponseDto
-                {
-                    StartDate = schemesWithRank.SelectMany(s => s.History).Min(h => h.Date),
-                    EndDate = schemesWithRank.SelectMany(s => s.History).Max(h => h.Date),
-                    Schemes = schemesWithRank,
-                    Message = message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Error = "An unexpected error occurred while fetching schemes.",
-                    Details = ex.Message
-                });
-            }
-        }
+        //        return Ok(new SchemeResponseDto
+        //        {
+        //            StartDate = schemesWithRank.SelectMany(s => s.History).Min(h => h.Date),
+        //            EndDate = schemesWithRank.SelectMany(s => s.History).Max(h => h.Date),
+        //            Schemes = schemesWithRank,
+        //            Message = message
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, new
+        //        {
+        //            Error = "An unexpected error occurred while fetching schemes.",
+        //            Details = ex.Message
+        //        });
+        //    }
+        //}
 
         [HttpGet("schemes")]
         public async Task<IActionResult> GetSchemes([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
@@ -615,5 +616,32 @@ namespace API.Controllers
                     new { message = "An unexpected error occurred.", details = ex.Message });
             }
         }
+
+        [HttpGet("schemes/today")]
+        public async Task<ActionResult<NavHistoryResponse>> GetNavHistoryForTodayAsync()
+        {
+            try
+            {
+                var currentDate = DateTime.Today;
+                //_logger.LogInformation("Received NAV history request for today: {CurrentDate}",currentDate.ToString("yyyy-MM-dd"));
+
+                var request = new NavHistoryRequest
+                {
+                    CurrentDate = currentDate
+                };
+
+                var result = await amfiRepository.GetNavHistoryAsync(request);
+
+                //_logger.LogInformation("Successfully returned NAV history with {SchemeCount} schemes", result.Schemes.Count);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, "Error in GetNavHistoryForTodayAsync");
+                return StatusCode(500, new { message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
     }
 }

@@ -140,7 +140,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
                 FundCode = fundId,
                 IsApproved = addSchemeDto.IsApproved,
                 SchemeCode = addSchemeDto.SchemeId,
-                SchemeName= addSchemeDto.SchemeName,
+                SchemeName = addSchemeDto.SchemeName,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedDate = DateTime.UtcNow
             };
@@ -373,7 +373,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
         catch (Exception ex)
         {
-           return (false, $"An error occurred while retrieving records: {ex.Message}", null);
+            return (false, $"An error occurred while retrieving records: {ex.Message}", null);
         }
     }
 
@@ -475,5 +475,315 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             ChangePercentage = Math.Round(changePercentage, 2),
             IsPositive = change >= 0
         };
+    }
+
+    public async Task<List<NavRecord>> GetNavRecordsAsync(string schemeCode, DateTime startDate, DateTime endDate)
+    {
+        return await storeContext.SchemeDetails
+            .Where(x => x.SchemeCode == schemeCode &&
+                       x.Date >= startDate &&
+                       x.Date <= endDate &&
+                       x.IsVisible)
+            .OrderByDescending(x => x.Date)
+            .Select(x => new NavRecord
+            {
+                Id = x.Id,
+                FundHouse = x.FundCode,
+                FundName = x.FundName,
+                SchemeCode = x.SchemeCode,
+                SchemeName = x.SchemeName,
+                IsActive = x.IsVisible ? 1 : 0,
+                NavDate = x.Date,
+                NavValue = x.Nav
+            })
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> GetDistinctSchemeCodesAsync()
+    {
+        return await storeContext.SchemeDetails
+            .Where(x => x.IsVisible)
+            .Select(x => x.SchemeCode)
+            .Distinct()
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date)
+    {
+        return await storeContext.SchemeDetails
+            .Where(x => x.SchemeCode == schemeCode &&
+                       x.Date <= date &&
+                       x.IsVisible)
+            .OrderByDescending(x => x.Date)
+            .Select(x => new NavRecord
+            {
+                Id = x.Id,
+                FundHouse = x.FundCode,
+                FundName = x.FundName,
+                SchemeCode = x.SchemeCode,
+                SchemeName = x.SchemeName,
+                IsActive = x.IsVisible ? 1 : 0,
+                NavDate = x.Date,
+                NavValue = x.Nav
+            })
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<NavHistoryResponse> GetNavHistoryAsync(NavHistoryRequest request)
+    {
+        try
+        {
+
+            var schemeCodes = await GetDistinctSchemeCodesAsync();
+            var schemes = new List<SchemeHistory>();
+            var allDates = new List<DateTime>();
+
+            // Process each scheme
+            foreach (var schemeCode in schemeCodes)
+            {
+                try
+                {
+                    // Calculate date range for this scheme based on current date
+                    var (startDate, endDate) = CalculateDateRange(request.CurrentDate);
+
+                    // Get all records for the scheme within the date range
+                    var schemeRecords = await GetNavRecordsAsync(schemeCode, startDate, endDate);
+
+                    if (schemeRecords.Any())
+                    {
+                        // Take only the last 2 records for history
+                        var lastTwoRecords = schemeRecords
+                            .OrderByDescending(x => x.NavDate)
+                            .Take(2)
+                            .OrderBy(x => x.NavDate)
+                            .ToList();
+
+                        var schemeHistory = BuildSchemeHistory(lastTwoRecords, schemeCode);
+                        schemes.Add(schemeHistory);
+
+                        // Collect all dates from this scheme's history
+                        allDates.AddRange(schemeHistory.History.Select(h => h.Date));
+
+                    }
+                    else
+                    {
+                        //_logger.LogDebug("No records found for scheme {SchemeCode} in the date range", schemeCode);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Continue with other schemes even if one fails
+                }
+            }
+
+            // Calculate actual start and end dates from all scheme data
+            var (actualStartDate, actualEndDate) = CalculateActualDateRange(allDates);
+
+            // Apply ranking logic
+            var rankedSchemes = ApplyRanking(schemes);
+
+
+            return new NavHistoryResponse
+            {
+                StartDate = actualStartDate,
+                EndDate = actualEndDate,
+                Message = $"Retrieved {rankedSchemes.Count} schemes successfully.",
+                Schemes = rankedSchemes
+            };
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
+    private (DateTime startDate, DateTime endDate) CalculateActualDateRange(List<DateTime> allDates)
+    {
+        if (!allDates.Any())
+        {
+            // If no dates found, return default range
+            var defaultEndDate = DateTime.Today.AddDays(-1);
+            var defaultStartDate = defaultEndDate.AddDays(-1);
+            return (defaultStartDate, defaultEndDate);
+        }
+
+        var minDate = allDates.Min();
+        var maxDate = allDates.Max();
+        return (minDate, maxDate);
+    }
+
+    private List<SchemeHistory> ApplyRanking(List<SchemeHistory> schemes)
+    {
+        if (!schemes.Any())
+            return schemes;
+
+        var schemesWithRank = schemes
+            .Select(s => new
+            {
+                Scheme = s,
+                LatestPercentage = s.History
+                    .OrderByDescending(h => h.Date)
+                    .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+                    .FirstOrDefault()
+            })
+            .OrderByDescending(s => s.LatestPercentage)
+            .ThenBy(s => s.Scheme.FundName) // ensure stable ordering
+            .Select((s, index) =>
+            {
+                // Rank logic: top 3 = 1,2,3; all others = 4
+                s.Scheme.Rank = index < 3 ? index + 1 : 4;
+                return s.Scheme;
+            })
+            .OrderBy(s => s.Rank) // Final rank-based ordering
+            .ToList();
+
+        return schemesWithRank;
+    }
+
+    private SchemeHistory BuildSchemeHistory(List<NavRecord> records, string schemeCode)
+    {
+        var history = new List<NavHistory>();
+        var firstRecord = records.First();
+
+        if (records.Count == 0)
+        {
+            return new SchemeHistory
+            {
+                FundName = "",
+                SchemeCode = schemeCode,
+                SchemeName = "",
+                History = history,
+                Rank = null
+            };
+        }
+
+        // If we have only one record, we need to create a synthetic previous entry
+        if (records.Count == 1)
+        {
+            var singleRecord = records.First();
+
+            // Try to find the previous record
+            var previousDate = singleRecord.NavDate.AddDays(-1);
+            var previousRecord = GetLatestNavBeforeDateAsync(schemeCode, previousDate).Result;
+
+            if (previousRecord != null)
+            {
+                // Use actual previous record if available
+                var navHistory1 = new NavHistory
+                {
+                    Date = previousRecord.NavDate,
+                    Nav = previousRecord.NavValue,
+                    Percentage = "100",
+                    IsTradingHoliday = false,
+                    IsGrowth = false
+                };
+
+                var percentageChange = CalculatePercentageChange(previousRecord.NavValue, singleRecord.NavValue);
+                var navHistory2 = new NavHistory
+                {
+                    Date = singleRecord.NavDate,
+                    Nav = singleRecord.NavValue,
+                    Percentage = percentageChange.ToString("F2"),
+                    IsTradingHoliday = false,
+                    IsGrowth = percentageChange > 0
+                };
+
+                history.Add(navHistory1);
+                history.Add(navHistory2);
+            }
+            else
+            {
+                // Create synthetic previous entry
+                var navHistory1 = new NavHistory
+                {
+                    Date = singleRecord.NavDate.AddDays(-1),
+                    Nav = singleRecord.NavValue,
+                    Percentage = "100",
+                    IsTradingHoliday = false,
+                    IsGrowth = false
+                };
+
+                var navHistory2 = new NavHistory
+                {
+                    Date = singleRecord.NavDate,
+                    Nav = singleRecord.NavValue,
+                    Percentage = "0.00",
+                    IsTradingHoliday = false,
+                    IsGrowth = false
+                };
+
+                history.Add(navHistory1);
+                history.Add(navHistory2);
+            }
+        }
+        else if (records.Count >= 2)
+        {
+            // We have at least 2 records, use the actual data
+            var firstNavRecord = records[0]; // Older date
+            var secondNavRecord = records[1]; // Newer date
+
+            // First record (older date)
+            var navHistory1 = new NavHistory
+            {
+                Date = firstNavRecord.NavDate,
+                Nav = firstNavRecord.NavValue,
+                Percentage = "100",
+                IsTradingHoliday = false,
+                IsGrowth = false
+            };
+
+            // Second record (newer date) - calculate percentage change
+            var percentageChange = CalculatePercentageChange(firstNavRecord.NavValue, secondNavRecord.NavValue);
+            var navHistory2 = new NavHistory
+            {
+                Date = secondNavRecord.NavDate,
+                Nav = secondNavRecord.NavValue,
+                Percentage = percentageChange.ToString("F2"),
+                IsTradingHoliday = false,
+                IsGrowth = percentageChange > 0
+            };
+
+            history.Add(navHistory1);
+            history.Add(navHistory2);
+        }
+
+        return new SchemeHistory
+        {
+            FundName = firstRecord.FundName,
+            SchemeCode = firstRecord.SchemeCode,
+            SchemeName = firstRecord.SchemeName,
+            History = history,
+            Rank = null // Rank will be set later in ApplyRanking method
+        };
+    }
+
+    private decimal CalculatePercentageChange(decimal baseNav, decimal currentNav)
+    {
+        if (baseNav == 0) return 0;
+        return ((currentNav - baseNav) / baseNav) * 100;
+    }
+
+    private (DateTime startDate, DateTime endDate) CalculateDateRange(DateTime currentDate)
+    {
+        // For the given current date, we want to get the last 2 trading days
+        var endDate = GetLastTradingDate(currentDate);
+        var startDate = GetLastTradingDate(endDate.AddDays(-7)); // Look back 7 days to ensure we find the previous trading day
+
+        return (startDate, endDate);
+    }
+
+    private DateTime GetLastTradingDate(DateTime fromDate)
+    {
+        var date = fromDate;
+        // Go back until we find a weekday (Monday-Friday)
+        // In real scenario, you might want to check for trading holidays here
+        while (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+        {
+            date = date.AddDays(-1);
+        }
+        return date;
     }
 }

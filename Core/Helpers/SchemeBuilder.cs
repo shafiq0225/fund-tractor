@@ -30,31 +30,31 @@ namespace Core.Helpers
             });
         }
 
-        public static List<SchemeDto> BuildSchemeHistoryForDaily(List<SchemeDetail> schemes, DateTime endDate, int recordCount = 2)
-        {
-            return BuildSchemes(schemes, group =>
-            {
-                var history = new List<SchemeHistoryDto>();
-                var currentDate = endDate;
+        //public static List<SchemeDto> BuildSchemeHistoryForDaily(List<SchemeDetail> schemes, DateTime endDate, int recordCount = 2)
+        //{
+        //    return BuildSchemes(schemes, group =>
+        //    {
+        //        var history = new List<SchemeHistoryDto>();
+        //        var currentDate = endDate;
 
-                // Keep collecting until we have enough records
-                while (history.Count < recordCount)
-                {
-                    var record = FindRecord(group, currentDate);
+        //        // Keep collecting until we have enough records
+        //        while (history.Count < recordCount)
+        //        {
+        //            var record = FindRecord(group, currentDate);
 
-                    if (record != null && record.Nav > 0)
-                        history.Add(CreateHistoryItem(group, record, record.Date));
+        //            if (record != null && record.Nav > 0)
+        //                history.Add(CreateHistoryItem(group, record, record.Date));
 
-                    currentDate = currentDate.AddDays(-1);
+        //            currentDate = currentDate.AddDays(-1);
 
-                    // Prevent infinite loops if data is missing
-                    if ((endDate - currentDate).TotalDays > 60)
-                        break;
-                }
+        //            // Prevent infinite loops if data is missing
+        //            if ((endDate - currentDate).TotalDays > 60)
+        //                break;
+        //        }
 
-                return history.OrderBy(h => h.Date).ToList();
-            });
-        }
+        //        return history.OrderBy(h => h.Date).ToList();
+        //    });
+        //}
 
 
         // 🔹 Shared grouping logic
