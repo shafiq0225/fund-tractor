@@ -31,6 +31,59 @@
     }
   }
 }
+.cards-row-container {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 16px 0;
+  align-items: stretch;
+  
+  // Optional: Hide scrollbar for cleaner look
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  // Ensure cards maintain their design but fit in row
+  app-performance-card {
+    flex: 0 0 auto;
+    width: 300px; // Adjust based on your preferred card width
+    min-width: 280px; // Minimum width to prevent squeezing
+  }
+}
+
+// Alternative: Equal width cards that grow/shrink
+.cards-row-container.equal-width {
+  app-performance-card {
+    flex: 1;
+    min-width: 250px;
+    max-width: 350px;
+  }
+}
+
+// Responsive adjustments for the row
+@media (max-width: 768px) {
+  .cards-row-container {
+    gap: 15px;
+    
+    app-performance-card {
+      width: 280px;
+      min-width: 260px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-row-container {
+    gap: 12px;
+    
+    app-performance-card {
+      width: 260px;
+      min-width: 240px;
+    }
+  }
+}
 
 .error-state {
   display: flex;
