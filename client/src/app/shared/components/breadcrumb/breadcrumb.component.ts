@@ -35,7 +35,8 @@ export class BreadcrumbComponent {
     else if (
       currentUrl.startsWith('/nav/report') ||
       currentUrl.startsWith('/nav/manage') ||
-      currentUrl.startsWith('/nav/import')
+      currentUrl.startsWith('/nav/import') ||
+      currentUrl.startsWith('/nav/compare')
     ) {
       this.router.navigate(['/nav']);
     }

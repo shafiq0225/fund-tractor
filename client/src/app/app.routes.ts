@@ -5,6 +5,7 @@ import { NavDashboardComponent } from './features/nav/nav-dashboard/nav-dashboar
 import { ManageSchemesComponent } from './features/nav/manage-schemes/manage-schemes.component';
 import { NavReportComponent } from './features/nav/nav-report/nav-report.component';
 import { SchemePerformanceComponent } from './features/nav/nav-report/scheme-performance/scheme-performance.component';
+import { NavCompareComponent } from './features/nav/nav-compare/nav-compare.component';
 
 export const routes: Routes = [
     {
@@ -16,6 +17,7 @@ export const routes: Routes = [
             { path: 'manage', component: ManageSchemesComponent },
             { path: 'report', component: NavReportComponent },
             { path: 'scheme', component: SchemePerformanceComponent },
+            { path: 'compare', component: NavCompareComponent },
         ]
     }
 ];

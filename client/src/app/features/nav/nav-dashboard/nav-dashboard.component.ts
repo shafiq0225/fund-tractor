@@ -16,7 +16,7 @@ export class NavDashboardComponent {
     { title: 'Import Nav', icon: 'upload_file', route: 'import', color: 'bg-blue-500' },
     { title: 'Scheme Management', icon: 'list_alt', route: 'manage', color: 'bg-green-500' },
     { title: 'Report', icon: 'table_chart', route: 'report', color: 'bg-purple-500' },
-    { title: 'Settings', icon: 'settings', route: '/settings', color: 'bg-orange-500' },
+    { title: 'Compare', icon: 'compare', route: 'compare', color: 'bg-orange-500' },
     { title: 'Billing', icon: 'payments', route: '/billing', color: 'bg-pink-500' },
   ];
 

@@ -21,7 +21,6 @@ import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/bread
 export class ManageSchemesComponent implements OnInit {
   amfiService = inject(AmfiService);
   snackBarService = inject(SnackbarService);
-  constructor(private router: Router, private route: ActivatedRoute) { }
   schemes: Scheme[] = [];
   loading = true;
   errorMessage: string | null = null;
@@ -36,12 +35,10 @@ export class ManageSchemesComponent implements OnInit {
     this.amfiService.getSchemes().subscribe({
       next: (res) => {
         this.schemes = res.data;
-        console.log(this.schemes);
-
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = 'Failed to load schemes.';
+        this.snackBarService.error(err.error?.message || 'Failed to load schemes.');
         this.loading = false;
       }
     });
