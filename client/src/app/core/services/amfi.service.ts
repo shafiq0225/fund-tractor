@@ -5,6 +5,7 @@ import { ImportResponse } from '../../shared/models/Amfi/ImportResponse';
 import { ApiResponse, Scheme } from '../../shared/models/Amfi/Scheme';
 import { AddSchemeRequest } from '../../shared/models/Amfi/AddSchemeRequest';
 import { SchemeResponseDto } from '../../shared/models/Amfi/SchemeResponseDto';
+import { SchemePerformance } from '../../shared/models/Amfi/nav-performance.model';
 
 
 @Injectable({
@@ -61,5 +62,9 @@ export class AmfiService {
 
   getDailySchemesWithRank(): Observable<SchemeResponseDto> {
     return this.http.get<SchemeResponseDto>(this.baseUrl + 'schemes/today');
+  }
+
+  getNavPerformance(schemeCode: string): Observable<ApiResponse<SchemePerformance>>{
+    return this.http.get<ApiResponse<SchemePerformance>>(this.baseUrl + `schemeperformance?schemecode=${schemeCode}`);
   }
 }

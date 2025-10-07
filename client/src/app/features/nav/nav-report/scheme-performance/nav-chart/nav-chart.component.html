@@ -1,0 +1,42 @@
+<div class="nav-chart-container">
+    <!-- Chart Controls -->
+    <div class="chart-controls">
+        <div class="chart-type-toggle">
+            <button class="toggle-btn" [class.active]="chartType === 'line'" (click)="toggleChartType()">
+                📈 Line Chart
+            </button>
+            <button class="toggle-btn" [class.active]="chartType === 'bar'" (click)="toggleChartType()">
+                📊 Bar Chart
+            </button>
+        </div>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-wrapper">
+        <div class="chart-container">
+            <canvas #chartCanvas></canvas>
+        </div>
+    </div>
+
+    <!-- Chart Statistics -->
+    <div class="chart-statistics" *ngIf="historicalData">
+        <div class="stat-card">
+            <div class="stat-value">{{ getCurrentNav() | number:'1.2-2' }}</div>
+            <div class="stat-label">Current NAV</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" [class.positive]="getTotalChange() >= 0" [class.negative]="getTotalChange() < 0">
+                {{ getTotalChange() >= 0 ? '+' : '' }}{{ getTotalChange() | number:'1.2-2' }}%
+            </div>
+            <div class="stat-label">Total Change</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ historicalData.dates.length }}</div>
+            <div class="stat-label">Data Points</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ getMaxNav() | number:'1.2-2' }}</div>
+            <div class="stat-label">Highest NAV</div>
+        </div>
+    </div>
+</div>

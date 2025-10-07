@@ -1,0 +1,117 @@
+<!-- Breadcrumb -->
+<app-breadcrumb [links]="[{ label: 'AMFI Performance Report', route: '/nav/report', icon: 'dashboard' }]"
+    current="AMFI Data Import">
+</app-breadcrumb>
+<!-- nav-performance.component.html -->
+<div class="nav-performance-container">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p>Loading NAV performance data...</p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <h3>Unable to Load Data</h3>
+            <p>{{ error }}</p>
+            <button class="retry-btn" (click)="refreshData()">
+                <span class="btn-icon">🔄</span>
+                Try Again
+            </button>
+        </div>
+    </div>
+
+    <!-- Success State -->
+    <div *ngIf="schemePerformance && !loading" class="performance-content">
+        <!-- Header with last updated -->
+        <div class="content-header">
+            <div class="last-updated">
+                Last updated: {{ lastUpdated | date:'dd-MMM-yyyy' }}
+            </div>
+            <button class="refresh-btn" (click)="refreshData()" title="Refresh data">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- Scheme Header -->
+        <div class="scheme-header">
+            <div class="scheme-info">
+                <h1 class="scheme-name">{{ schemePerformance.schemeName }}</h1>
+                <div class="scheme-details">
+                    <span class="fund-house">{{ schemePerformance.fundHouse }}</span>
+                    <span class="divider">•</span>
+                    <span class="scheme-code">Scheme Code: {{ schemePerformance.schemeCode }}</span>
+                </div>
+            </div>
+            <div class="current-nav">
+                <div class="nav-value">{{ schemePerformance.currentNav | number:'1.2-4' }}</div>
+                <div class="nav-date">As of {{ schemePerformance.lastUpdated | date:'fullDate' }}</div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics Grid -->
+        <div class="performance-section">
+            <h2 class="section-title">Performance Overview</h2>
+            <div class="performance-grid">
+                <app-performance-card *ngFor="let metric of performanceMetrics" [metric]="metric">
+                </app-performance-card>
+            </div>
+        </div>
+
+        <!-- Performance Summary -->
+        <div *ngIf="performanceSummary" class="performance-summary">
+            <h2 class="section-title">Performance Summary</h2>
+            <div class="summary-cards">
+                <div class="summary-card" [class]="getTrendClass(performanceSummary.overallTrend)">
+                    <div class="summary-icon">
+                        {{ getTrendIcon(performanceSummary.overallTrend) }}
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-label">Overall Trend</span>
+                        <span class="summary-value">
+                            {{ performanceSummary.overallTrend | titlecase }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="summary-card trend-up">
+                    <div class="summary-icon">🏆</div>
+                    <div class="summary-content">
+                        <span class="summary-label">Best Performer</span>
+                        <span class="summary-value">{{ performanceSummary.bestPerformer }}</span>
+                    </div>
+                </div>
+
+                <div class="summary-card trend-down">
+                    <div class="summary-icon">📉</div>
+                    <div class="summary-content">
+                        <span class="summary-label">Worst Performer</span>
+                        <span class="summary-value">{{ performanceSummary.worstPerformer }}</span>
+                    </div>
+                </div>
+
+                <div class="summary-card total-return">
+                    <div class="summary-icon">💰</div>
+                    <div class="summary-content">
+                        <span class="summary-label">1 Year Return</span>
+                        <span class="summary-value" [class.positive]="performanceSummary.totalReturn > 0"
+                            [class.negative]="performanceSummary.totalReturn < 0">
+                            {{ performanceSummary.totalReturn > 0 ? '+' : '' }}{{ performanceSummary.totalReturn }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In scheme-performance.component.html -->
+        <div class="historical-section" *ngIf="schemePerformance">
+            <h2 class="section-title">Historical NAV Trend</h2>
+            <app-nav-chart [historicalData]="schemePerformance.historicalData" [chartType]="'line'">
+            </app-nav-chart>
+        </div>
+    </div>
+</div>

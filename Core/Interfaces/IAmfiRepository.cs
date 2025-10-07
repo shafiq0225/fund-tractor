@@ -14,4 +14,6 @@ public interface IAmfiRepository
     Task<(bool Success, string Message, List<ApprovedData>? Data)> GetSchemesListAsync();
     Task AddSchemeDetailsAsync(List<SchemeDetail> schemes);
     Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate);
+    Task<(bool Success, string Message, List<SchemeDetail>? schemeDetails)> GetSchemePerformance(string schemeCode);
+    SchemePerformanceResponse TransformToPerformanceResponse(List<SchemeDetail> schemeDetails);
 }

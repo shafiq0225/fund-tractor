@@ -27,7 +27,24 @@ export class BreadcrumbComponent {
   ) { }
 
   goToDashboard(): void {
-    this.router.navigate(['../'], { relativeTo: this.route });
+    const currentUrl = this.router.url;
+
+    if (currentUrl.startsWith('/nav/scheme')) {
+      this.router.navigate(['/nav/report']);
+    }
+    else if (
+      currentUrl.startsWith('/nav/report') ||
+      currentUrl.startsWith('/nav/manage') ||
+      currentUrl.startsWith('/nav/import')
+    ) {
+      this.router.navigate(['/nav']);
+    }
+    else {
+      // fallback
+      this.router.navigate(['/dashboard']);
+    }
   }
+
+
 
 }

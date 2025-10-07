@@ -577,5 +577,43 @@ namespace API.Controllers
                     new { message = "An unexpected error occurred.", details = ex.Message });
             }
         }
+
+        [HttpGet("schemeperformance")]
+        public async Task<IActionResult> GetSchemePerformance([FromQuery] string schemeCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(schemeCode))
+                {
+                    return BadRequest(new { message = "Scheme code is required." });
+                }
+
+                var response = await amfiRepository.GetSchemePerformance(schemeCode);
+
+                if (!response.Success)
+                {
+                    return BadRequest(new { message = response.Message });
+                }
+
+                if (response.schemeDetails == null || !response.schemeDetails.Any())
+                {
+                    return NotFound(new { message = "No schemes found." });
+                }
+
+                // Transform the data
+                var transformedData = amfiRepository.TransformToPerformanceResponse(response.schemeDetails);
+
+                return Ok(new
+                {
+                    message = "Performance data retrieved successfully.",
+                    data = transformedData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "An unexpected error occurred.", details = ex.Message });
+            }
+        }
     }
 }

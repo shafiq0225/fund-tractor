@@ -20,6 +20,7 @@ interface FundUI {
   percent2: number;
   change: number;
   absoluteChange: number;
+  schemeCode: string;
 }
 
 @Component({
@@ -35,13 +36,15 @@ interface FundUI {
     MatTooltip,
     BreadcrumbComponent,
     TruncatePipe
-],
+  ],
   templateUrl: './nav-report.component.html',
   styleUrls: ['./nav-report.component.scss']
 })
 export class NavReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   snackBarService = inject(SnackbarService);
+  private router = inject(Router);
+  private reportService = inject(AmfiService);
 
   allFunds: FundUI[] = [];
   filteredFunds: FundUI[] = [];
@@ -57,8 +60,6 @@ export class NavReportComponent implements OnInit, OnDestroy {
   negativeFunds = 0;
   bestPerformer: FundUI | null = null;
   worstPerformer: FundUI | null = null;
-
-  private reportService = inject(AmfiService);
 
   ngOnInit(): void {
     this.getDailySchemes();
@@ -82,6 +83,7 @@ export class NavReportComponent implements OnInit, OnDestroy {
     const change = rate1 !== 0 ? ((rate2 - rate1) / rate1) * 100 : 0;
     const absoluteChange = rate2 - rate1;
 
+    const schemeCode = s.schemeCode;
     return {
       rank: s.rank,
       name: s.schemeName,
@@ -90,7 +92,8 @@ export class NavReportComponent implements OnInit, OnDestroy {
       rate2,
       percent2,
       change,
-      absoluteChange
+      absoluteChange,
+      schemeCode
     };
   }
 
@@ -106,7 +109,7 @@ export class NavReportComponent implements OnInit, OnDestroy {
           this.endDate = res.endDate;
           this.allFunds = res.schemes
             .map((s: SchemeDto) => this.mapSchemeToFundUI(s));
-            // .sort((a, b) => b.change - a.change); // Sort by performance descending
+          // .sort((a, b) => b.change - a.change); // Sort by performance descending
 
           this.calculateStatistics();
           this.isLoading = false;
@@ -160,5 +163,9 @@ export class NavReportComponent implements OnInit, OnDestroy {
     if (change > -2) return 'text-orange-500';
     return 'text-red-600';
   }
+  goToScheme(schemeCode: string) {
+    this.router.navigate(['/nav/scheme'], { queryParams: { scheme: schemeCode } });
+  }
+
 
 }

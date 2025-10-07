@@ -1,0 +1,37 @@
+<!-- performance-card.component.html -->
+<div class="performance-card" [class.compact]="compact" [class.trend-up]="metric.trend === 'up'"
+    [class.trend-down]="metric.trend === 'down'">
+    <div class="card-header">
+        <h3 class="period">{{ metric.period }}</h3>
+        <div class="trend-indicator">
+            <i class="trend-icon" [class.icon-up]="metric.trend === 'up'"
+                [class.icon-down]="metric.trend === 'down'"></i>
+        </div>
+    </div>
+
+    <div class="card-content">
+        <div class="nav-value">{{ metric.navValue | number:'1.2-4' }}</div>
+
+        <div class="performance-details">
+            <div class="change-amount" [class.positive]="metric.trend === 'up'"
+                [class.negative]="metric.trend === 'down'">
+                {{ metric.trend === 'up' ? '+' : '' }}{{ metric.change | number:'1.2-4' }}
+            </div>
+            <div class="change-percentage" [class.positive]="metric.trend === 'up'"
+                [class.negative]="metric.trend === 'down'">
+                ({{ metric.trend === 'up' ? '+' : '' }}{{ metric.changePercentage }}%)
+            </div>
+        </div>
+
+        <div class="period-description">
+            {{ metric.description }}
+        </div>
+    </div>
+
+    <div class="card-footer">
+        <div class="performance-badge" [class.positive]="metric.trend === 'up'"
+            [class.negative]="metric.trend === 'down'">
+            {{ metric.trend === 'up' ? 'Positive' : 'Negative' }}
+        </div>
+    </div>
+</div>

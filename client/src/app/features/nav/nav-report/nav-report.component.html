@@ -144,7 +144,8 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-100">
             <tr *ngFor="let fund of allFunds; let i = index"
-              class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer group">
+              class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer group"
+              (click)="goToScheme(fund.schemeCode)">
 
               <!-- Rank with top performer highlights -->
               <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -209,7 +210,7 @@
                     [ngClass]="fund.change >= 0 
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-200' 
                       : 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-200'"
-                    matTooltip="Absolute Change: ₹{{ fund.rate2 - fund.rate1 | number:'1.2-2' }} | Period Return">
+                    matTooltip="Absolute Change: {{ fund.rate2 - fund.rate1 | number:'1.2-2' }} | Period Return">
                     <mat-icon class="text-sm">
                       {{ fund.change >= 0 ? 'trending_up' : 'trending_down' }}
                     </mat-icon>

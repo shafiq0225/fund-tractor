@@ -4,6 +4,7 @@ import { NavImportComponent } from './features/nav/nav-import/nav-import.compone
 import { NavDashboardComponent } from './features/nav/nav-dashboard/nav-dashboard.component';
 import { ManageSchemesComponent } from './features/nav/manage-schemes/manage-schemes.component';
 import { NavReportComponent } from './features/nav/nav-report/nav-report.component';
+import { SchemePerformanceComponent } from './features/nav/nav-report/scheme-performance/scheme-performance.component';
 
 export const routes: Routes = [
     {
@@ -13,7 +14,8 @@ export const routes: Routes = [
             { path: '', component: NavDashboardComponent },
             { path: 'import', component: NavImportComponent },
             { path: 'manage', component: ManageSchemesComponent },
-            { path: 'report', component: NavReportComponent }
+            { path: 'report', component: NavReportComponent },
+            { path: 'scheme', component: SchemePerformanceComponent },
         ]
     }
 ];

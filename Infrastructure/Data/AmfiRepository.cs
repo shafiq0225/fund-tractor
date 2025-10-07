@@ -377,4 +377,103 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
     }
 
+    public async Task<(bool Success, string Message, List<SchemeDetail>? schemeDetails)> GetSchemePerformance(string schemeCode)
+    {
+        try
+        {
+            var result = await storeContext.SchemeDetails.Where(x => x.SchemeCode == schemeCode).ToListAsync();
+
+            if (result == null || result.Count == 0)
+            {
+                return (false, "No records found.", null);
+            }
+
+            return (true, "Records retrieved successfully.", result);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"An error occurred while retrieving records: {ex.Message}", null);
+        }
+    }
+
+    public SchemePerformanceResponse TransformToPerformanceResponse(List<SchemeDetail> schemeDetails)
+    {
+        if (schemeDetails == null || !schemeDetails.Any())
+            return null;
+
+        // Sort by date to ensure chronological order
+        var sortedDetails = schemeDetails.OrderBy(x => x.Date).ToList();
+        var currentDetail = sortedDetails.Last();
+
+        return new SchemePerformanceResponse
+        {
+            Status = "success",
+            SchemeCode = currentDetail.SchemeCode,
+            SchemeName = currentDetail.SchemeName,
+            FundHouse = currentDetail.FundName,
+            CurrentNav = currentDetail.Nav,
+            LastUpdated = currentDetail.Date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            Performance = new PerformanceData
+            {
+                Yesterday = CalculatePerformanceForPeriod(sortedDetails, 1),
+                OneWeek = CalculatePerformanceForPeriod(sortedDetails, 7),
+                OneMonth = CalculatePerformanceForPeriod(sortedDetails, 30),
+                SixMonths = CalculatePerformanceForPeriod(sortedDetails, 180),
+                OneYear = CalculatePerformanceForPeriod(sortedDetails, 365)
+            },
+            HistoricalData = new HistoricalData
+            {
+                Dates = sortedDetails.Select(r => r.Date.ToString("yyyy-MM-dd")).ToList(),
+                NavValues = sortedDetails.Select(r => r.Nav).ToList()
+            }
+        };
+    }
+
+    private NavPerformance CalculatePerformanceForPeriod(List<SchemeDetail> records, int daysBack)
+    {
+        var current = records.Last();
+        var previous = GetBestAvailableRecordForPeriod(records, daysBack);
+
+        return CalculatePerformance(current, previous);
+    }
+
+    private SchemeDetail GetBestAvailableRecordForPeriod(List<SchemeDetail> records, int daysBack)
+    {
+        if (records.Count < 2) return null;
+
+        var currentDate = records.Last().Date;
+        var targetDate = currentDate.AddDays(-daysBack);
+
+        // First try to get exact or closest record before target date
+        var previousRecord = records
+            .Where(r => r.Date <= targetDate)
+            .OrderByDescending(r => r.Date)
+            .FirstOrDefault();
+
+        // If no record found, use the oldest available record
+        if (previousRecord == null)
+        {
+            previousRecord = records.First();
+        }
+
+        return previousRecord;
+    }
+
+    private NavPerformance CalculatePerformance(SchemeDetail current, SchemeDetail previous)
+    {
+        if (previous == null || previous.Date >= current.Date)
+            return new NavPerformance { Nav = 0, Date = "", Change = 0, ChangePercentage = 0, IsPositive = false };
+
+        var change = current.Nav - previous.Nav;
+        var changePercentage = (change / previous.Nav) * 100;
+
+        return new NavPerformance
+        {
+            Nav = Math.Round(previous.Nav, 4),
+            Date = previous.Date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            Change = Math.Round(change, 4),
+            ChangePercentage = Math.Round(changePercentage, 2),
+            IsPositive = change >= 0
+        };
+    }
 }
