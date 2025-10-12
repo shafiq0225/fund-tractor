@@ -510,27 +510,27 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             .ToListAsync();
     }
 
-    public async Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date)
-    {
-        return await storeContext.SchemeDetails
-            .Where(x => x.SchemeCode == schemeCode &&
-                       x.Date <= date &&
-                       x.IsVisible)
-            .OrderByDescending(x => x.Date)
-            .Select(x => new NavRecord
-            {
-                Id = x.Id,
-                FundHouse = x.FundCode,
-                FundName = x.FundName,
-                SchemeCode = x.SchemeCode,
-                SchemeName = x.SchemeName,
-                IsActive = x.IsVisible ? 1 : 0,
-                NavDate = x.Date,
-                NavValue = x.Nav
-            })
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
-    }
+    //public async Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date)
+    //{
+    //    return await storeContext.SchemeDetails
+    //        .Where(x => x.SchemeCode == schemeCode &&
+    //                   x.Date <= date &&
+    //                   x.IsVisible)
+    //        .OrderByDescending(x => x.Date)
+    //        .Select(x => new NavRecord
+    //        {
+    //            Id = x.Id,
+    //            FundHouse = x.FundCode,
+    //            FundName = x.FundName,
+    //            SchemeCode = x.SchemeCode,
+    //            SchemeName = x.SchemeName,
+    //            IsActive = x.IsVisible ? 1 : 0,
+    //            NavDate = x.Date,
+    //            NavValue = x.Nav
+    //        })
+    //        .AsNoTracking()
+    //        .FirstOrDefaultAsync();
+    //}
 
     public async Task<NavHistoryResponse> GetNavHistoryAsync(NavHistoryRequest request)
     {

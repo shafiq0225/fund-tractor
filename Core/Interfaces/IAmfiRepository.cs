@@ -18,7 +18,7 @@ public interface IAmfiRepository
     SchemePerformanceResponse TransformToPerformanceResponse(List<SchemeDetail> schemeDetails);
     Task<List<NavRecord>> GetNavRecordsAsync(string schemeCode, DateTime startDate, DateTime endDate);
     Task<List<string>> GetDistinctSchemeCodesAsync();
-    Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date);
+    //Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date);
     Task<NavHistoryResponse> GetNavHistoryAsync(NavHistoryRequest request);
 
 }
