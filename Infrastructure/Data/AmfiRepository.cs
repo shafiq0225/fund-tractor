@@ -750,26 +750,34 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
     public async Task<FundDataResponse> GetFundsBySchemeCodes(List<string> schemeCodes)
     {
         var response = new FundDataResponse();
+        var allFunds = new Dictionary<string, FundResponse>();
 
         foreach (var schemeCode in schemeCodes)
         {
             var fundData = await GetFundBySchemeCode(schemeCode);
             foreach (var fund in fundData)
             {
-                response[fund.Key] = fund.Value;
+                allFunds[fund.Key] = fund.Value;
             }
+        }
+
+        // Calculate ranks based on 1-year returns
+        CalculateRanksBasedOn1YearReturns(allFunds);
+
+        foreach (var fund in allFunds.OrderBy(r=> r.Value.CrisilRank))
+        {
+            response[fund.Key] = fund.Value;
         }
 
         return response;
     }
+
     public async Task<FundDataResponse> GetFundBySchemeCode(string schemeCode)
     {
-        //var cacheKey = $"Fund_{schemeCode}";
-
         var navData = await storeContext.SchemeDetails
             .Where(n => n.SchemeCode == schemeCode && n.IsVisible)
             .OrderByDescending(n => n.Date)
-            .Take(365) // Last year data for calculations
+            .Take(365)
             .ToListAsync();
 
         if (!navData.Any())
@@ -785,17 +793,11 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         return response;
     }
+
     private FundResponse CalculateFundResponse(List<SchemeDetail> navData, string fundName)
     {
-        //if (navData.Count < 30)
-        //{
-        //    throw new InvalidOperationException("Insufficient data for calculations");
-        //}
-
-        var latestNav = navData.First();
         var sortedData = navData.OrderBy(n => n.Date).ToList();
 
-        // Calculate returns
         var returns = new FundReturns
         {
             Yesterday = Math.Round(CalculateReturn(sortedData, 1), 2),
@@ -805,21 +807,37 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             _1y = Math.Round(CalculateReturn(sortedData, 365), 2)
         };
 
-        // Calculate monthly returns for the last 12 months
         var monthlyReturns = CalculateMonthlyReturns(sortedData);
-
-        // Generate random Crisil rank (4 or 5 for demo)
-        var random = new Random();
-        var crisilRank = random.Next(4, 6); // 4 or 5
 
         return new FundResponse
         {
             Name = fundName,
-            CrisilRank = crisilRank,
+            CrisilRank = 0, // Temporary - will be calculated later
             Returns = returns,
             MonthlyReturns = monthlyReturns
         };
     }
+
+    private void CalculateRanksBasedOn1YearReturns(Dictionary<string, FundResponse> allFunds)
+    {
+        var fundsWithReturns = allFunds
+            .Select(kvp => new
+            {
+                FundName = kvp.Key,
+                OneYearReturn = kvp.Value.Returns._1y,
+                FundResponse = kvp.Value
+            })
+            .ToList();
+
+        var sortedFunds = fundsWithReturns.OrderByDescending(f => f.OneYearReturn).ToList();
+
+        for (int i = 0; i < sortedFunds.Count; i++)
+        {
+            sortedFunds[i].FundResponse.CrisilRank = i + 1;
+        }
+    }
+
+    // Keep your existing CalculateReturn and CalculateMonthlyReturns methods as they are
     private decimal CalculateReturn(List<SchemeDetail> sortedData, int daysBack)
     {
         var latestDate = sortedData.Last().Date;
@@ -898,6 +916,4 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         monthlyReturns.Reverse(); // Order from oldest to newest
         return monthlyReturns;
     }
-
-
 }

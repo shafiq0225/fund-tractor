@@ -85,7 +85,7 @@ export class NavCompareComponent implements OnInit {
     this.isLoading = true;
     this.amfiService.getSchemes().subscribe({
       next: (response: ApiResponse<Scheme[]>) => {
-        this.schemes = response.data;
+        this.schemes = response.data.filter(scheme => scheme.isApproved);
         this.isLoading = false;
       },
       error: (error) => {
@@ -354,8 +354,8 @@ export class NavCompareComponent implements OnInit {
 
   getRankClass(rank: number): string {
     switch (rank) {
-      case 5: return 'bg-green-500 text-white';
-      case 4: return 'bg-blue-500 text-white';
+      case 1: return 'bg-green-500 text-white';
+      case 2: return 'bg-blue-500 text-white';
       case 3: return 'bg-yellow-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
@@ -400,44 +400,43 @@ export class NavCompareComponent implements OnInit {
   }
 
   // Add these helper methods to your component
-getRankText(rank: number): string {
-  const rankTexts: { [key: number]: string } = {
-    1: 'Poor',
-    2: 'Below Average', 
-    3: 'Average',
-    4: 'Good',
-    5: 'Excellent'
-  };
-  return rankTexts[rank] || 'Not Rated';
-}
-
-getReturnTrend(returns: any, periodKey: string): any {
-  const value = returns[periodKey];
-  if (value > 0) {
-    return {
-      icon: 'fas fa-arrow-up',
-      color: 'text-green-500',
-      text: 'Positive'
+  getRankText(rank: number): string {
+    const rankTexts: { [key: number]: string } = {
+      4: 'Poor',
+      3: 'Average',
+      2: 'Good',
+      1: 'Excellent'
     };
-  } else if (value < 0) {
+    return rankTexts[rank] || 'Not Rated';
+  }
+
+  getReturnTrend(returns: any, periodKey: string): any {
+    const value = returns[periodKey];
+    if (value > 0) {
+      return {
+        icon: 'fas fa-arrow-up',
+        color: 'text-green-500',
+        text: 'Positive'
+      };
+    } else if (value < 0) {
+      return {
+        icon: 'fas fa-arrow-down',
+        color: 'text-red-500',
+        text: 'Negative'
+      };
+    }
     return {
-      icon: 'fas fa-arrow-down', 
-      color: 'text-red-500',
-      text: 'Negative'
+      icon: 'fas fa-minus',
+      color: 'text-gray-500',
+      text: 'Neutral'
     };
   }
-  return {
-    icon: 'fas fa-minus',
-    color: 'text-gray-500',
-    text: 'Neutral'
-  };
-}
 
-// Add current date property
-currentDate: Date = new Date();
+  // Add current date property
+  currentDate: Date = new Date();
 
-// Scroll to top method
-scrollToTop(): void {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  // Scroll to top method
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
