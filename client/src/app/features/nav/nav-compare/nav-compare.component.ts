@@ -168,34 +168,64 @@ export class NavCompareComponent implements OnInit {
     };
   }
 
+  private lastComparedCodes: string[] = [];
+  private isCompareInProgress = false;
+
   compareFunds() {
-    if (this.selectedSchemes.length >= 2 && this.selectedSchemes.length <= 4) {
-      this.isComparing = true;
-      const schemeCodes = this.selectedSchemes.map(scheme => scheme.schemeCode);
-
-      this.amfiService.getSchemeComparison(schemeCodes.join(',')).subscribe({
-        next: (comparisonResponse) => {
-          // Convert the response object to array
-          this.comparisonData = Object.values(comparisonResponse);
-          this.isComparisonVisible = true;
-          this.generateCharts();
-          this.isComparing = false;
-
-          // Scroll to comparison section
-          setTimeout(() => {
-            const element = document.getElementById('comparisonSection');
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }, 100);
-        },
-        error: (error) => {
-          console.error('Error comparing schemes:', error);
-          this.isComparing = false;
-        }
-      });
+    if (this.selectedSchemes.length < 2 || this.selectedSchemes.length > 4) {
+      return;
     }
+
+    const schemeCodes = this.selectedSchemes.map(s => s.schemeCode);
+
+    // 🔹 Prevent duplicate / same selection comparison
+    if (this.arraysEqual(this.lastComparedCodes, schemeCodes)) {
+      console.log('Same selection — skipping duplicate comparison call.');
+      return;
+    }
+
+    // 🔹 Prevent rapid duplicate clicks
+    if (this.isCompareInProgress) {
+      console.log('Comparison already in progress — please wait.');
+      return;
+    }
+
+    this.isCompareInProgress = true;
+    this.isComparing = true;
+
+    this.amfiService.getSchemeComparison(schemeCodes.join(',')).subscribe({
+      next: (comparisonResponse) => {
+        this.comparisonData = Object.values(comparisonResponse);
+        this.isComparisonVisible = true;
+        this.generateCharts();
+
+        // Cache last compared codes for same-selection detection
+        this.lastComparedCodes = [...schemeCodes];
+
+        // Smooth scroll
+        setTimeout(() => {
+          const element = document.getElementById('comparisonSection');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      },
+      error: (error) => {
+        console.error('Error comparing schemes:', error);
+      },
+      complete: () => {
+        this.isCompareInProgress = false;
+        this.isComparing = false;
+      }
+    });
   }
+
+  /** 🔸 Helper to check if two string arrays are identical */
+  private arraysEqual(arr1: string[], arr2: string[]): boolean {
+    if (arr1.length !== arr2.length) return false;
+    return arr1.every((code, index) => code === arr2[index]);
+  }
+
 
   removeScheme(scheme: Scheme): void {
     this.selectedSchemes = this.selectedSchemes.filter(s => s.schemeCode !== scheme.schemeCode);
@@ -215,15 +245,15 @@ export class NavCompareComponent implements OnInit {
   }
 
 
- getButtonText(): string {
-  return 'Compare Funds'; // Simplified text
-}
+  getButtonText(): string {
+    return 'Compare Funds'; // Simplified text
+  }
 
-getButtonSubtext(): string {
-  return `${this.selectedSchemes.length} selected`;
-}
+  getButtonSubtext(): string {
+    return `${this.selectedSchemes.length} selected`;
+  }
 
-// Or remove subtext entirely for ultra-compact version
+  // Or remove subtext entirely for ultra-compact version
 
   // getButtonClasses(): string {
   //   if (this.isComparing) {
@@ -340,22 +370,22 @@ getButtonSubtext(): string {
     return colors[index];
   }
 
-  getReturnTrend(returns: any, period: string): any {
-    const periods = ['yesterday', '_1week', '_1m', '_6m', '_1y'];
-    const currentIndex = periods.indexOf(period);
-    if (currentIndex > 0) {
-      const prevPeriod = periods[currentIndex - 1];
-      const currentReturn = returns[period];
-      const prevReturn = returns[prevPeriod];
+  // getReturnTrend(returns: any, period: string): any {
+  //   const periods = ['yesterday', '_1week', '_1m', '_6m', '_1y'];
+  //   const currentIndex = periods.indexOf(period);
+  //   if (currentIndex > 0) {
+  //     const prevPeriod = periods[currentIndex - 1];
+  //     const currentReturn = returns[period];
+  //     const prevReturn = returns[prevPeriod];
 
-      if (currentReturn > prevReturn) {
-        return { icon: 'fas fa-arrow-up', color: 'text-green-600', text: 'Improving' };
-      } else if (currentReturn < prevReturn) {
-        return { icon: 'fas fa-arrow-down', color: 'text-red-600', text: 'Declining' };
-      }
-    }
-    return { icon: 'fas fa-minus', color: 'text-gray-600', text: 'Stable' };
-  }
+  //     if (currentReturn > prevReturn) {
+  //       return { icon: 'fas fa-arrow-up', color: 'text-green-600', text: 'Improving' };
+  //     } else if (currentReturn < prevReturn) {
+  //       return { icon: 'fas fa-arrow-down', color: 'text-red-600', text: 'Declining' };
+  //     }
+  //   }
+  //   return { icon: 'fas fa-minus', color: 'text-gray-600', text: 'Stable' };
+  // }
 
   getTopRatedFunds(): number {
     return this.comparisonData.filter(fund => fund.crisilRank === 5).length;
@@ -368,4 +398,46 @@ getButtonSubtext(): string {
     );
     return `${bestFund.returns._1y.toFixed(2)}%`;
   }
+
+  // Add these helper methods to your component
+getRankText(rank: number): string {
+  const rankTexts: { [key: number]: string } = {
+    1: 'Poor',
+    2: 'Below Average', 
+    3: 'Average',
+    4: 'Good',
+    5: 'Excellent'
+  };
+  return rankTexts[rank] || 'Not Rated';
+}
+
+getReturnTrend(returns: any, periodKey: string): any {
+  const value = returns[periodKey];
+  if (value > 0) {
+    return {
+      icon: 'fas fa-arrow-up',
+      color: 'text-green-500',
+      text: 'Positive'
+    };
+  } else if (value < 0) {
+    return {
+      icon: 'fas fa-arrow-down', 
+      color: 'text-red-500',
+      text: 'Negative'
+    };
+  }
+  return {
+    icon: 'fas fa-minus',
+    color: 'text-gray-500',
+    text: 'Neutral'
+  };
+}
+
+// Add current date property
+currentDate: Date = new Date();
+
+// Scroll to top method
+scrollToTop(): void {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 }

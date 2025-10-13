@@ -2,15 +2,15 @@
 <app-breadcrumb [links]="[{ label: 'Nav', route: '/dashboard', icon: 'dashboard' }]" current="Scheme Compare">
 </app-breadcrumb>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+<div class="bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen py-8">
   <div class="container mx-auto px-4 max-w-7xl">
 
     <!-- Header -->
     <div class="flex items-center gap-3 mb-6">
       <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-2">
-        Mutual Fund Performance
+        Mutual Fund Comparision
         <mat-icon
-          matTooltip="This report shows NAV-based performance of mutual funds for the selected date range, along with ranking and change percentage."
+          matTooltip="View a side-by-side analysis of selected mutual funds, including NAV trends, percentage returns, and performance rankings over the selected period."
           matTooltipPosition="above"
           class="text-gray-400 text-base cursor-pointer hover:text-blue-500 transition-colors">
           info
@@ -28,10 +28,6 @@
           <!-- Fund Dropdown -->
           <div class="mb-6">
             <label class=" text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <div
-                class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                <i class="fas fa-chart-line text-white text-sm"></i>
-              </div>
               <span class="text-lg">Select Mutual Fund Schemes</span>
             </label>
 
@@ -87,7 +83,7 @@
 
             <div
               class="flex items-center gap-2 text-gray-600 bg-white px-3 py-2 rounded-full shadow-sm border border-gray-200">
-              <i class="fas fa-info-circle text-blue-500"></i>
+              <!-- <i class="fas fa-info-circle text-blue-500"></i> -->
               <span class="text-xs font-medium">Select 2–4 funds</span>
             </div>
           </div>
@@ -113,7 +109,7 @@
 
                   <button (click)="removeScheme(scheme)"
                     class="text-white/80 hover:text-white transition-colors duration-200 ml-1">
-                    <i class="fas fa-times text-xs"></i>
+                    <!-- <i class="fas fa-times text-xs"></i> -->
                   </button>
                 </span>
               </div>
@@ -121,7 +117,7 @@
               <ng-template #emptyState>
                 <div class="flex items-center justify-center h-full text-gray-400">
                   <div class="text-center">
-                    <i class="fas fa-arrow-up text-lg mb-1 block"></i>
+                    <!-- <i class="fas fa-arrow-up text-lg mb-1 block"></i> -->
                     <p class="text-sm font-medium">Select funds from dropdown</p>
                   </div>
                 </div>
@@ -173,87 +169,149 @@
       <p class="text-gray-600 mt-4">Loading schemes...</p>
     </div>
 
-    <!-- Comparison Section -->
-    <div *ngIf="isComparisonVisible" id="comparisonSection" class="space-y-12">
-      <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <i class="fas fa-table text-blue-600"></i>
-            Performance Comparison
-          </h2>
-          <div class="text-sm text-gray-500 bg-blue-50 px-4 py-2 rounded-full">
-            <i class="fas fa-info-circle mr-2"></i>
-            {{ comparisonData.length }} funds compared
+    <!-- Enhanced Comparison Section -->
+    <div *ngIf="isComparisonVisible" id="comparisonSection" class="space-y-8">
+      <!-- Header Section -->
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div class="flex flex-col lg:flex-row items-start justify-between">
+          <div class="flex items-center">
+            <h2 class="text-2xl font-bold text-gray-800">Performance Comparison</h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Table -->
+      <div
+        class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+        <!-- Table Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <!-- <i class="fas fa-analytics text-white text-xl"></i> -->
+              <h3 class="text-xl font-bold text-white">Detailed Performance Analysis</h3>
+            </div>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-          <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
-            <h3 class="text-xl font-bold text-white flex items-center gap-3">
-              <i class="fas fa-list-alt"></i>
-              Detailed Performance Analysis
-            </h3>
-          </div>
+        <!-- Table Content -->
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="comparisonData" class="w-full">
 
-          <div class="overflow-x-auto">
-            <table mat-table [dataSource]="comparisonData" class="w-full">
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef
-                  class="bg-gray-50 font-semibold text-gray-700 p-4 text-left cursor-pointer hover:bg-gray-100 transition-colors">
-                  Fund Name
-                </th>
-                <td mat-cell *matCellDef="let fund" class="p-4 border-r border-gray-100">
-                  <div class="flex items-center gap-3">
-                    <div [class]="'w-3 h-3 rounded-full ' + getFundColor(fund.name)"></div>
-                    <div class="min-w-0 flex-1">
-                      <div class="font-semibold text-gray-800 truncate">{{ fund.name }}</div>
-                    </div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="crisilRank">
-                <th mat-header-cell *matHeaderCellDef
-                  class="bg-gray-50 font-semibold text-gray-700 p-4 text-center hover:bg-gray-100">
-                  Rating
-                </th>
-                <td mat-cell *matCellDef="let fund" class="p-4 border-r border-gray-100 text-center">
-                  <span [class]="'px-3 py-2 rounded-full text-sm font-bold shadow-sm ' + getRankClass(fund.crisilRank)">
-                    {{ fund.crisilRank }}★
-                  </span>
-                </td>
-              </ng-container>
-
-              <ng-container *ngFor="let period of returnPeriods" [matColumnDef]="period.key">
-                <th mat-header-cell *matHeaderCellDef
-                  class="bg-gray-50 font-semibold text-gray-700 p-4 text-center hover:bg-gray-100">
-                  {{ period.label }}
-                </th>
-                <td mat-cell *matCellDef="let fund" class="p-4 text-center">
+            <!-- Fund Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef
+                class="bg-gray-50 font-bold text-gray-800 p-5 text-left border-r border-gray-200 sticky left-0 z-10">
+                <div class="flex items-center gap-2">
+                  <!-- <i class="fas fa-money-bill-wave text-blue-600 text-sm"></i> -->
+                  <span>Fund Name</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let fund; let i = index"
+                class="p-5 border-r border-gray-100 bg-white sticky left-0 z-10 group">
+                <div class="flex items-center gap-4">
                   <div class="flex flex-col items-center">
-                    <span [class]="getReturnClass(fund.returns[period.key]) + ' text-lg font-bold'">
-                      {{ formatReturn(fund.returns[period.key]) }}
+                    <span
+                      class="text-xs font-bold text-gray-500 bg-gray-100 w-6 h-6 rounded-full flex items-center justify-center">
+                      {{ i + 1 }}
                     </span>
                   </div>
-                </td>
-              </ng-container>
+                  <div [class]="'w-3 h-3 rounded-full flex-shrink-0 ' + getFundColor(fund.name)"></div>
+                  <div class="min-w-0 flex-1">
+                    <div class="font-bold text-gray-900 truncate hover:text-clip">{{ fund.name }}</div>
+                    <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                      <!-- <i class="fas fa-hashtag text-gray-400"></i> -->
+                      {{ fund.schemeCode }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                class="hover:bg-blue-50 border-b border-gray-100 even:bg-gray-50/50"></tr>
-            </table>
+            <!-- Crisil Rank Column -->
+            <ng-container matColumnDef="crisilRank">
+              <th mat-header-cell *matHeaderCellDef
+                class="bg-gray-50 font-bold text-gray-800 p-5 text-center border-r border-gray-200 hover:bg-gray-100 transition-colors cursor-help"
+                matTooltip="CRISIL Mutual Fund Rank">
+                <div class="flex items-center justify-center gap-2">
+                  <!-- <i class="fas fa-star text-yellow-500 text-sm"></i> -->
+                  <span>Rating</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let fund" class="p-5 border-r border-gray-100 text-center group">
+                <div class="flex flex-col items-center gap-2">
+                  <span
+                    [class]="'px-4 py-2.5 rounded-full text-sm font-bold shadow-sm transition-all duration-200 ' + getRankClass(fund.crisilRank) + ' group-hover:scale-105'">
+                    {{ fund.crisilRank }}★
+                  </span>
+                  <div class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                    {{ getRankText(fund.crisilRank) }}
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Returns Columns -->
+            <ng-container *ngFor="let period of returnPeriods; let last = last" [matColumnDef]="period.key">
+              <th mat-header-cell *matHeaderCellDef
+                class="bg-gray-50 font-bold text-gray-800 p-5 text-center border-r border-gray-200 hover:bg-gray-100 transition-colors cursor-help"
+                [matTooltip]="'Returns for ' + period.label">
+                <div class="flex flex-col items-center gap-1">
+                  <!-- <i class="fas fa-chart-line text-green-500 text-sm"></i> -->
+                  <span class="whitespace-nowrap">{{ period.label }}</span>
+                  <span class="text-xs font-normal text-gray-500">Returns</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let fund" class="p-5 text-center border-r border-gray-100 group"
+                [class.border-r-0]="last">
+                <div class="flex flex-col items-center gap-1">
+                  <span
+                    [class]="getReturnClass(fund.returns[period.key]) + ' text-lg font-bold px-3 py-2 rounded-lg transition-all duration-200 group-hover:scale-105'">
+                    {{ formatReturn(fund.returns[period.key]) }}
+                  </span>
+                  <div class="flex items-center gap-1 text-xs"
+                    *ngIf="getReturnTrend(fund.returns, period.key) as trend">
+                    <i [class]="trend.icon + ' ' + trend.color"></i>
+                    <span [class]="trend.color + ' font-medium'">{{ trend.text }}</span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="h-16 border-b border-gray-200"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+              class="h-20 border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 group">
+            </tr>
+          </table>
+        </div>
+
+        <!-- Table Footer -->
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div class="flex items-center justify-between text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+              <!-- <i class="fas fa-info-circle text-blue-500"></i> -->
+              <!-- <span>Last updated: {{ currentDate | date:'medium' }}</span> -->
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Positive Returns</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span>Negative Returns</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Charts -->
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <app-chart-card title="Returns Comparison (%)" type="bar" [data]="returnsChartData"
-          [options]="returnsChartOptions"></app-chart-card>
-        <app-chart-card title="Performance Trend Analysis" type="line" [data]="trendChartData"
-          [options]="trendChartOptions"></app-chart-card>
-      </div>
+    <!-- Charts -->
+    <div  class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <app-chart-card title="Returns Comparison (%)" type="bar" [data]="returnsChartData"
+        [options]="returnsChartOptions"></app-chart-card>
+      <app-chart-card title="Performance Trend Analysis" type="line" [data]="trendChartData"
+        [options]="trendChartOptions"></app-chart-card>
     </div>
   </div>
 </div>

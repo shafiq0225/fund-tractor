@@ -129,3 +129,39 @@ button {
 .mat-mdc-flat-button {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+/* Add to your component CSS */
+.sticky-table-header {
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 10;
+}
+
+/* Custom scrollbar for table */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
