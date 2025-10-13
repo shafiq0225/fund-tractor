@@ -20,5 +20,6 @@ public interface IAmfiRepository
     Task<List<string>> GetDistinctSchemeCodesAsync();
     //Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date);
     Task<NavHistoryResponse> GetNavHistoryAsync(NavHistoryRequest request);
+    Task<FundDataResponse> GetFundsBySchemeCodes(List<string> schemeCodes);
 
 }

@@ -1,6 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ApiResponse, PerformanceMetric, PerformanceSummary, SchemePerformance } from '../../../../shared/models/Amfi/nav-performance.model';
-import { MutualFundService } from '../../../../core/services/mutual-fund.service';
 import { CommonModule } from '@angular/common';
 import { PerformanceCardComponent } from "./performance-card/performance-card.component";
 import { NavChartComponent } from "./nav-chart/nav-chart.component";
@@ -23,7 +22,7 @@ export class SchemePerformanceComponent implements OnInit {
   error = '';
   lastUpdated = '';
   reportService = inject(AmfiService);
-  constructor(private mutualFundService: MutualFundService, private route: ActivatedRoute) { }
+  constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {

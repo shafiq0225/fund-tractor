@@ -4,6 +4,7 @@ using Core.DTOs;
 using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
@@ -12,12 +13,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 {
     public async Task<List<ApprovedData>> GetApprovedSchemesAsync()
         => await storeContext.ApprovedData.Where(x => x.IsApproved).ToListAsync();
-
-    //public async Task AddSchemeDetailsAsync(List<SchemeDetail> schemes)
-    //{
-    //    storeContext.SchemeDetails.AddRange(schemes);
-    //    await storeContext.SaveChangesAsync();
-    //}
 
     public async Task ImportAmfiDataAsync(string rawData)
     {
@@ -510,28 +505,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             .ToListAsync();
     }
 
-    //public async Task<NavRecord?> GetLatestNavBeforeDateAsync(string schemeCode, DateTime date)
-    //{
-    //    return await storeContext.SchemeDetails
-    //        .Where(x => x.SchemeCode == schemeCode &&
-    //                   x.Date <= date &&
-    //                   x.IsVisible)
-    //        .OrderByDescending(x => x.Date)
-    //        .Select(x => new NavRecord
-    //        {
-    //            Id = x.Id,
-    //            FundHouse = x.FundCode,
-    //            FundName = x.FundName,
-    //            SchemeCode = x.SchemeCode,
-    //            SchemeName = x.SchemeName,
-    //            IsActive = x.IsVisible ? 1 : 0,
-    //            NavDate = x.Date,
-    //            NavValue = x.Nav
-    //        })
-    //        .AsNoTracking()
-    //        .FirstOrDefaultAsync();
-    //}
-
     public async Task<NavHistoryResponse> GetNavHistoryAsync(NavHistoryRequest request)
     {
         try
@@ -773,4 +746,158 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         return schemesWithRank;
     }
+
+    public async Task<FundDataResponse> GetFundsBySchemeCodes(List<string> schemeCodes)
+    {
+        var response = new FundDataResponse();
+
+        foreach (var schemeCode in schemeCodes)
+        {
+            var fundData = await GetFundBySchemeCode(schemeCode);
+            foreach (var fund in fundData)
+            {
+                response[fund.Key] = fund.Value;
+            }
+        }
+
+        return response;
+    }
+    public async Task<FundDataResponse> GetFundBySchemeCode(string schemeCode)
+    {
+        //var cacheKey = $"Fund_{schemeCode}";
+
+        var navData = await storeContext.SchemeDetails
+            .Where(n => n.SchemeCode == schemeCode && n.IsVisible)
+            .OrderByDescending(n => n.Date)
+            .Take(365) // Last year data for calculations
+            .ToListAsync();
+
+        if (!navData.Any())
+        {
+            return new FundDataResponse();
+        }
+
+        var fundName = navData.First().SchemeName;
+        var response = new FundDataResponse
+        {
+            [fundName] = CalculateFundResponse(navData, fundName)
+        };
+
+        return response;
+    }
+    private FundResponse CalculateFundResponse(List<SchemeDetail> navData, string fundName)
+    {
+        //if (navData.Count < 30)
+        //{
+        //    throw new InvalidOperationException("Insufficient data for calculations");
+        //}
+
+        var latestNav = navData.First();
+        var sortedData = navData.OrderBy(n => n.Date).ToList();
+
+        // Calculate returns
+        var returns = new FundReturns
+        {
+            Yesterday = Math.Round(CalculateReturn(sortedData, 1), 2),
+            _1week = Math.Round(CalculateReturn(sortedData, 7), 2),
+            _1m = Math.Round(CalculateReturn(sortedData, 30), 2),
+            _6m = Math.Round(CalculateReturn(sortedData, 180), 2),
+            _1y = Math.Round(CalculateReturn(sortedData, 365), 2)
+        };
+
+        // Calculate monthly returns for the last 12 months
+        var monthlyReturns = CalculateMonthlyReturns(sortedData);
+
+        // Generate random Crisil rank (4 or 5 for demo)
+        var random = new Random();
+        var crisilRank = random.Next(4, 6); // 4 or 5
+
+        return new FundResponse
+        {
+            Name = fundName,
+            CrisilRank = crisilRank,
+            Returns = returns,
+            MonthlyReturns = monthlyReturns
+        };
+    }
+    private decimal CalculateReturn(List<SchemeDetail> sortedData, int daysBack)
+    {
+        var latestDate = sortedData.Last().Date;
+        var targetDate = latestDate.AddDays(-daysBack);
+
+        var latestNav = sortedData.Last().Nav;
+        var historicalNav = sortedData
+            .Where(n => n.Date <= targetDate)
+            .OrderByDescending(n => n.Date)
+            .FirstOrDefault()?.Nav;
+
+        if (historicalNav == null)
+        {
+            historicalNav = sortedData
+                .OrderBy(n => n.Date)
+                .FirstOrDefault()?.Nav;
+        }
+
+        if (historicalNav == null || historicalNav == 0 || latestNav == 0)
+            return 0;
+
+        var returnValue = ((latestNav - historicalNav.Value) / historicalNav.Value) * 100;
+        return Math.Round(returnValue, 4); // Keep more precision for intermediate calculations
+    }
+    private List<decimal> CalculateMonthlyReturns(List<SchemeDetail> sortedData)
+    {
+        var monthlyReturns = new List<decimal>();
+        var currentDate = sortedData.Last().Date;
+
+        for (int i = 0; i < 12; i++)
+        {
+            var monthStart = currentDate.AddMonths(-i).Date;
+            var monthEnd = monthStart.AddMonths(1).AddDays(-1).Date;
+
+            // Find start NAV - use oldest available in the first week
+            var startNav = sortedData
+                .Where(n => n.Date >= monthStart && n.Date <= monthStart.AddDays(7))
+                .OrderBy(n => n.Date)
+                .FirstOrDefault()?.Nav;
+
+            // If no record found in first week, use the closest available record before month end
+            if (startNav == null)
+            {
+                startNav = sortedData
+                    .Where(n => n.Date <= monthStart)
+                    .OrderByDescending(n => n.Date)
+                    .FirstOrDefault()?.Nav;
+            }
+
+            // Find end NAV - use newest available in the last week
+            var endNav = sortedData
+                .Where(n => n.Date >= monthEnd.AddDays(-7) && n.Date <= monthEnd)
+                .OrderByDescending(n => n.Date)
+                .FirstOrDefault()?.Nav;
+
+            // If no record found in last week, use the closest available record before month end
+            if (endNav == null)
+            {
+                endNav = sortedData
+                    .Where(n => n.Date <= monthEnd)
+                    .OrderByDescending(n => n.Date)
+                    .FirstOrDefault()?.Nav;
+            }
+
+            if (startNav != null && endNav != null && startNav > 0)
+            {
+                var monthlyReturn = ((endNav.Value - startNav.Value) / startNav.Value) * 100;
+                monthlyReturns.Add(Math.Round(monthlyReturn, 2));
+            }
+            else
+            {
+                monthlyReturns.Add(0);
+            }
+        }
+
+        monthlyReturns.Reverse(); // Order from oldest to newest
+        return monthlyReturns;
+    }
+
+
 }

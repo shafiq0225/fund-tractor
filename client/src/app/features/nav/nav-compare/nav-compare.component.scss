@@ -1,0 +1,131 @@
+/* Enhanced Select Panel */
+.enhanced-select-panel {
+  border-radius: 12px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.1) !important;
+  margin-top: 8px !important;
+}
+
+.enhanced-select-panel .mat-option {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.enhanced-select-panel .mat-option:last-child {
+  border-bottom: none !important;
+}
+
+.fund-option.mat-option {
+  height: auto !important;
+  min-height: 64px !important;
+}
+
+/* Enhanced Material Form Field */
+.mat-form-field-appearance-fill .mat-form-field-flex {
+  background-color: rgba(249, 250, 251, 0.8) !important;
+  border-radius: 12px !important;
+  padding: 0.75em 1em 0.5em !important;
+  border: 2px solid transparent !important;
+  transition: all 0.3s ease !important;
+}
+
+.mat-form-field-appearance-fill .mat-form-field-flex:hover {
+  background-color: rgba(239, 246, 255, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.mat-form-field-appearance-fill.mat-focused .mat-form-field-flex {
+  background-color: rgba(239, 246, 255, 0.9) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Smooth animations */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Custom shadow utilities */
+.shadow-3xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+/* Stable Select Panel */
+.stable-select-panel {
+  border-radius: 12px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.1) !important;
+  margin-top: 8px !important;
+  transform: translateY(0) !important;
+}
+
+/* Fixed height for form field to prevent layout shifts */
+.mat-form-field {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.mat-form-field-appearance-fill .mat-form-field-flex {
+  background-color: rgba(249, 250, 251, 0.8) !important;
+  border-radius: 12px !important;
+  padding: 0.75em 1em 0.5em !important;
+  border: 2px solid transparent !important;
+  transition: all 0.3s ease !important;
+  min-height: 56px;
+  transform: translateZ(0);
+}
+
+/* Prevent any transform animations that might cause jumping */
+.mat-form-field-appearance-fill .mat-form-field-infix {
+  transform: translateZ(0);
+}
+
+/* Smooth scroll for chips container */
+.chips-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
+}
+
+.chips-scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chips-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.chips-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+.chips-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Ensure stable layout during animations */
+.stable-layout {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+}
+
+/* Add to your global styles */
+button {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.mat-badge-content {
+  font-weight: 700;
+}
+
+/* Smooth material overrides */
+.mat-mdc-flat-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}

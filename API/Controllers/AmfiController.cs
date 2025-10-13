@@ -475,79 +475,79 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("schemes/compare")]
-        public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)
-        {
-            try
-            {
-                // Validate inputs
-                if (string.IsNullOrWhiteSpace(schemeCode1) || string.IsNullOrWhiteSpace(schemeCode2))
-                {
-                    return BadRequest(new { Message = "Both schemeCode1 and schemeCode2 must be provided." });
-                }
+        //[HttpGet("schemes/compare")]
+        //public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)
+        //{
+        //    try
+        //    {
+        //        // Validate inputs
+        //        if (string.IsNullOrWhiteSpace(schemeCode1) || string.IsNullOrWhiteSpace(schemeCode2))
+        //        {
+        //            return BadRequest(new { Message = "Both schemeCode1 and schemeCode2 must be provided." });
+        //        }
 
-                if (schemeCode1.Trim().Equals(schemeCode2.Trim(), StringComparison.OrdinalIgnoreCase))
-                {
-                    return BadRequest(new { Message = "Comparison not allowed: schemeCode1 and schemeCode2 cannot be the same." });
-                }
+        //        if (schemeCode1.Trim().Equals(schemeCode2.Trim(), StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            return BadRequest(new { Message = "Comparison not allowed: schemeCode1 and schemeCode2 cannot be the same." });
+        //        }
 
-                var today = DateTime.Today;
-                var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
+        //        var today = DateTime.Today;
+        //        var validDates = AmfiDataHelper.GetWorkingDates(today, 10);
 
-                if (validDates == null || validDates.Count == 0)
-                {
-                    return BadRequest(new { Message = "No valid trading days found for comparison." });
-                }
+        //        if (validDates == null || validDates.Count == 0)
+        //        {
+        //            return BadRequest(new { Message = "No valid trading days found for comparison." });
+        //        }
 
-                var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(validDates.Min(), validDates.Max());
+        //        var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(validDates.Min(), validDates.Max());
 
-                if (!success || navs == null)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new
-                    {
-                        Message = message ?? "Failed to retrieve NAV records."
-                    });
-                }
+        //        if (!success || navs == null)
+        //        {
+        //            return StatusCode(StatusCodes.Status500InternalServerError, new
+        //            {
+        //                Message = message ?? "Failed to retrieve NAV records."
+        //            });
+        //        }
 
-                var scheme1Records = navs.Where(x => x.SchemeCode == schemeCode1).ToList();
-                var scheme2Records = navs.Where(x => x.SchemeCode == schemeCode2).ToList();
+        //        var scheme1Records = navs.Where(x => x.SchemeCode == schemeCode1).ToList();
+        //        var scheme2Records = navs.Where(x => x.SchemeCode == schemeCode2).ToList();
 
-                if (!scheme1Records.Any() || !scheme2Records.Any())
-                {
-                    return NotFound(new { Message = "One or both scheme codes do not exist or have no NAV records." });
-                }
+        //        if (!scheme1Records.Any() || !scheme2Records.Any())
+        //        {
+        //            return NotFound(new { Message = "One or both scheme codes do not exist or have no NAV records." });
+        //        }
 
-                var response = new
-                {
-                    Scheme1 = new
-                    {
-                        SchemeCode = schemeCode1,
-                        SchemeName = scheme1Records.FirstOrDefault()?.SchemeName ?? "Unknown",
-                        Yesterday = AmfiDataHelper.CalculateChange(scheme1Records, 1),
-                        LastWeek = AmfiDataHelper.CalculateChange(scheme1Records, 5),
-                        Last10Days = AmfiDataHelper.CalculateChange(scheme1Records, 10)
-                    },
-                    Scheme2 = new
-                    {
-                        SchemeCode = schemeCode2,
-                        SchemeName = scheme2Records.FirstOrDefault()?.SchemeName ?? "Unknown",
-                        Yesterday = AmfiDataHelper.CalculateChange(scheme2Records, 1),
-                        LastWeek = AmfiDataHelper.CalculateChange(scheme2Records, 5),
-                        Last10Days = AmfiDataHelper.CalculateChange(scheme2Records, 10)
-                    }
-                };
+        //        var response = new
+        //        {
+        //            Scheme1 = new
+        //            {
+        //                SchemeCode = schemeCode1,
+        //                SchemeName = scheme1Records.FirstOrDefault()?.SchemeName ?? "Unknown",
+        //                Yesterday = AmfiDataHelper.CalculateChange(scheme1Records, 1),
+        //                LastWeek = AmfiDataHelper.CalculateChange(scheme1Records, 5),
+        //                Last10Days = AmfiDataHelper.CalculateChange(scheme1Records, 10)
+        //            },
+        //            Scheme2 = new
+        //            {
+        //                SchemeCode = schemeCode2,
+        //                SchemeName = scheme2Records.FirstOrDefault()?.SchemeName ?? "Unknown",
+        //                Yesterday = AmfiDataHelper.CalculateChange(scheme2Records, 1),
+        //                LastWeek = AmfiDataHelper.CalculateChange(scheme2Records, 5),
+        //                Last10Days = AmfiDataHelper.CalculateChange(scheme2Records, 10)
+        //            }
+        //        };
 
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Message = "Unexpected error occurred while comparing schemes.",
-                    Details = ex.Message
-                });
-            }
-        }
+        //        return Ok(response);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, new
+        //        {
+        //            Message = "Unexpected error occurred while comparing schemes.",
+        //            Details = ex.Message
+        //        });
+        //    }
+        //}
 
         [HttpGet("schemeslist")]
         public async Task<IActionResult> GetSchemes()
@@ -642,6 +642,48 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [HttpGet("schemes/compare")]
+        public async Task<ActionResult<FundDataResponse>> GetFundsBySchemeCodes([FromQuery] string schemeCodes)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schemeCodes))
+                {
+                    return BadRequest("Scheme codes are required");
+                }
+
+                var codes = schemeCodes.Split(',')
+                    .Select(code => code.Trim())
+                    .Where(code => !string.IsNullOrWhiteSpace(code))
+                    .ToList();
+
+                if (!codes.Any())
+                {
+                    return BadRequest("No valid scheme codes provided");
+                }
+
+                // Validate minimum and maximum scheme codes
+                if (codes.Count < 2)
+                {
+                    return BadRequest("Minimum 2 scheme codes are required for comparison");
+                }
+
+                if (codes.Count > 4)
+                {
+                    return BadRequest("Maximum 4 scheme codes allowed per request");
+                }
+
+                var result = await amfiRepository.GetFundsBySchemeCodes(codes);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, "Error retrieving funds data for scheme codes: {SchemeCodes}", schemeCodes);
+                return StatusCode(500, "An error occurred while processing your request");
+            }
+        }
+
 
     }
 }
