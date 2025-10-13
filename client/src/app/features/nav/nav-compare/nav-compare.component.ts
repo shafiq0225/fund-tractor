@@ -244,27 +244,6 @@ export class NavCompareComponent implements OnInit {
     }
   }
 
-
-  getButtonText(): string {
-    return 'Compare Funds'; // Simplified text
-  }
-
-  getButtonSubtext(): string {
-    return `${this.selectedSchemes.length} selected`;
-  }
-
-  // Or remove subtext entirely for ultra-compact version
-
-  // getButtonClasses(): string {
-  //   if (this.isComparing) {
-  //     return 'bg-blue-500 cursor-wait shadow-inner';
-  //   }
-  //   if (this.selectedSchemes.length >= 2 && this.selectedSchemes.length <= 4) {
-  //     return 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transform hover:scale-105';
-  //   }
-  //   return 'bg-gray-400 cursor-not-allowed shadow';
-  // }
-
   private generateCharts() {
     this.generateReturnsChart();
     this.generateTrendChart();
@@ -352,15 +331,6 @@ export class NavCompareComponent implements OnInit {
     return value >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
   }
 
-  getRankClass(rank: number): string {
-    switch (rank) {
-      case 1: return 'bg-green-500 text-white';
-      case 2: return 'bg-blue-500 text-white';
-      case 3: return 'bg-yellow-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  }
-
   getFundColor(schemeName: string): string {
     const colors = [
       'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500',
@@ -370,73 +340,100 @@ export class NavCompareComponent implements OnInit {
     return colors[index];
   }
 
-  // getReturnTrend(returns: any, period: string): any {
-  //   const periods = ['yesterday', '_1week', '_1m', '_6m', '_1y'];
-  //   const currentIndex = periods.indexOf(period);
-  //   if (currentIndex > 0) {
-  //     const prevPeriod = periods[currentIndex - 1];
-  //     const currentReturn = returns[period];
-  //     const prevReturn = returns[prevPeriod];
-
-  //     if (currentReturn > prevReturn) {
-  //       return { icon: 'fas fa-arrow-up', color: 'text-green-600', text: 'Improving' };
-  //     } else if (currentReturn < prevReturn) {
-  //       return { icon: 'fas fa-arrow-down', color: 'text-red-600', text: 'Declining' };
-  //     }
-  //   }
-  //   return { icon: 'fas fa-minus', color: 'text-gray-600', text: 'Stable' };
-  // }
-
-  getTopRatedFunds(): number {
-    return this.comparisonData.filter(fund => fund.crisilRank === 5).length;
-  }
-
-  getBestPerformingFund(): string {
-    if (this.comparisonData.length === 0) return 'N/A';
-    const bestFund = this.comparisonData.reduce((prev, current) =>
-      (prev.returns._1y > current.returns._1y) ? prev : current
-    );
-    return `${bestFund.returns._1y.toFixed(2)}%`;
-  }
-
-  // Add these helper methods to your component
-  getRankText(rank: number): string {
-    const rankTexts: { [key: number]: string } = {
-      4: 'Poor',
-      3: 'Average',
-      2: 'Good',
-      1: 'Excellent'
-    };
-    return rankTexts[rank] || 'Not Rated';
-  }
-
   getReturnTrend(returns: any, periodKey: string): any {
     const value = returns[periodKey];
-    if (value > 0) {
+
+    if (value > 5) {
       return {
-        icon: 'fas fa-arrow-up',
+        icon: 'north', // Straight up arrow
+        color: 'text-green-600 font-bold',
+        text: 'Very Positive'
+      };
+    } else if (value > 0) {
+      return {
+        icon: 'north_east', // Diagonal up arrow
         color: 'text-green-500',
         text: 'Positive'
       };
+    } else if (value < -5) {
+      return {
+        icon: 'south', // Straight down arrow
+        color: 'text-red-600 font-bold',
+        text: 'Very Negative'
+      };
     } else if (value < 0) {
       return {
-        icon: 'fas fa-arrow-down',
+        icon: 'south_east', // Diagonal down arrow
         color: 'text-red-500',
         text: 'Negative'
       };
     }
     return {
-      icon: 'fas fa-minus',
+      icon: 'horizontal_rule',
       color: 'text-gray-500',
       text: 'Neutral'
     };
   }
 
-  // Add current date property
-  currentDate: Date = new Date();
-
   // Scroll to top method
   scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  getRankIcon(rank: number): string {
+    const icons: { [key: number]: string } = {
+      1: 'military_tech', // Trophy
+      2: 'workspace_premium', // Medal
+      3: 'emoji_events', // Award
+      4: 'star', // Star
+      5: 'flag' // Flag
+    };
+    return icons[rank] || 'circle';
+  }
+
+  getTrendIcon(returnValue: number): string {
+    if (returnValue > 5) return 'trending_up';
+    if (returnValue > 0) return 'north_east';
+    if (returnValue < 0) return 'south_east';
+    return 'remove';
+  }
+
+  getReturnColor(returnValue: number): string {
+    if (returnValue > 5) return 'text-green-600 font-bold';
+    if (returnValue > 0) return 'text-green-500';
+    if (returnValue < 0) return 'text-red-500';
+    return 'text-gray-500';
+  }
+
+  getRankClass(rank: number): string {
+    const rankClasses: { [key: number]: string } = {
+      1: 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow',
+      2: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow',
+      3: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow',
+      4: 'bg-gradient-to-r from-gray-400 to-gray-500 text-white',
+      5: 'bg-gradient-to-r from-red-400 to-red-500 text-white'
+    };
+    return rankClasses[rank] || 'bg-gray-200 text-gray-700';
+  }
+
+  getRankText(rank: number): string {
+    const rankTexts: { [key: number]: string } = {
+      1: 'Top',
+      2: 'Excellent',
+      3: 'Good',
+      4: 'Average'
+    };
+    return rankTexts[rank] || `Rank ${rank}`;
+  }
+
+  getRankTextClass(rank: number): string {
+    const textClasses: { [key: number]: string } = {
+      1: 'bg-amber-50 text-amber-600',
+      2: 'bg-blue-50 text-blue-600',
+      3: 'bg-green-50 text-green-600',
+      4: 'bg-gray-50 text-gray-600',
+      5: 'bg-red-50 text-red-600'
+    };
+    return textClasses[rank] || 'bg-gray-50 text-gray-500';
   }
 }
