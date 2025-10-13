@@ -249,38 +249,38 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
     }
 
-    public async Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
-    {
-        if (startDate > endDate)
-        {
-            return (false, "Start date cannot be later than end date.", null);
-        }
+    //public async Task<(bool Success, string Message, List<SchemeDetail>? Data)> GetSchemesByDateRangeAsync(DateTime startDate, DateTime endDate)
+    //{
+    //    if (startDate > endDate)
+    //    {
+    //        return (false, "Start date cannot be later than end date.", null);
+    //    }
 
-        try
-        {
-            var result = await storeContext.SchemeDetails
-                .Where(x => x.Date >= startDate && x.Date <= endDate && x.IsVisible)
-                .OrderBy(x => x.Date)
-                .ToListAsync();
+    //    try
+    //    {
+    //        var result = await storeContext.SchemeDetails
+    //            .Where(x => x.Date >= startDate && x.Date <= endDate && x.IsVisible)
+    //            .OrderBy(x => x.Date)
+    //            .ToListAsync();
 
-            if (result.Count == 0)
-                return (false, "No records found for the given date range.", new List<SchemeDetail>());
+    //        if (result.Count == 0)
+    //            return (false, "No records found for the given date range.", new List<SchemeDetail>());
 
-            return (true, "Records retrieved successfully.", result);
-        }
-        catch (OperationCanceledException)
-        {
-            return (false, "The request was canceled before completion.", null);
-        }
-        catch (DbUpdateException dbEx)
-        {
-            return (false, $"Database error occurred: {dbEx.InnerException?.Message ?? dbEx.Message}", null);
-        }
-        catch (Exception ex)
-        {
-            return (false, $"Unexpected error: {ex.Message}", null);
-        }
-    }
+    //        return (true, "Records retrieved successfully.", result);
+    //    }
+    //    catch (OperationCanceledException)
+    //    {
+    //        return (false, "The request was canceled before completion.", null);
+    //    }
+    //    catch (DbUpdateException dbEx)
+    //    {
+    //        return (false, $"Database error occurred: {dbEx.InnerException?.Message ?? dbEx.Message}", null);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return (false, $"Unexpected error: {ex.Message}", null);
+    //    }
+    //}
 
     public async Task ImportAmfiDataFromExcelAsync(byte[] excelData)
     {
@@ -687,7 +687,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         return ((currentNav - baseNav) / baseNav) * 100;
     }
 
-    // Keep your existing helper methods
     private (DateTime startDate, DateTime endDate) CalculateDateRange(DateTime currentDate)
     {
         var endDate = GetLastTradingDate(currentDate);
@@ -837,7 +836,6 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
         }
     }
 
-    // Keep your existing CalculateReturn and CalculateMonthlyReturns methods as they are
     private decimal CalculateReturn(List<SchemeDetail> sortedData, int daysBack)
     {
         var latestDate = sortedData.Last().Date;

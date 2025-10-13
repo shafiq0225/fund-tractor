@@ -12,46 +12,46 @@ namespace API.Controllers
     public class AmfiController(IAmfiRepository amfiRepository) : ControllerBase
     {
         // clean up is required
-        [HttpPost("importfile")]
-        public async Task<IActionResult> Import(IFormFile rawdata)
-        {
-            if (rawdata == null || rawdata.Length == 0)
-                return BadRequest(new { Message = "No file uploaded." });
+        //[HttpPost("importfile")]
+        //public async Task<IActionResult> Import(IFormFile rawdata)
+        //{
+        //    if (rawdata == null || rawdata.Length == 0)
+        //        return BadRequest(new { Message = "No file uploaded." });
 
-            var extension = Path.GetExtension(rawdata.FileName).ToLowerInvariant();
-            if (extension != ".txt")
-                return BadRequest(new { Message = "Only .txt files are allowed." });
+        //    var extension = Path.GetExtension(rawdata.FileName).ToLowerInvariant();
+        //    if (extension != ".txt")
+        //        return BadRequest(new { Message = "Only .txt files are allowed." });
 
-            try
-            {
-                string content;
-                using (var reader = new StreamReader(rawdata.OpenReadStream()))
-                {
-                    content = await reader.ReadToEndAsync();
-                }
+        //    try
+        //    {
+        //        string content;
+        //        using (var reader = new StreamReader(rawdata.OpenReadStream()))
+        //        {
+        //            content = await reader.ReadToEndAsync();
+        //        }
 
-                if (string.IsNullOrWhiteSpace(content))
-                    return BadRequest(new { Message = "Uploaded file is empty." });
+        //        if (string.IsNullOrWhiteSpace(content))
+        //            return BadRequest(new { Message = "Uploaded file is empty." });
 
-                await amfiRepository.ImportAmfiDataAsync(content);
+        //        await amfiRepository.ImportAmfiDataAsync(content);
 
-                return Ok(new { Message = "Imported successfully" });
-            }
-            catch (FormatException fex)
-            {
-                return BadRequest(new { Message = "File contains invalid data format.", Details = fex.Message });
-            }
-            catch (DbUpdateException dbex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { Message = "Database error during import.", Details = dbex.InnerException?.Message ?? dbex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { Message = "An unexpected error occurred during import.", Details = ex.Message });
-            }
-        }
+        //        return Ok(new { Message = "Imported successfully" });
+        //    }
+        //    catch (FormatException fex)
+        //    {
+        //        return BadRequest(new { Message = "File contains invalid data format.", Details = fex.Message });
+        //    }
+        //    catch (DbUpdateException dbex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError,
+        //            new { Message = "Database error during import.", Details = dbex.InnerException?.Message ?? dbex.Message });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError,
+        //            new { Message = "An unexpected error occurred during import.", Details = ex.Message });
+        //    }
+        //}
 
         [HttpPost("import/url")]
         public async Task<IActionResult> DownloadAndSaveFromUrlAsync([FromBody] ImportUrlRequest fileUrl)
@@ -118,18 +118,18 @@ namespace API.Controllers
         }
 
         // clean up is required
-        [HttpPost("import-excel")]
-        public async Task<IActionResult> ImportExcel(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-                return BadRequest("No file uploaded.");
+        //[HttpPost("import-excel")]
+        //public async Task<IActionResult> ImportExcel(IFormFile file)
+        //{
+        //    if (file == null || file.Length == 0)
+        //        return BadRequest("No file uploaded.");
 
-            using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream);
+        //    using var memoryStream = new MemoryStream();
+        //    await file.CopyToAsync(memoryStream);
 
-            await amfiRepository.ImportAmfiDataFromExcelAsync(memoryStream.ToArray());
-            return Ok(new { message = "AMFI Excel data imported successfully." });
-        }
+        //    await amfiRepository.ImportAmfiDataFromExcelAsync(memoryStream.ToArray());
+        //    return Ok(new { message = "AMFI Excel data imported successfully." });
+        //}
 
         [HttpPost("import/file")]
         public async Task<IActionResult> UploadAndSaveFromFile(IFormFile file)
@@ -422,58 +422,58 @@ namespace API.Controllers
         //    }
         //}
 
-        [HttpGet("schemes")]
-        public async Task<IActionResult> GetSchemes([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
-        {
-            try
-            {
-                var workingResult = AmfiDataHelper.GetWorkingDates(startDate, endDate);
+        //[HttpGet("schemes")]
+        //public async Task<IActionResult> GetSchemes([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        //{
+        //    try
+        //    {
+        //        var workingResult = AmfiDataHelper.GetWorkingDates(startDate, endDate);
 
-                if (!workingResult.Success)
-                {
-                    return Ok(new SchemeResponseDto
-                    {
-                        StartDate = startDate,
-                        EndDate = endDate,
-                        Message = workingResult.Message ?? "No working days available in the selected range",
-                        Schemes = new List<SchemeDto>()
-                    });
-                }
+        //        if (!workingResult.Success)
+        //        {
+        //            return Ok(new SchemeResponseDto
+        //            {
+        //                StartDate = startDate,
+        //                EndDate = endDate,
+        //                Message = workingResult.Message ?? "No working days available in the selected range",
+        //                Schemes = new List<SchemeDto>()
+        //            });
+        //        }
 
-                // Repository call wrapped
-                var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(
-                    workingResult.StartWorkingDate,
-                    workingResult.EndWorkingDate
-                );
+        //        // Repository call wrapped
+        //        var (success, message, navs) = await amfiRepository.GetSchemesByDateRangeAsync(
+        //            workingResult.StartWorkingDate,
+        //            workingResult.EndWorkingDate
+        //        );
 
-                if (!success || navs == null)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new
-                    {
-                        Error = "Failed to fetch schemes from repository.",
-                        Details = message
-                    });
-                }
+        //        if (!success || navs == null)
+        //        {
+        //            return StatusCode(StatusCodes.Status500InternalServerError, new
+        //            {
+        //                Error = "Failed to fetch schemes from repository.",
+        //                Details = message
+        //            });
+        //        }
 
-                var schemes = SchemeBuilder.BuildSchemeHistory(navs, workingResult.Dates, startDate, endDate);
+        //        var schemes = SchemeBuilder.BuildSchemeHistory(navs, workingResult.Dates, startDate, endDate);
 
-                return Ok(new SchemeResponseDto
-                {
-                    StartDate = workingResult.StartWorkingDate,
-                    EndDate = workingResult.EndWorkingDate,
-                    Schemes = schemes,
-                    Message = string.IsNullOrEmpty(workingResult.Message) ? "Success" : workingResult.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Error = "An unexpected error occurred while fetching schemes.",
-                    Details = ex.Message
-                });
-            }
-        }
+        //        return Ok(new SchemeResponseDto
+        //        {
+        //            StartDate = workingResult.StartWorkingDate,
+        //            EndDate = workingResult.EndWorkingDate,
+        //            Schemes = schemes,
+        //            Message = string.IsNullOrEmpty(workingResult.Message) ? "Success" : workingResult.Message
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, new
+        //        {
+        //            Error = "An unexpected error occurred while fetching schemes.",
+        //            Details = ex.Message
+        //        });
+        //    }
+        //}
 
         //[HttpGet("schemes/compare")]
         //public async Task<IActionResult> CompareSchemes([FromQuery] string schemeCode1, [FromQuery] string schemeCode2)

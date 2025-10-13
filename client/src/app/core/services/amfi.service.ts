@@ -68,7 +68,6 @@ export class AmfiService {
     return this.http.get<ApiResponse<SchemePerformance>>(this.baseUrl + `schemeperformance?schemecode=${schemeCode}`);
   }
 
-  // Add this method to your existing amfi.service.ts
   getSchemeComparison(schemeCodes: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}schemes/compare?schemeCodes=${schemeCodes}`);
   }
