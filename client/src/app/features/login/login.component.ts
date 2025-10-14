@@ -65,6 +65,9 @@ export class LoginComponent implements OnInit {
     this.initForm();
   }
 
+  // Add to your login.component.ts
+
+  // Update the form initialization
   initForm(): void {
     if (this.isSignup) {
       // Signup form
@@ -72,6 +75,7 @@ export class LoginComponent implements OnInit {
         firstName: ['', Validators.required],
         lastName: ['', Validators.required],
         email: ['', [Validators.required, Validators.email]],
+        panNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
         password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', Validators.required],
         agreeToTerms: [false, Validators.requiredTrue]
@@ -83,6 +87,24 @@ export class LoginComponent implements OnInit {
         password: ['password', Validators.required]
       });
     }
+  }
+
+  // Add PAN input formatting method
+  onPanInput(event: any): void {
+    const input = event.target;
+    const value = input.value.toUpperCase();
+    input.value = value;
+
+    // Update form control value
+    this.loginForm.patchValue({
+      panNumber: value
+    });
+  }
+
+  // Add method to validate PAN format
+  validatePanFormat(pan: string): boolean {
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    return panRegex.test(pan);
   }
 
   toggleMode(): void {
