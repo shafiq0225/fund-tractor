@@ -1,11 +1,10 @@
 import { ApplicationRef, Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { LayoutComponent } from "./layout/layout.component";
 import { first } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [LayoutComponent, RouterOutlet],
+  imports: [ RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
