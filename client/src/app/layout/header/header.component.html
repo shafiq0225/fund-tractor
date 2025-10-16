@@ -1,22 +1,101 @@
-<!-- core/layout/header/header.component.html -->
-<header class="bg-white shadow-sm border-b">
+<header class="bg-white shadow-sm border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-            <!-- Left side - Could be empty or have page title -->
+            <!-- Logo and Brand -->
             <div class="flex items-center">
-                <h1 class="text-xl font-semibold text-gray-900">Dashboard</h1>
+                <!-- <div class="flex-shrink-0 flex items-center">
+                    <div
+                        class="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                        <span class="text-white font-bold text-sm">FT</span>
+                    </div>
+                    <span
+                        class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        FundTrackr
+                    </span>
+                </div> -->
+
+                <!-- Navigation Links (only show when logged in) -->
+                <nav *ngIf="isLoggedIn" class="hidden md:ml-8 md:flex space-x-8">
+                    <a routerLink="/dashboard"
+                        class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
+                        Dashboard
+                    </a>
+                    <a routerLink="/investments"
+                        class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
+                        Investments
+                    </a>
+                    <a routerLink="/portfolio"
+                        class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
+                        Portfolio
+                    </a>
+                    <a routerLink="/profile"
+                        class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
+                        Profile
+                    </a>
+                </nav>
             </div>
-            
-            <!-- Right side - User menu -->
+
+            <!-- Right Section -->
             <div class="flex items-center space-x-4">
-                <span class="text-gray-700">Welcome, User</span>
-                <button 
-                    (click)="logout()"
-                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-200"
-                >
-                    Logout
-                </button>
+                <!-- User Info when logged in -->
+                <div *ngIf="isLoggedIn" class="flex items-center space-x-4">
+                    <!-- User Welcome Message -->
+                    <div class="hidden sm:flex flex-col text-right">
+                        <span class="text-sm font-medium text-slate-800">Welcome back!</span>
+                        <span class="text-xs text-slate-500">{{ userEmail }}</span>
+                    </div>
+
+                    <!-- User Avatar -->
+                    <div class="relative group">
+                        <button (click)="toggleUserMenu()"
+                            class="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <div
+                                class="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">
+                                    {{ userInitials }}
+                                </span>
+                            </div>
+                            <mat-icon class="text-slate-600 !text-lg">expand_more</mat-icon>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div *ngIf="isUserMenuOpen"
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                            <a routerLink="/profile"
+                                class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200">
+                                <mat-icon class="!text-lg mr-2">person</mat-icon>
+                                My Profile
+                            </a>
+                            <a routerLink="/settings"
+                                class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200">
+                                <mat-icon class="!text-lg mr-2">settings</mat-icon>
+                                Settings
+                            </a>
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <button (click)="onLogout()"
+                                class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 cursor-pointer">
+                                <mat-icon class="!text-lg mr-2">logout</mat-icon>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login/Signup buttons when not logged in -->
+                <div *ngIf="!isLoggedIn" class="flex items-center space-x-3">
+                    <button routerLink="/auth/login"
+                        class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer">
+                        Sign In
+                    </button>
+                    <button routerLink="/auth/signup"
+                        class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer">
+                        Get Started
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </header>
+
+<!-- Backdrop for mobile menu -->
+<div *ngIf="isUserMenuOpen" (click)="toggleUserMenu()" class="fixed inset-0 z-40 md:hidden"></div>

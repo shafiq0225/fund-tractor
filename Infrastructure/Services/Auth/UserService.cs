@@ -30,9 +30,10 @@ namespace Infrastructure.Services.Auth
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive);
 
+            // Use the same message for both cases for security
             if (user == null || !_passwordService.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
-                throw new UnauthorizedAccessException("Invalid email or password");
+                throw new UnauthorizedAccessException("Invalid Email ID or Password");
             }
 
             var token = _tokenService.GenerateToken(user);
@@ -53,7 +54,6 @@ namespace Infrastructure.Services.Auth
                 }
             };
         }
-
         public async Task<UserDto> RegisterAsync(RegisterDto registerDto)
         {
             if (await UserExistsAsync(registerDto.Email))
@@ -66,6 +66,31 @@ namespace Infrastructure.Services.Auth
                 throw new ArgumentException("User with this PAN number already exists");
             }
 
+            // Validate role
+            var validRoles = new[] { "Admin", "Employee", "HeadOfFamily", "FamilyMember" };
+            if (!validRoles.Contains(registerDto.Role))
+            {
+                throw new ArgumentException("Invalid role specified");
+            }
+
+            // Validate family relationship
+            if (registerDto.Role == "FamilyMember" && !registerDto.FamilyHeadId.HasValue)
+            {
+                throw new ArgumentException("Family members must be associated with a family head");
+            }
+
+            if (registerDto.FamilyHeadId.HasValue)
+            {
+                var familyHead = await _context.Users
+                    .Include(u => u.UserRoles)
+                    .FirstOrDefaultAsync(u => u.Id == registerDto.FamilyHeadId && u.IsActive);
+
+                if (familyHead == null || !familyHead.UserRoles.Any(r => r.RoleName == "HeadOfFamily"))
+                {
+                    throw new ArgumentException("Invalid family head specified");
+                }
+            }
+
             var user = new User
             {
                 FirstName = registerDto.FirstName,
@@ -73,15 +98,68 @@ namespace Infrastructure.Services.Auth
                 Email = registerDto.Email,
                 PanNumber = registerDto.PanNumber.ToUpper(),
                 PasswordHash = _passwordService.HashPassword(registerDto.Password),
+                EmployeeId = registerDto.EmployeeId,
+                Department = registerDto.Department,
+                DateOfJoining = registerDto.DateOfJoining,
+                FamilyHeadId = registerDto.FamilyHeadId,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
 
-            // Add default role
-            user.UserRoles.Add(new UserRole { RoleName = "User" });
+            // Add primary role
+            user.UserRoles.Add(new UserRole { RoleName = "Employee" });
+
+            // Auto-create UserProfile
+            user.UserProfile = new UserProfile();
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            return await GetUserDtoAsync(user);
+        }
+
+        public async Task<List<string>> GetUserPermissionsAsync(int userId)
+        {
+            // Return basic permissions based on roles for now
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
+            if (user == null) return new List<string>();
+
+            var permissions = new List<string>();
+
+            foreach (var role in user.UserRoles)
+            {
+                switch (role.RoleName)
+                {
+                    case "Admin":
+                        permissions.AddRange(new[] { "ViewDashboard", "ManageUsers", "ViewReports", "ManageInvestments" });
+                        break;
+                    case "Employee":
+                        permissions.AddRange(new[] { "ViewDashboard", "ViewReports", "ManageInvestments" });
+                        break;
+                    case "HeadOfFamily":
+                        permissions.AddRange(new[] { "ViewDashboard", "ManageInvestments", "ViewFamilyData", "ManageFamily" });
+                        break;
+                    case "FamilyMember":
+                        permissions.AddRange(new[] { "ViewDashboard", "ManageInvestments" });
+                        break;
+                }
+            }
+
+            return permissions.Distinct().ToList();
+        }
+
+        public async Task<bool> HasPermissionAsync(int userId, string permissionName)
+        {
+            var permissions = await GetUserPermissionsAsync(userId);
+            return permissions.Contains(permissionName);
+        }
+
+        private async Task<UserDto> GetUserDtoAsync(User user)
+        {
+            var permissions = await GetUserPermissionsAsync(user.Id);
 
             return new UserDto
             {
@@ -91,7 +169,13 @@ namespace Infrastructure.Services.Auth
                 Email = user.Email,
                 PanNumber = user.PanNumber,
                 CreatedAt = user.CreatedAt,
-                Roles = user.UserRoles.Select(r => r.RoleName).ToList()
+                Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
+                Permissions = permissions,
+                EmployeeId = user.EmployeeId,
+                Department = user.Department,
+                FamilyHeadId = user.FamilyHeadId,
+                FamilyHeadName = user.FamilyHeadId.HasValue ?
+                    $"{user.FamilyHead!.FirstName} {user.FamilyHead.LastName}" : null
             };
         }
 

@@ -50,6 +50,19 @@ namespace API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Login(LoginDto loginDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Please fix the validation errors",
+                    Errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList()
+                });
+            }
+
             try
             {
                 var result = await _userService.LoginAsync(loginDto);
@@ -60,12 +73,12 @@ namespace API.Controllers
                     Data = result
                 });
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Invalid email or password"
+                    Message = ex.Message // "Invalid email or password"
                 });
             }
             catch (Exception ex)

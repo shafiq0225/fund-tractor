@@ -1,5 +1,6 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,6 +12,10 @@ export class SidebarComponent {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('dropZone') dropZone!: ElementRef<HTMLDivElement>;
   
+   private authService = inject(AuthService);
+
+  menuItems: any[] = [];
+
   isDragging = false;
   uploadedFile: File | null = null;
   uploadProgress = 30; // Default progress for demo
@@ -108,5 +113,71 @@ export class SidebarComponent {
       // Here you would typically send the file to your backend API
       alert(`Importing ${this.uploadedFile.name}`);
     }
+  }
+
+   ngOnInit(): void {
+    this.buildMenuBasedOnRole();
+  }
+
+  private buildMenuBasedOnRole(): void {
+    const baseMenu = [
+      { 
+        path: '/', 
+        label: 'Dashboard', 
+        icon: 'dashboard',
+        roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember']
+      }
+    ];
+
+    const navMenuItems = [
+      { 
+        path: '/nav/dashboard', 
+        label: 'NAV Dashboard', 
+        icon: 'table_chart',
+        roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember']
+      },
+      { 
+        path: '/nav/import', 
+        label: 'Import Data', 
+        icon: 'file_upload',
+        roles: ['Admin', 'Employee']
+      },
+      { 
+        path: '/nav/manage', 
+        label: 'Manage Schemes', 
+        icon: 'settings',
+        roles: ['Admin', 'Employee']
+      },
+      { 
+        path: '/nav/report', 
+        label: 'Reports', 
+        icon: 'assessment',
+        roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember']
+      },
+      { 
+        path: '/nav/scheme', 
+        label: 'Scheme Performance', 
+        icon: 'trending_up',
+        roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember']
+      },
+      { 
+        path: '/nav/compare', 
+        label: 'Compare', 
+        icon: 'compare',
+        roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember']
+      }
+    ];
+
+    // Filter menu items based on user roles
+    this.menuItems = [
+      ...baseMenu,
+      ...navMenuItems.filter(item => 
+        this.authService.hasAnyRole(item.roles)
+      )
+    ];
+  }
+
+  canShowMenuItem(roles: string[]): boolean {
+    return this.authService.hasAnyRole(roles);
   }
 }

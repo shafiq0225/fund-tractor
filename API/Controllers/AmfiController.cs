@@ -2,6 +2,7 @@
 using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,7 @@ namespace API.Controllers
         //}
 
         [HttpPost("import/url")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> DownloadAndSaveFromUrlAsync([FromBody] ImportUrlRequest fileUrl)
         {
             if (fileUrl == null || string.IsNullOrWhiteSpace(fileUrl.FileUrl))
@@ -132,6 +134,7 @@ namespace API.Controllers
         //}
 
         [HttpPost("import/file")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UploadAndSaveFromFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -186,6 +189,7 @@ namespace API.Controllers
         }
 
         [HttpPost("addapprovedscheme")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> AddApprovedScheme([FromBody] ApprovedSchemeDto approvedSchemeDto)
         {
             if (string.IsNullOrWhiteSpace(approvedSchemeDto.FundName))
@@ -231,6 +235,7 @@ namespace API.Controllers
         }
 
         [HttpPut("updateapprovedscheme")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UpdateApprovedScheme([FromBody] UpdateSchemeRequest schemeApprovalDto)
         {
             if (string.IsNullOrWhiteSpace(schemeApprovalDto.FundId))
@@ -279,6 +284,7 @@ namespace API.Controllers
         }
 
         [HttpPut("updateapprovedfund")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UpdateApprovedFund([FromBody] UpdateFundRequest updateFundRequest)
         {
             if (string.IsNullOrWhiteSpace(updateFundRequest.FundId))
@@ -550,6 +556,7 @@ namespace API.Controllers
         //}
 
         [HttpGet("schemeslist")]
+        [Authorize]
         public async Task<IActionResult> GetSchemes()
         {
             try
@@ -580,6 +587,7 @@ namespace API.Controllers
         }
 
         [HttpGet("schemeperformance")]
+        [Authorize]
         public async Task<IActionResult> GetSchemePerformance([FromQuery] string schemeCode)
         {
             try
@@ -618,6 +626,7 @@ namespace API.Controllers
         }
 
         [HttpGet("schemes/today")]
+        [Authorize]
         public async Task<ActionResult<NavHistoryResponse>> GetNavHistoryForTodayAsync()
         {
             try
@@ -644,6 +653,7 @@ namespace API.Controllers
         }
 
         [HttpGet("schemes/compare")]
+        [Authorize]
         public async Task<ActionResult<FundDataResponse>> GetFundsBySchemeCodes([FromQuery] string schemeCodes)
         {
             try

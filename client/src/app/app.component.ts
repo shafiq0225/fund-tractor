@@ -1,10 +1,11 @@
 import { ApplicationRef, Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { first } from 'rxjs';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [ RouterOutlet],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -14,7 +15,10 @@ export class AppComponent implements OnInit {
   private splashMinTime = 1000; // minimum 1 second
   private splashStartTime = Date.now();
 
+  constructor(private authService: AuthService) { }
   ngOnInit() {
+    console.log('App initialized, user logged in:', this.authService.isLoggedIn());
+    console.log('Current user:', this.authService.getCurrentUser());
     // Splash start time
     this.splashStartTime = Date.now();
 

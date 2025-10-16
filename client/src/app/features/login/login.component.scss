@@ -30,12 +30,24 @@
   }
 }
 
-// Smooth transitions
-mat-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+.form-group {
+  margin-bottom: 2rem; /* Extra space to accommodate overlapping messages */
+  position: relative;
 }
 
-mat-card:hover {
-  transform: translateY(-2px);
+/* Smooth fade-in animation */
+.text-red-600 {
+  animation: fadeIn 0.2s ease-in-out;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
