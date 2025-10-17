@@ -56,8 +56,7 @@ namespace Core.DTOs.Auth
         public string ConfirmPassword { get; set; } = string.Empty;
 
         // Role assignment (default to FamilyMember)
-        public string Role { get; set; }
-
+        public string Role { get; set; } = "FamilyMember";
         // Additional fields for employees
         public string? EmployeeId { get; set; }
         public string? Department { get; set; }

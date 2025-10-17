@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService, LoginRequest } from '../../core/services/auth.service';
+import { SnackbarService } from '../../core/services/snackbar.service';
 
 @Component({
   selector: 'app-login',
@@ -31,7 +32,7 @@ export class LoginComponent implements OnInit {
   private formBuilder = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private snackBar = inject(MatSnackBar);
+  private snackBarService = inject(SnackbarService);
   private authService = inject(AuthService);
 
   loginForm!: FormGroup;
@@ -100,10 +101,7 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         this.isLoading = false;
         if (response.success) {
-          this.snackBar.open('Login successful!', 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
+          this.snackBarService.success(response.message || 'Login successful!');
           this.router.navigate([this.returnUrl]);
         } else {
           this.hasServerError = true;
@@ -112,9 +110,9 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Login error:', error);
         this.hasServerError = true;
         this.serverErrorMessage = error.error?.message || 'Login failed. Please try again.';
+        this.snackBarService.error(error.error?.message || 'Login failed. Please try again.');
       }
     });
   }

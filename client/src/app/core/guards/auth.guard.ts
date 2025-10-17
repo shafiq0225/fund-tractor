@@ -30,8 +30,6 @@ export const authGuard = (route: ActivatedRouteSnapshot) => {
   }
 
   // Redirect to login with return URL
-  router.navigate(['/login'], { 
-    queryParams: { returnUrl: router.url } 
-  });
+  router.navigate(['/login']);
   return false;
 };
