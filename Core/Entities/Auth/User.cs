@@ -33,7 +33,7 @@ namespace Core.Entities.Auth
         public string PasswordHash { get; set; } = string.Empty;
 
         // Family relationship (for Head and Family Members)
-        public int? FamilyHeadId { get; set; } // Reference to Head of Family
+        //public int? FamilyHeadId { get; set; } // Reference to Head of Family
         public virtual User? FamilyHead { get; set; }
         public virtual ICollection<User> FamilyMembers { get; set; } = new List<User>();
 

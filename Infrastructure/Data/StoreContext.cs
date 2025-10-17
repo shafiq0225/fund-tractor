@@ -28,8 +28,7 @@ public class StoreContext(DbContextOptions options) : DbContext(options)
 
             // Family relationship
             entity.HasOne(u => u.FamilyHead)
-                  .WithMany(u => u.FamilyMembers)
-                  .HasForeignKey(u => u.FamilyHeadId)
+                  .WithMany(u => u.FamilyMembers)                  
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

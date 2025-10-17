@@ -63,7 +63,7 @@ namespace Core.DTOs.Auth
         public DateTime? DateOfJoining { get; set; }
 
         // For family members
-        public int? FamilyHeadId { get; set; }
+        //public int? FamilyHeadId { get; set; }
     }
 
     public class UserDto

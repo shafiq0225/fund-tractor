@@ -105,7 +105,7 @@ export class LoginComponent implements OnInit {
           this.router.navigate([this.returnUrl]);
         } else {
           this.hasServerError = true;
-          this.serverErrorMessage = response.message || 'Login failed!';
+          this.snackBarService.error(response.message || 'Login failed!');
         }
       },
       error: (error) => {

@@ -58,12 +58,12 @@ namespace Infrastructure.Services.Auth
         {
             if (await UserExistsAsync(registerDto.Email))
             {
-                throw new ArgumentException("User with this email already exists");
+                throw new ArgumentException("An account with this email address already exists. Please use a different email or try signing in.");
             }
 
             if (await _context.Users.AnyAsync(u => u.PanNumber == registerDto.PanNumber.ToUpper()))
             {
-                throw new ArgumentException("User with this PAN number already exists");
+                throw new ArgumentException("This PAN number is already registered. Please check the number or contact support if you believe this is an error.");
             }
 
             // Validate role
@@ -74,22 +74,22 @@ namespace Infrastructure.Services.Auth
             }
 
             // Validate family relationship
-            if (registerDto.Role == "FamilyMember" && !registerDto.FamilyHeadId.HasValue)
-            {
-                throw new ArgumentException("Family members must be associated with a family head");
-            }
+            //if (registerDto.Role == "FamilyMember" && !registerDto.FamilyHeadId.HasValue)
+            //{
+            //    throw new ArgumentException("Family members must be associated with a family head");
+            //}
 
-            if (registerDto.FamilyHeadId.HasValue)
-            {
-                var familyHead = await _context.Users
-                    .Include(u => u.UserRoles)
-                    .FirstOrDefaultAsync(u => u.Id == registerDto.FamilyHeadId && u.IsActive);
+            //if (registerDto.FamilyHeadId.HasValue)
+            //{
+            //    var familyHead = await _context.Users
+            //        .Include(u => u.UserRoles)
+            //        .FirstOrDefaultAsync(u => u.Id == registerDto.FamilyHeadId && u.IsActive);
 
-                if (familyHead == null || !familyHead.UserRoles.Any(r => r.RoleName == "HeadOfFamily"))
-                {
-                    throw new ArgumentException("Invalid family head specified");
-                }
-            }
+            //    if (familyHead == null || !familyHead.UserRoles.Any(r => r.RoleName == "HeadOfFamily"))
+            //    {
+            //        throw new ArgumentException("Invalid family head specified");
+            //    }
+            //}
 
             var user = new User
             {
@@ -101,13 +101,13 @@ namespace Infrastructure.Services.Auth
                 EmployeeId = registerDto.EmployeeId,
                 Department = registerDto.Department,
                 DateOfJoining = registerDto.DateOfJoining,
-                FamilyHeadId = registerDto.FamilyHeadId,
                 CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                UserRoles = new List<UserRole>() // Initialize the collection
             };
 
-            // Add primary role
-            user.UserRoles.Add(new UserRole { RoleName = "Employee" });
+            // Add the role from registerDto (based on your business logic)
+            user.UserRoles.Add(new UserRole { RoleName = registerDto.Role });
 
             // Auto-create UserProfile
             user.UserProfile = new UserProfile();
@@ -173,9 +173,9 @@ namespace Infrastructure.Services.Auth
                 Permissions = permissions,
                 EmployeeId = user.EmployeeId,
                 Department = user.Department,
-                FamilyHeadId = user.FamilyHeadId,
-                FamilyHeadName = user.FamilyHeadId.HasValue ?
-                    $"{user.FamilyHead!.FirstName} {user.FamilyHead.LastName}" : null
+                //FamilyHeadId = user.FamilyHeadId,
+                //FamilyHeadName = user.FamilyHeadId.HasValue ?
+                //    $"{user.FamilyHead!.FirstName} {user.FamilyHead.LastName}" : null
             };
         }
 

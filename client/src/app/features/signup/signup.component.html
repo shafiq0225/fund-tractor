@@ -47,7 +47,9 @@
                             [class.border-red-300]="firstName?.invalid && firstName?.touched">
                         <div *ngIf="firstName?.invalid && firstName?.touched"
                             class="mt-1 text-xs text-red-600 animate-fade-in">
-                            <span>First name is required</span>
+                            <span *ngIf="firstName?.errors?.['required']">First name is required</span>
+                            <span *ngIf="firstName?.errors?.['maxlength']">First name cannot exceed 10
+                                characters.</span>
                         </div>
                     </div>
 
@@ -58,11 +60,13 @@
                             [class.border-red-300]="lastName?.invalid && lastName?.touched">
                         <div *ngIf="lastName?.invalid && lastName?.touched"
                             class="mt-1 text-xs text-red-600 animate-fade-in">
-                            <span>Last name is required</span>
+                            <span *ngIf="lastName?.errors?.['required']">Last name is required</span>
+                            <span *ngIf="lastName?.errors?.['maxlength']">Last name cannot exceed 10 characters.</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- Rest of the form remains the same -->
                 <!-- Email Field -->
                 <div class="min-h-[75px]">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
@@ -156,27 +160,29 @@
                         <input [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword"
                             placeholder="Re-enter your password"
                             class="w-full pl-10 pr-10 py-2.5 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 placeholder-slate-400 shadow-sm"
-                            [class.border-red-300]="confirmPassword?.invalid && confirmPassword?.touched">
+                            [class.border-red-300]="(confirmPassword?.invalid && confirmPassword?.touched) || (signupForm?.errors?.['passwordMismatch'] && confirmPassword?.touched && password?.touched)">
                         <button type="button" (click)="hideConfirmPassword = !hideConfirmPassword"
                             class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors duration-200">
                             <mat-icon class="!text-base">{{ hideConfirmPassword ? 'visibility_off' : 'visibility'
                                 }}</mat-icon>
                         </button>
                     </div>
+                    <!-- Validation Messages -->
                     <div *ngIf="confirmPassword?.invalid && confirmPassword?.touched"
                         class="mt-1 text-xs text-red-600 animate-fade-in">
-                        <span>
-                            <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
-                            <span *ngIf="confirmPassword?.errors?.['passwordMismatch']">Passwords do not match</span>
-                        </span>
+                        <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
+                    </div>
+
+                    <!-- Password Mismatch Validation -->
+                    <div *ngIf="signupForm?.errors?.['passwordMismatch'] && confirmPassword?.touched && password?.touched && confirmPassword?.value"
+                        class="mt-1 text-xs text-red-600 animate-fade-in">
+                        <span>Passwords do not match</span>
                     </div>
                 </div>
 
-
-
                 <!-- Enhanced Submit Button -->
                 <button type="submit"
-                    class="w-full py-3 font-bold text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+                    class="w-full py-3 font-bold text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed cursor-pointer"
                     [disabled]="signupForm.invalid || isLoading">
                     <div class="flex items-center justify-center gap-2">
                         <mat-spinner *ngIf="isLoading" diameter="18" strokeWidth="3" class="!text-white"></mat-spinner>
@@ -184,7 +190,6 @@
                     </div>
                 </button>
 
-                <!-- Enhanced Mode Toggle -->
                 <!-- Enhanced Mode Toggle -->
                 <div class="text-center pt-3 border-t border-slate-200/60">
                     <p class="text-sm text-slate-600">

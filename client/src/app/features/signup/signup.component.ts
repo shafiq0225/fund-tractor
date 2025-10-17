@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService, RegisterRequest } from '../../core/services/auth.service';
+import { SnackbarService } from '../../core/services/snackbar.service';
 
 // Custom validator for password confirmation
 export function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -45,7 +46,7 @@ export class SignupComponent implements OnInit {
   private formBuilder = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private snackBar = inject(MatSnackBar);
+  private snackBarService = inject(SnackbarService);
   private authService = inject(AuthService);
 
   signupForm!: FormGroup;
@@ -61,8 +62,8 @@ export class SignupComponent implements OnInit {
 
   initForm(): void {
     this.signupForm = this.formBuilder.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
+      firstName: ['', [Validators.required, Validators.maxLength(10)]],
+      lastName: ['', [Validators.required, Validators.maxLength(10)]],
       email: ['', [Validators.required, Validators.email]],
       panNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -95,35 +96,24 @@ export class SignupComponent implements OnInit {
   }
 
   private handleSignup(): void {
-    const registerData: RegisterRequest = this.signupForm.value;
+    const registerData: RegisterRequest = {
+      ...this.signupForm.value,
+      role: 'FamilyMember'
+    };
 
     this.authService.register(registerData).subscribe({
       next: (response) => {
         this.isLoading = false;
         if (response.success) {
-          this.snackBar.open('Account created successfully! Please login.', 'Close', {
-            duration: 5000,
-            panelClass: ['success-snackbar']
-          });
+          this.snackBarService.success(response.message || 'Account created successfully! Please login.');
           this.navigateToLogin();
         } else {
-          this.snackBar.open(response.message || 'Registration failed!', 'Close', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
+          this.snackBarService.error(response.message || 'Registration failed!.');
         }
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Registration error:', error);
-        this.snackBar.open(
-          error.error?.message || 'Registration failed. Please try again.',
-          'Close',
-          {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          }
-        );
+        this.snackBarService.error(error.error?.message || 'Registration failed!.');
       }
     });
   }
