@@ -1,18 +1,37 @@
-import { Injectable } from '@angular/core';
+import { inject } from '@angular/core';
+import { Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { ActivatedRouteSnapshot, CanActivate } from '@angular/router';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class RoleGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
+export const roleGuard = (route: ActivatedRouteSnapshot) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-  canActivate(route: ActivatedRouteSnapshot): boolean {
-    const requiredRoles = route.data['roles'] as Array<string>;
-    if (!requiredRoles) {
-      return true;
-    }
-    return this.authService.hasAnyRole(requiredRoles);
+  console.log('🔐 RoleGuard checking route:', route.routeConfig?.path);
+  console.log('📋 Route data:', route.data);
+
+  if (!authService.isLoggedIn()) {
+    console.log('❌ User not logged in');
+    router.navigate(['/login']);
+    return false;
   }
-}
+
+  const requiredRoles = route.data['roles'] as string[];
+  const userRoles = authService.getCurrentUser()?.roles || [];
+
+  console.log('👤 User roles:', userRoles);
+  console.log('🔑 Required roles:', requiredRoles);
+
+  if (requiredRoles && requiredRoles.length > 0) {
+    const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+    console.log('✅ Has required role:', hasRequiredRole);
+
+    if (!hasRequiredRole) {
+      console.log('🚫 Access denied - insufficient permissions');
+      router.navigate(['/unauthorized']);
+      return false;
+    }
+  }
+
+  console.log('🎉 Access granted');
+  return true;
+};

@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, User } from '../../../core/services/auth.service';
+import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-nav-dashboard',
@@ -14,19 +16,28 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class NavDashboardComponent implements OnInit {
   tiles: any[] = [];
-  hasRestrictedAccess: boolean = false;
+  currentUser: User | null = null;
+  hasAdminAccess: boolean = false;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit(): void {
+    this.loadCurrentUser();
     this.checkUserRole();
     this.setupTiles();
   }
 
+  private loadCurrentUser(): void {
+    this.currentUser = this.authService.getCurrentUser();
+  }
+
   private checkUserRole(): void {
-    // Check if user has either FamilyMember OR HeadOfFamily role
-    this.hasRestrictedAccess = this.authService.hasRole('FamilyMember') || 
-                              this.authService.hasRole('HeadOfFamily');
+    this.hasAdminAccess = this.authService.hasRole('Admin') || 
+                          this.authService.hasRole('Employee');
   }
 
   private setupTiles(): void {
@@ -57,13 +68,31 @@ export class NavDashboardComponent implements OnInit {
       }
     ];
 
-    // If user has restricted access, filter out Import Data and Manage Schemes
-    if (this.hasRestrictedAccess) {
+    // If user has admin access, show ALL tiles
+    // If user is FamilyMember/HeadOfFamily, hide Import Data and Manage Schemes
+    if (this.hasAdminAccess) {
+      this.tiles = allTiles; // Show all tiles for Admin/Employee
+    } else {
       this.tiles = allTiles.filter(tile => 
         tile.title !== 'Import Data' && tile.title !== 'Manage Schemes'
-      );
-    } else {
-      this.tiles = allTiles;
+      ); // Hide import/manage for family users
     }
+  }
+
+  // Helper methods for template
+  isFamilyMember(): boolean {
+    return this.authService.hasRole('FamilyMember');
+  }
+
+  isHeadOfFamily(): boolean {
+    return this.authService.hasRole('HeadOfFamily');
+  }
+
+  isAdminOrEmployee(): boolean {
+    return this.authService.hasRole('Admin') || this.authService.hasRole('Employee');
+  }
+
+  getUserRoles(): string[] {
+    return this.currentUser?.roles || [];
   }
 }

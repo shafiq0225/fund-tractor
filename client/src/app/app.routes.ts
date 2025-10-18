@@ -10,10 +10,12 @@ import { SchemePerformanceComponent } from './features/nav/nav-report/scheme-per
 import { NavCompareComponent } from './features/nav/nav-compare/nav-compare.component';
 import { LayoutComponent } from './layout/layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 import { SignupComponent } from './features/signup/signup.component';
+import { UnauthorizedComponent } from './features/unauthorized/unauthorized.component';
 
 export const routes: Routes = [
-    // Public route - no layout
+    // Public routes - no layout
     { 
         path: 'login', 
         component: LoginComponent 
@@ -22,18 +24,21 @@ export const routes: Routes = [
         path: 'signup', 
         component: SignupComponent 
     },
+    { 
+        path: 'unauthorized', 
+        component: UnauthorizedComponent 
+    },
     
     // Protected routes - with layout
     {
         path: '',
         component: LayoutComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuard], // Only check authentication for parent
         children: [
             // Main Dashboard - Accessible to all authenticated users
             { 
                 path: '', 
-                component: DashboardComponent,
-                data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                component: DashboardComponent
             },
             
             // NAV Management Section
@@ -41,26 +46,33 @@ export const routes: Routes = [
                 path: 'nav',
                 component: NavComponent,
                 children: [
-                    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+                    { 
+                        path: '', 
+                        redirectTo: 'dashboard', 
+                        pathMatch: 'full' 
+                    },
                     
                     // Accessible to all authenticated users
                     { 
                         path: 'dashboard', 
                         component: NavDashboardComponent,
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
                     
-                    // Restricted to Admin and Employee only
+                    // RESTRICTED to Admin and Employee only
                     { 
                         path: 'import', 
                         component: NavImportComponent,
+                        canActivate: [roleGuard], // Add roleGuard here
                         data: { roles: ['Admin', 'Employee'] }
                     },
                     
-                    // Restricted to Admin and Employee only
+                    // RESTRICTED to Admin and Employee only
                     { 
                         path: 'manage', 
                         component: ManageSchemesComponent,
+                        canActivate: [roleGuard], // Add roleGuard here
                         data: { roles: ['Admin', 'Employee'] }
                     },
                     
@@ -68,6 +80,7 @@ export const routes: Routes = [
                     { 
                         path: 'report', 
                         component: NavReportComponent,
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
                     
@@ -75,6 +88,7 @@ export const routes: Routes = [
                     { 
                         path: 'scheme', 
                         component: SchemePerformanceComponent,
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
                     
@@ -82,6 +96,7 @@ export const routes: Routes = [
                     { 
                         path: 'compare', 
                         component: NavCompareComponent,
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
                 ]
@@ -90,23 +105,19 @@ export const routes: Routes = [
             // Other main app routes
             { 
                 path: 'portfolio', 
-                component: DashboardComponent,
-                data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                component: DashboardComponent
             },
             { 
                 path: 'funds', 
-                component: DashboardComponent,
-                data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                component: DashboardComponent
             },
             { 
                 path: 'transactions', 
-                component: DashboardComponent,
-                data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                component: DashboardComponent
             },
             { 
                 path: 'performance', 
-                component: DashboardComponent,
-                data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                component: DashboardComponent
             },
         ]
     },
