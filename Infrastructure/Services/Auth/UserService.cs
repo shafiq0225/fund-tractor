@@ -2,12 +2,9 @@
 using Core.Entities.Auth;
 using Core.Interfaces.Auth;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Infrastructure.Services.Auth
 {
@@ -16,12 +13,14 @@ namespace Infrastructure.Services.Auth
         private readonly StoreContext _context;
         private readonly IPasswordService _passwordService;
         private readonly ITokenService _tokenService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(StoreContext context, IPasswordService passwordService, ITokenService tokenService)
+        public UserService(StoreContext context, IPasswordService passwordService, ITokenService tokenService, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _passwordService = passwordService;
             _tokenService = tokenService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
@@ -190,6 +189,25 @@ namespace Infrastructure.Services.Auth
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
         }
+
+        public async Task<string?> GetCurrentUserNameAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity?.IsAuthenticated != true)
+            {
+                return null;
+            }
+
+            var userEmail = httpContext.User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                return null;
+            }
+
+            var user = await GetUserByEmailAsync(userEmail);
+            return user != null ? $"{user.FirstName} {user.LastName}" : null;
+        }
+
     }
 
 }

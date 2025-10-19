@@ -27,7 +27,7 @@ builder.Services.AddDbContext<StoreContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IAmfiRepository, AmfiRepository>();
-
+builder.Services.AddHttpContextAccessor();
 // NEW: Authentication Services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService, TokenService>();

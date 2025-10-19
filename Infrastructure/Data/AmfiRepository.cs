@@ -4,12 +4,12 @@ using Core.DTOs;
 using Core.Entities.AMFI;
 using Core.Helpers;
 using Core.Interfaces;
-using DocumentFormat.OpenXml.InkML;
+using Core.Interfaces.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
 
-public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
+public class AmfiRepository(StoreContext storeContext, IUserService _userService) : IAmfiRepository
 {
     public async Task<List<ApprovedData>> GetApprovedSchemesAsync()
         => await storeContext.ApprovedData.Where(x => x.IsApproved).ToListAsync();
@@ -122,6 +122,12 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
         try
         {
+            // Get current user's name
+            var approvedByName = await _userService.GetCurrentUserNameAsync();
+            if (string.IsNullOrEmpty(approvedByName))
+            {
+                return (false, "Unable to determine current user.");
+            }
             // ✅ Check if record already exists
             var exists = await storeContext.ApprovedData
                 .AnyAsync(x => x.FundCode == fundId && x.SchemeCode == addSchemeDto.SchemeId);
@@ -131,7 +137,7 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
 
             var approvedFund = new ApprovedData
             {
-                ApprovedName = "Shafiq",
+                ApprovedName = approvedByName,
                 FundCode = fundId,
                 IsApproved = addSchemeDto.IsApproved,
                 SchemeCode = addSchemeDto.SchemeId,
@@ -174,9 +180,17 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             if (existingRecord.IsApproved == isApproved)
                 return (false, "No changes made");
 
+            // Get current user's name
+            var approvedByName = await _userService.GetCurrentUserNameAsync();
+            if (string.IsNullOrEmpty(approvedByName))
+            {
+                return (false, "Unable to determine current user.");
+            }
+
             // ✅ Update ApprovedData
             existingRecord.IsApproved = isApproved;
             existingRecord.LastUpdatedDate = DateTime.UtcNow;
+            existingRecord.ApprovedName = approvedByName;
             storeContext.ApprovedData.Update(existingRecord);
 
             // ✅ Sync visibility in SchemeDetails (only if record exists)
@@ -216,10 +230,17 @@ public class AmfiRepository(StoreContext storeContext) : IAmfiRepository
             if (existingRecords.Count == 0)
                 return (false, "Record not found");
 
+            // Get current user's name
+            var approvedByName = await _userService.GetCurrentUserNameAsync();
+            if (string.IsNullOrEmpty(approvedByName))
+            {
+                return (false, "Unable to determine current user.");
+            }
             foreach (var record in existingRecords)
             {
                 record.IsApproved = isApproved;
                 record.LastUpdatedDate = DateTime.UtcNow;
+                record.ApprovedName = approvedByName;
             }
 
             var schemeDetails = await storeContext.SchemeDetails

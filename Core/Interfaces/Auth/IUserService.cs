@@ -14,6 +14,7 @@ namespace Core.Interfaces.Auth
         Task<UserDto> RegisterAsync(RegisterDto registerDto);
         Task<bool> UserExistsAsync(string email);
         Task<User?> GetUserByEmailAsync(string email);
+        Task<string?> GetCurrentUserNameAsync();
     }
 
     public interface ITokenService
