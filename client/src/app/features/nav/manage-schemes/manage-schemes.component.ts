@@ -63,6 +63,7 @@ export class ManageSchemesComponent implements OnInit {
           ? `${res.fundId} - Scheme ${res.schemeId} approved successfully.`
           : `${res.fundId} - Scheme ${res.schemeId} approval revoked.`;
         this.snackBarService.success(msg || res.message);
+        this.fetchSchemes();
       },
       error: (err) => {
         scheme.isApproved = prevStatus; // rollback
@@ -88,6 +89,7 @@ export class ManageSchemesComponent implements OnInit {
           this.snackBarService.success(event.isApproved
             ? `All schemes under fund ${event.fundId} approved successfully.`
             : `All schemes under fund ${event.fundId} deactivated.`);
+             this.fetchSchemes();
         } else {
           fundSchemes.forEach(s => s.isUpdating = false);
           this.snackBarService.error(res.message || 'Failed to update fund.');
