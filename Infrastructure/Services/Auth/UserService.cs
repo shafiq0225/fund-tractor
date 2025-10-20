@@ -208,6 +208,144 @@ namespace Infrastructure.Services.Auth
             return user != null ? $"{user.FirstName} {user.LastName}" : null;
         }
 
+        public async Task<List<UserDto>> GetAllUsersAsync()
+        {
+            var users = await _context.Users
+                .Include(u => u.UserRoles)
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync();
+
+            var userDtos = new List<UserDto>();
+            foreach (var user in users)
+            {
+                var permissions = await GetUserPermissionsAsync(user.Id);
+                userDtos.Add(new UserDto
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    PanNumber = user.PanNumber,
+                    CreatedAt = user.CreatedAt,
+                    Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
+                    Permissions = permissions,
+                    EmployeeId = user.EmployeeId,
+                    IsActive = user.IsActive
+                });
+            }
+
+            return userDtos;
+        }
+
+
+        public async Task<UserDto?> GetUserByIdAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
+            if (user == null) return null;
+
+            var permissions = await GetUserPermissionsAsync(user.Id);
+            return new UserDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                PanNumber = user.PanNumber,
+                CreatedAt = user.CreatedAt,
+                Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
+                Permissions = permissions,
+                EmployeeId = user.EmployeeId,
+                Department = user.Department,
+                IsActive = user.IsActive
+            };
+        }
+
+
+        public async Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedBy)
+        {
+            // Validate role
+            var validRoles = new[] { "Admin", "Employee", "HeadOfFamily", "FamilyMember" };
+            if (!validRoles.Contains(newRole))
+            {
+                throw new ArgumentException("Invalid role specified");
+            }
+
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
+            if (user == null)
+            {
+                throw new ArgumentException("User not found");
+            }
+
+            // Check if the user performing the update is an admin
+            var currentUser = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == updatedBy);
+
+            if (currentUser == null || !currentUser.UserRoles.Any(r => r.RoleName == "Admin"))
+            {
+                throw new UnauthorizedAccessException("Only administrators can update user roles");
+            }
+
+            // Prevent admin from removing their own admin role
+            if (userId == updatedBy && newRole != "Admin")
+            {
+                throw new InvalidOperationException("Cannot remove admin role from yourself");
+            }
+
+            // Remove existing roles and add new one
+            user.UserRoles.Clear();
+            user.UserRoles.Add(new UserRole { RoleName = newRole });
+
+            // Update timestamp
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
+        public async Task<bool> DeleteUserAsync(int userId, int deletedBy)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
+            if (user == null)
+            {
+                throw new ArgumentException("User not found");
+            }
+
+            // Check if the user performing the deletion is an admin
+            var currentUser = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == deletedBy);
+
+            if (currentUser == null || !currentUser.UserRoles.Any(r => r.RoleName == "Admin"))
+            {
+                throw new UnauthorizedAccessException("Only administrators can delete users");
+            }
+
+            // Prevent admin from deleting themselves
+            if (userId == deletedBy)
+            {
+                throw new InvalidOperationException("Cannot delete your own account");
+            }
+
+            // Soft delete
+            user.IsActive = false;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 
 }

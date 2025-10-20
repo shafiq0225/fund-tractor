@@ -15,6 +15,11 @@ namespace Core.Interfaces.Auth
         Task<bool> UserExistsAsync(string email);
         Task<User?> GetUserByEmailAsync(string email);
         Task<string?> GetCurrentUserNameAsync();
+
+        Task<List<UserDto>> GetAllUsersAsync();
+        Task<UserDto?> GetUserByIdAsync(int userId);
+        Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedBy);
+        Task<bool> DeleteUserAsync(int userId, int deletedBy);
     }
 
     public interface ITokenService

@@ -80,6 +80,7 @@ namespace Core.DTOs.Auth
         public string? Department { get; set; }
         public int? FamilyHeadId { get; set; }
         public string? FamilyHeadName { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class CreateUserDto : RegisterDto
