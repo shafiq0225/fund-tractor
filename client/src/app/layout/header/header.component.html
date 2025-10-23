@@ -3,17 +3,6 @@
         <div class="flex justify-between items-center h-16">
             <!-- Logo and Brand -->
             <div class="flex items-center">
-                <!-- <div class="flex-shrink-0 flex items-center">
-                    <div
-                        class="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                        <span class="text-white font-bold text-sm">FT</span>
-                    </div>
-                    <span
-                        class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        FundTrackr
-                    </span>
-                </div> -->
-
                 <!-- Navigation Links (only show when logged in) -->
                 <nav *ngIf="isLoggedIn" class="hidden md:ml-8 md:flex space-x-8">
                     <a routerLink="/dashboard"
@@ -39,6 +28,86 @@
             <div class="flex items-center space-x-4">
                 <!-- User Info when logged in -->
                 <div *ngIf="isLoggedIn" class="flex items-center space-x-4">
+                    <!-- Notification Icon -->
+                    <div class="relative">
+                        <button data-notifications-button (click)="toggleNotifications()"
+                            class="relative p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <mat-icon class="!text-xl">notifications</mat-icon>
+                            <!-- Notification Badge -->
+                            <span *ngIf="unreadNotifications > 0"
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                {{ unreadNotifications > 9 ? '9+' : unreadNotifications }}
+                            </span>
+                        </button>
+
+                        <!-- Notifications Dropdown -->
+                        <div *ngIf="isNotificationsOpen" data-notifications-dropdown
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 max-h-96 overflow-y-auto">
+                            <!-- Notifications Header -->
+                            <div class="px-4 py-2 border-b border-slate-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-sm font-semibold text-slate-800">Notifications</h3>
+                                    <span *ngIf="unreadNotifications > 0"
+                                        class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                                        {{ unreadNotifications }} new
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Notifications List -->
+                            <div class="divide-y divide-slate-100">
+                                <!-- Sample Notification Items -->
+                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="bg-green-100 p-2 rounded-full">
+                                            <mat-icon class="!text-lg text-green-600">trending_up</mat-icon>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-slate-800 font-medium">Investment Update</p>
+                                            <p class="text-xs text-slate-500 mt-1">Your portfolio gained 2.3% today</p>
+                                            <span class="text-xs text-slate-400 mt-1">2 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="bg-blue-100 p-2 rounded-full">
+                                            <mat-icon class="!text-lg text-blue-600">info</mat-icon>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-slate-800 font-medium">Market Alert</p>
+                                            <p class="text-xs text-slate-500 mt-1">New investment opportunities
+                                                available</p>
+                                            <span class="text-xs text-slate-400 mt-1">5 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="bg-yellow-100 p-2 rounded-full">
+                                            <mat-icon class="!text-lg text-yellow-600">warning</mat-icon>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-slate-800 font-medium">Reminder</p>
+                                            <p class="text-xs text-slate-500 mt-1">Complete your profile setup</p>
+                                            <span class="text-xs text-slate-400 mt-1">1 day ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notifications Footer -->
+                            <div class="px-4 py-2 border-t border-slate-200">
+                                <button
+                                    class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2">
+                                    View All Notifications
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- User Welcome Message -->
                     <div class="hidden sm:flex flex-col text-right">
                         <span class="text-sm font-medium text-slate-800">Welcome back!</span>
@@ -47,7 +116,7 @@
 
                     <!-- User Avatar -->
                     <div class="relative group">
-                        <button (click)="toggleUserMenu()"
+                        <button data-user-menu-button (click)="toggleUserMenu()"
                             class="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             <div
                                 class="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -59,7 +128,7 @@
                         </button>
 
                         <!-- Dropdown Menu -->
-                        <div *ngIf="isUserMenuOpen"
+                        <div *ngIf="isUserMenuOpen" data-user-menu-dropdown
                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
                             <a routerLink="/profile"
                                 class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200">
@@ -98,4 +167,5 @@
 </header>
 
 <!-- Backdrop for mobile menu -->
-<div *ngIf="isUserMenuOpen" (click)="toggleUserMenu()" class="fixed inset-0 z-40 md:hidden"></div>
+<div *ngIf="(isUserMenuOpen || isNotificationsOpen)" (click)="closeAllMenus()" class="fixed inset-0 z-40 md:hidden">
+</div>
