@@ -1,15 +1,16 @@
-// features/admin/user-management/user-management.component.ts
+// Update your user-management.component.ts to include admin password change
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { AuthService, AdminChangePasswordRequest, User } from '../../../core/services/auth.service';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
-import { AuthService, User } from '../../../core/services/auth.service';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, BreadcrumbComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, BreadcrumbComponent, MatTooltip],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.scss']
 })
@@ -18,8 +19,18 @@ export class UserManagementComponent implements OnInit {
 
   users: (User & { newRole?: string })[] = [];
   loading = false;
+  passwordLoading = false;
   error = '';
   successMessage = '';
+
+  // Admin password change modal
+  showPasswordModal = false;
+  selectedUser: User | null = null;
+  adminPasswordData: AdminChangePasswordRequest = {
+    userId: 0,
+    newPassword: '',
+    confirmPassword: ''
+  };
 
   ngOnInit() {
     this.loadUsers();
@@ -28,7 +39,7 @@ export class UserManagementComponent implements OnInit {
   loadUsers() {
     this.loading = true;
     this.error = '';
-    
+
     this.authService.getAllUsers().subscribe({
       next: (users) => {
         this.users = users.map(user => ({ ...user, newRole: '' }));
@@ -50,11 +61,11 @@ export class UserManagementComponent implements OnInit {
     this.authService.updateUserRole(user.id, user.newRole).subscribe({
       next: (response: any) => {
         this.successMessage = `Successfully updated ${user.firstName}'s role to ${user.newRole}`;
-        
+
         // Update local user data
         user.roles = [user.newRole!];
         user.newRole = '';
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           this.successMessage = '';
@@ -63,6 +74,63 @@ export class UserManagementComponent implements OnInit {
       error: (err) => {
         this.error = err.error?.message || 'Failed to update user role. Please try again.';
         console.error('Error updating user role:', err);
+      }
+    });
+  }
+
+  openPasswordModal(user: User) {
+    this.selectedUser = user;
+    this.adminPasswordData = {
+      userId: user.id,
+      newPassword: '',
+      confirmPassword: ''
+    };
+    this.showPasswordModal = true;
+  }
+
+  closePasswordModal() {
+    this.showPasswordModal = false;
+    this.selectedUser = null;
+    this.adminPasswordData = {
+      userId: 0,
+      newPassword: '',
+      confirmPassword: ''
+    };
+  }
+
+  onAdminPasswordSubmit() {
+    if (this.adminPasswordData.newPassword !== this.adminPasswordData.confirmPassword) {
+      this.error = 'New password and confirmation do not match';
+      return;
+    }
+
+    if (this.adminPasswordData.newPassword.length < 6) {
+      this.error = 'Password must be at least 6 characters long';
+      return;
+    }
+
+    this.passwordLoading = true;
+
+    this.authService.adminChangePassword(this.adminPasswordData).subscribe({
+      next: (response) => {
+        this.passwordLoading = false;
+
+        if (response.success) {
+          this.successMessage = response.message || 'Password reset successfully!';
+          this.closePasswordModal();
+
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.successMessage = '';
+          }, 3000);
+        } else {
+          this.error = response.message || 'Failed to reset password';
+        }
+      },
+      error: (err) => {
+        this.passwordLoading = false;
+        this.error = err.error?.message || 'Failed to reset password. Please try again.';
+        console.error('Error resetting password:', err);
       }
     });
   }
@@ -76,7 +144,7 @@ export class UserManagementComponent implements OnInit {
       next: (response: any) => {
         this.successMessage = 'User deleted successfully';
         this.loadUsers(); // Reload the user list
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           this.successMessage = '';
@@ -98,4 +166,6 @@ export class UserManagementComponent implements OnInit {
     };
     return classes[role] || 'bg-gray-100 text-gray-800';
   }
+
+  
 }

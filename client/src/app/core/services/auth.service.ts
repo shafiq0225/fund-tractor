@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { ApiResponse } from '../../shared/models/Amfi/Scheme';
 
 export interface LoginRequest {
   email: string;
@@ -47,6 +48,19 @@ export interface UpdateRoleRequest {
   userId: number;
   newRole: string;
 }
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface AdminChangePasswordRequest {
+  userId: number;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -187,4 +201,20 @@ export class AuthService {
       }
     }
   }
+
+  changePassword(changePasswordData: ChangePasswordRequest): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/auth/change-password`, 
+      changePasswordData
+    );
+  }
+
+  // Admin change password for other users
+  adminChangePassword(adminChangePasswordData: AdminChangePasswordRequest): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/auth/admin/change-password`, 
+      adminChangePasswordData
+    );
+  }
+
 }
