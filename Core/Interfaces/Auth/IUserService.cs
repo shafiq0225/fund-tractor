@@ -20,6 +20,9 @@ namespace Core.Interfaces.Auth
         Task<UserDto?> GetUserByIdAsync(int userId);
         Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedBy);
         Task<bool> DeleteUserAsync(int userId, int deletedBy);
+        Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto changePasswordDto);
+        Task<bool> AdminChangePasswordAsync(int adminUserId, AdminChangePasswordDto adminChangePasswordDto);
+
     }
 
     public interface ITokenService

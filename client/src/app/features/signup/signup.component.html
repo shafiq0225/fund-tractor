@@ -160,7 +160,7 @@
                         <input [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword"
                             placeholder="Re-enter your password"
                             class="w-full pl-10 pr-10 py-2.5 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 placeholder-slate-400 shadow-sm"
-                            [class.border-red-300]="(confirmPassword?.invalid && confirmPassword?.touched) || (signupForm?.errors?.['passwordMismatch'] && confirmPassword?.touched && password?.touched)">
+                            [class.border-red-300]="(confirmPassword?.invalid && confirmPassword?.touched) || (signupForm.errors?.['passwordMismatch'] && confirmPassword?.touched && password?.touched)">
                         <button type="button" (click)="hideConfirmPassword = !hideConfirmPassword"
                             class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors duration-200">
                             <mat-icon class="!text-base">{{ hideConfirmPassword ? 'visibility_off' : 'visibility'

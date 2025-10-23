@@ -346,6 +346,93 @@ namespace Infrastructure.Services.Auth
             return true;
         }
 
+        public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto changePasswordDto)
+        {
+            // Validate input
+            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmPassword)
+            {
+                throw new ArgumentException("New password and confirmation password do not match");
+            }
+
+            // Password strength validation
+            if (string.IsNullOrWhiteSpace(changePasswordDto.NewPassword) || changePasswordDto.NewPassword.Length < 6)
+            {
+                throw new ArgumentException("Password must be at least 6 characters long");
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
+            if (user == null)
+            {
+                throw new ArgumentException("User not found");
+            }
+
+            // Verify current password
+            if (!_passwordService.VerifyPassword(changePasswordDto.CurrentPassword, user.PasswordHash))
+            {
+                throw new UnauthorizedAccessException("Current password is incorrect");
+            }
+
+            // Check if new password is different from current password
+            if (_passwordService.VerifyPassword(changePasswordDto.NewPassword, user.PasswordHash))
+            {
+                throw new ArgumentException("New password must be different from current password");
+            }
+
+            // Update password
+            user.PasswordHash = _passwordService.HashPassword(changePasswordDto.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> AdminChangePasswordAsync(int adminUserId, AdminChangePasswordDto adminChangePasswordDto)
+        {
+            // Validate input
+            if (adminChangePasswordDto.NewPassword != adminChangePasswordDto.ConfirmPassword)
+            {
+                throw new ArgumentException("New password and confirmation password do not match");
+            }
+
+            // Password strength validation
+            if (string.IsNullOrWhiteSpace(adminChangePasswordDto.NewPassword) || adminChangePasswordDto.NewPassword.Length < 6)
+            {
+                throw new ArgumentException("Password must be at least 6 characters long");
+            }
+
+            // Check if admin user exists and has admin role
+            var adminUser = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == adminUserId && u.IsActive);
+
+            if (adminUser == null || !adminUser.UserRoles.Any(r => r.RoleName == "Admin"))
+            {
+                throw new UnauthorizedAccessException("Only administrators can change other users' passwords");
+            }
+
+            // Prevent admin from changing their own password using this method
+            if (adminUserId == adminChangePasswordDto.UserId)
+            {
+                throw new InvalidOperationException("Please use the regular change password endpoint to change your own password");
+            }
+
+            var targetUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == adminChangePasswordDto.UserId && u.IsActive);
+
+            if (targetUser == null)
+            {
+                throw new ArgumentException("User not found");
+            }
+
+            // Update password
+            targetUser.PasswordHash = _passwordService.HashPassword(adminChangePasswordDto.NewPassword);
+            targetUser.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 
 }
