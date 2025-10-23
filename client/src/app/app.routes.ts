@@ -13,6 +13,9 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { SignupComponent } from './features/signup/signup.component';
 import { UnauthorizedComponent } from './features/unauthorized/unauthorized.component';
+import { SettingsDashboardComponent } from './features/settings/settings-dashboard/settings-dashboard.component';
+import { ChangePasswordComponent } from './features/settings/change-password/change-password.component';
+import { UserManagementComponent } from './features/settings/user-management/user-management.component';
 
 export const routes: Routes = [
     // Public routes - no layout
@@ -102,6 +105,21 @@ export const routes: Routes = [
                 ]
             },
             
+            // Settings Section
+            { 
+                path: 'settings', 
+                component: SettingsDashboardComponent
+            },
+            { 
+                path: 'settings/change-password', 
+                component: ChangePasswordComponent
+            },
+            { 
+                path: 'settings/user-management', 
+                component: UserManagementComponent,
+                canActivate: [roleGuard],
+                data: { roles: ['Admin'] }
+            },
             // Other main app routes
             { 
                 path: 'portfolio', 

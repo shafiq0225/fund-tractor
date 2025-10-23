@@ -43,6 +43,11 @@ export interface RegisterResponse {
   data: User;
 }
 
+export interface UpdateRoleRequest {
+  userId: number;
+  newRole: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -121,7 +126,7 @@ export class AuthService {
   private loadUserFromStorage(): void {
     const token = this.getToken();
     const userData = localStorage.getItem('user');
-    
+
     if (token && userData) {
       try {
         const user = JSON.parse(userData);
@@ -143,6 +148,43 @@ export class AuthService {
       return payload.exp * 1000 > Date.now();
     } catch {
       return false;
+    }
+  }
+
+  // Get all users
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/auth/users`);
+  }
+
+  // Get user by ID
+  getUserById(id: number): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/auth/users/${id}`);
+  }
+
+  // Update user role
+  updateUserRole(userId: number, newRole: string): Observable<any> {
+    const updateRoleDto: UpdateRoleRequest = {
+      userId,
+      newRole
+    };
+    return this.http.put(`${this.apiUrl}/auth/users/role`, updateRoleDto);
+  }
+
+  // Delete user
+  deleteUser(userId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/auth/users/${userId}`);
+  }
+
+  // Refresh current user data
+  refreshCurrentUser(): void {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        this.currentUserSubject.next(user);
+      } catch (error) {
+        console.error('Error refreshing user data', error);
+      }
     }
   }
 }

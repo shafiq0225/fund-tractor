@@ -1,3 +1,4 @@
+// breadcrumb.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
@@ -9,7 +10,6 @@ interface BreadcrumbLink {
   icon?: string;
 }
 
-
 @Component({
   selector: 'app-breadcrumb',
   imports: [MatIcon, CommonModule],
@@ -19,7 +19,6 @@ interface BreadcrumbLink {
 export class BreadcrumbComponent {
   @Input() links: BreadcrumbLink[] = [];
   @Input() current: string = '';
-
 
   constructor(
     private router: Router,
@@ -40,12 +39,18 @@ export class BreadcrumbComponent {
     ) {
       this.router.navigate(['/nav']);
     }
+    else if (currentUrl.startsWith('/settings')) {
+      this.router.navigate(['/settings']);
+    }
     else {
       // fallback
       this.router.navigate(['/dashboard']);
     }
   }
 
-
-
+  navigateTo(link: BreadcrumbLink): void {
+    if (link.route) {
+      this.router.navigate([link.route]);
+    }
+  }
 }

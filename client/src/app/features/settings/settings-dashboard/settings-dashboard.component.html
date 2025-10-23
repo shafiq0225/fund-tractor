@@ -1,0 +1,123 @@
+<div class="min-h-screen bg-gray-50 py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+          <!-- Header -->
+          <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+            <p class="mt-2 text-sm text-gray-600">
+              Manage your account settings and preferences
+            </p>
+          </div>
+
+          <!-- Settings Grid -->
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <!-- Change Password Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-6">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <mat-icon class="!text-white !text-lg">lock</mat-icon>
+                    </div>
+                  </div>
+                  <div class="ml-4">
+                    <h3 class="text-lg font-medium text-gray-900">Change Password</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Update your account password
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <button 
+                    routerLink="/settings/change-password"
+                    class="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Change Password
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Management Card (Only for Admin) -->
+            <div *ngIf="isAdmin" class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-6">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <mat-icon class="!text-white !text-lg">people</mat-icon>
+                    </div>
+                  </div>
+                  <div class="ml-4">
+                    <h3 class="text-lg font-medium text-gray-900">User Management</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Manage user roles and permissions
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <button 
+                    routerLink="/settings/user-management"
+                    class="w-full bg-purple-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                    Manage Users
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile Settings Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-6">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                      <mat-icon class="!text-white !text-lg">person</mat-icon>
+                    </div>
+                  </div>
+                  <div class="ml-4">
+                    <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Update your personal information
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <button 
+                    routerLink="/settings/profile"
+                    class="w-full bg-green-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Edit Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preferences Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-6">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                      <mat-icon class="!text-white !text-lg">settings</mat-icon>
+                    </div>
+                  </div>
+                  <div class="ml-4">
+                    <h3 class="text-lg font-medium text-gray-900">Preferences</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                      Customize your application preferences
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <button 
+                    routerLink="/settings/preferences"
+                    class="w-full bg-yellow-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats (Optional) -->
+          
+        </div>
+      </div>
+    </div>
