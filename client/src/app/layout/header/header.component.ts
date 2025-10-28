@@ -45,7 +45,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
         // Load notifications when user is logged in
         this.loadNotifications();
-        this.startNotificationPolling();
       } else {
         this.userEmail = '';
         this.userInitials = '';
@@ -107,15 +106,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
       // Load unread count separately
       this.notificationService.getUnreadCount(this.userId).subscribe();
     }
-  }
-
-  private startNotificationPolling(): void {
-    // Refresh notifications every 30 seconds
-    this.refreshIntervalSubscription = interval(30000).subscribe(() => {
-      if (this.userId && this.isLoggedIn) {
-        this.notificationService.refreshNotifications(this.userId);
-      }
-    });
   }
 
   private stopNotificationPolling(): void {
