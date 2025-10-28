@@ -448,12 +448,28 @@ namespace Infrastructure.Services.Auth
             {
                 throw new ArgumentException("User not found");
             }
-
+            if (_passwordService.VerifyPassword(adminChangePasswordDto.NewPassword, targetUser.PasswordHash))
+            {
+                throw new ArgumentException("New password must be different from current password");
+            }
             // Update password
             targetUser.PasswordHash = _passwordService.HashPassword(adminChangePasswordDto.NewPassword);
             targetUser.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            // Send notification after successful password reset
+            var adminUserName = $"{adminUser.FirstName} {adminUser.LastName}";
+
+            await _notificationService.SendPasswordResetNotificationAsync(new PasswordResetNotificationDto
+            {
+                UserId = targetUser.Id,
+                UserEmail = targetUser.Email,
+                Firstname = targetUser.FirstName,
+                Lastname = targetUser.LastName,
+                ResetBy = adminUserName,
+                ResetAt = DateTime.UtcNow
+            });
+
             return true;
         }
     }

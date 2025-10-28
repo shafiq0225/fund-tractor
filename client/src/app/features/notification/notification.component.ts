@@ -109,9 +109,11 @@ export class NotificationComponent implements OnInit, OnDestroy {
   }
 
   private handleNotificationAction(notification: NotificationDto): void {
-    // Navigate based on notification type or metadata
     switch (notification.type) {
       case 'role_update':
+        this.router.navigate(['/emails']);
+        break;
+      case 'password_reset':
         this.router.navigate(['/emails']);
         break;
       case 'investment_update':
@@ -135,6 +137,8 @@ export class NotificationComponent implements OnInit, OnDestroy {
     switch (type) {
       case 'role_update':
         return 'security';
+      case 'password_reset':  // Add this
+        return 'lock_reset';
       case 'investment_update':
         return 'trending_up';
       case 'portfolio_update':
@@ -150,6 +154,8 @@ export class NotificationComponent implements OnInit, OnDestroy {
     switch (type) {
       case 'role_update':
         return 'text-purple-600';
+      case 'password_reset':  // Add this
+        return 'text-red-600';
       case 'investment_update':
         return 'text-green-600';
       case 'portfolio_update':
@@ -165,6 +171,8 @@ export class NotificationComponent implements OnInit, OnDestroy {
     switch (type) {
       case 'role_update':
         return 'bg-purple-100';
+      case 'password_reset':  // Add this
+        return 'bg-red-100';
       case 'investment_update':
         return 'bg-green-100';
       case 'portfolio_update':

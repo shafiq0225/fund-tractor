@@ -392,6 +392,120 @@ namespace Infrastructure.Services.Notification
             }
         }
 
+        public async Task<bool> SendPasswordResetNotificationAsync(PasswordResetNotificationDto passwordResetDto)
+        {
+            try
+            {
+                // Create internal notification
+                var notificationDto = new CreateNotificationDto
+                {
+                    UserId = passwordResetDto.UserId,
+                    Title = "Password Reset",
+                    Message = $"Your password has been reset by {passwordResetDto.ResetBy} on {passwordResetDto.ResetAt:MMMM dd, yyyy 'at' hh:mm tt}",
+                    Type = "password_reset",
+                    Metadata = new Dictionary<string, object>
+            {
+                { "resetBy", passwordResetDto.ResetBy },
+                { "resetAt", passwordResetDto.ResetAt },
+                { "action", "admin_password_reset" }
+            }
+                };
+
+                await CreateNotificationAsync(notificationDto);
+
+                // Store email content
+                var emailBody = GeneratePasswordResetEmailBody(
+                    passwordResetDto.Firstname,
+                    passwordResetDto.Lastname,
+                    passwordResetDto.ResetBy
+                );
+
+                var emailDto = new StoreEmailDto
+                {
+                    UserId = passwordResetDto.UserId,
+                    ToEmail = passwordResetDto.UserEmail,
+                    Subject = "Your Password Has Been Reset",
+                    Body = emailBody,
+                    Type = "password_reset",
+                    Metadata = new Dictionary<string, object>
+            {
+                { "Firstname", passwordResetDto.Firstname },
+                { "Lastname", passwordResetDto.Lastname },
+                { "resetBy", passwordResetDto.ResetBy },
+                { "date", DateTime.UtcNow.ToString("MMMM dd, yyyy") },
+                { "time", DateTime.UtcNow.ToString("hh:mm tt") }
+            }
+                };
+
+                await StoreEmailAsync(emailDto);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't throw - we don't want password reset to fail because of notification
+                Console.WriteLine($"Failed to send password reset notification: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string GeneratePasswordResetEmailBody(string firstname,string lastname, string resetBy)
+        {
+            return $@"
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa;'>
+            <div style='background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center; color: white;'>
+                <h1 style='margin: 0; font-size: 24px;'>Password Reset Notification</h1>
+            </div>
+            
+            <div style='padding: 30px;'>
+                <h2 style='color: #333; margin-bottom: 20px;'>Hello {firstname} {lastname},</h2>
+                
+                <div style='background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                    <p style='color: #666; line-height: 1.6; margin-bottom: 20px;'>
+                        Your account password has been reset by an administrator. Here are the details of this action:
+                    </p>
+                    
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                        <tr>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: #333; width: 40%;'>Action:</td>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; color: #666;'>Password Reset</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: #333;'>Reset By:</td>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; color: #666;'>{resetBy}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: #333;'>Date & Time:</td>
+                            <td style='padding: 12px; border-bottom: 1px solid #eee; color: #666;'>{DateTime.UtcNow.ToString("MMMM dd, yyyy 'at' hh:mm tt")} UTC</td>
+                        </tr>
+                    </table>
+                    
+                    <div style='background: #fef2f2; padding: 15px; border-radius: 6px; border: 1px solid #fecaca; margin: 20px 0;'>
+                        <p style='color: #dc2626; margin: 0; font-size: 14px;'>
+                            <strong>Important Security Notice:</strong> 
+                            If you did not request this password reset or believe this action was taken in error, 
+                            please contact your system administrator immediately and consider securing your account.
+                        </p>
+                    </div>
+                    
+                    <div style='background: #f0f9ff; padding: 15px; border-radius: 6px; border: 1px solid #bae6fd; margin: 20px 0;'>
+                        <p style='color: #0369a1; margin: 0; font-size: 14px;'>
+                            <strong>Next Steps:</strong> 
+                            You can now login to the system using your new password. 
+                            We recommend changing your password after your first login for security purposes.
+                        </p>
+                    </div>
+                </div>
+                
+                <div style='margin-top: 30px; padding: 20px; background: white; border-radius: 8px; text-align: center; border-top: 1px solid #e5e7eb;'>
+                    <p style='color: #999; font-size: 12px; margin: 0;'>
+                        This is an automated security message from the system. Please do not reply to this email.
+                    </p>
+                </div>
+            </div>
+        </div>
+    ";
+        }
     }
 
 }

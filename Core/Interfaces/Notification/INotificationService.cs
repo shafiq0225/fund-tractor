@@ -19,5 +19,6 @@ namespace Core.Interfaces.Notification
         Task<int> GetUnreadCountAsync(int userId);
         Task<bool> SendRoleUpdateNotificationAsync(RoleUpdateNotificationDto roleUpdateDto);
         Task<StoredEmailDto?> GetEmailByIdAsync(int emailId);
+        Task<bool> SendPasswordResetNotificationAsync(PasswordResetNotificationDto passwordResetDto);
     }
 }

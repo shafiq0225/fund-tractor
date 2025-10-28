@@ -325,14 +325,14 @@ namespace API.Controllers
                     return Ok(new ApiResponse<object>
                     {
                         Success = true,
-                        Message = "Password changed successfully"
+                        Message = "Password reset successfully and user has been notified"
                     });
                 }
 
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Failed to change password"
+                    Message = "Failed to reset password"
                 });
             }
             catch (ArgumentException ex)
@@ -364,7 +364,7 @@ namespace API.Controllers
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "An error occurred while changing password"
+                    Message = "An error occurred while resetting password"
                 });
             }
         }

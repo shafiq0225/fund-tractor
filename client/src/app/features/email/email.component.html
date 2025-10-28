@@ -216,6 +216,14 @@
                           {{ selectedEmail.metadata.oldRole }} → {{ selectedEmail.metadata.newRole }}
                         </span>
                       </div>
+
+                      <div *ngIf="selectedEmail?.type === 'password_reset' && selectedEmail?.metadata" class="mt-2">
+                        <span
+                          class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200/50">
+                          <mat-icon class="!text-base mr-1.5">security</mat-icon>
+                          Security Action: Password Reset
+                        </span>
+                      </div>
                     </div>
                   </div>
 

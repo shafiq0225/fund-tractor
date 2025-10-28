@@ -280,6 +280,7 @@ export class EmailComponent implements OnInit {
   getEmailIcon(type: string): string {
     const iconMap: { [key: string]: string } = {
       'role_update': 'admin_panel_settings',
+      'password_reset': 'lock_reset',
       'alert': 'warning',
       'notification': 'notifications',
       'broadcast': 'campaign',
@@ -289,7 +290,7 @@ export class EmailComponent implements OnInit {
   }
 
   getRelativeTime(createdAt: string): string {
-    const created = new Date(createdAt);
+    const created = new Date(createdAt + 'Z');
     const now = new Date();
     const diffMs = now.getTime() - created.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -327,6 +328,7 @@ export class EmailComponent implements OnInit {
   getSenderDisplay(email: StoredEmailDto): string {
     const senderMap: { [key: string]: string } = {
       'role_update': 'User Management System',
+      'password_reset': 'Security System',
       'system': 'System Administrator',
       'alert': 'Security System',
       'broadcast': 'Announcement System'
