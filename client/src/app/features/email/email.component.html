@@ -1,0 +1,282 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- HEADER - Improved with better visual hierarchy -->
+    <!-- <div class="flex justify-between items-center mb-8">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg">
+          <mat-icon class="text-white !text-3xl">mark_email_unread</mat-icon>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Message Center</h1>
+          <p class="text-gray-500 text-sm mt-1">Manage your notifications and system messages</p>
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <div
+          class="text-center bg-white/80 backdrop-blur-sm shadow-sm border border-white/20 rounded-2xl px-6 py-4 min-w-[100px]">
+          <div class="text-2xl font-bold text-blue-600" [class.animate-pulse]="unreadCount > 0">{{ unreadCount }}</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Unread</div>
+        </div>
+        <div
+          class="text-center bg-white/80 backdrop-blur-sm shadow-sm border border-white/20 rounded-2xl px-6 py-4 min-w-[100px]">
+          <div class="text-2xl font-bold text-gray-700">{{ emails.length }}</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Total</div>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- SEARCH & FILTER BAR - Streamlined -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md border border-white/20 p-4 mb-6">
+      <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <!-- Filter Chips -->
+        <div class="flex flex-wrap gap-2">
+          <button (click)="applyFilter('all')" [class]="filter === 'all' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'"
+            class="px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-2">
+            <mat-icon class="!text-sm">all_inbox</mat-icon>
+            All Messages
+          </button>
+          <button (click)="applyFilter('unread')" [class]="filter === 'unread' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'"
+            class="px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-2">
+            <mat-icon class="!text-sm">mark_email_unread</mat-icon>
+            Unread
+            <span *ngIf="unreadCount > 0"
+              class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center ml-1">
+              {{ unreadCount }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex gap-3 items-center w-full sm:w-auto">
+          <div class="relative flex-1 sm:flex-initial min-w-[280px]">
+            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 !text-lg">search</mat-icon>
+            <input type="text" [(ngModel)]="searchTerm" (input)="searchMessages()"
+              placeholder="Search subjects, content, or senders..."
+              class="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none transition-all bg-white/50" />
+            <button *ngIf="searchTerm" (click)="clearSearch()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+              <mat-icon class="!text-lg">close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTAINER - Enhanced visual design -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+      <div class="flex h-[700px]">
+
+        <!-- LEFT: EMAIL LIST - Improved card design -->
+        <div class="w-2/5 border-r border-gray-100/50 bg-gradient-to-b from-gray-50/50 to-white/30">
+          <div class="p-4 border-b border-gray-100/50 bg-white/60 backdrop-blur-sm flex justify-between items-center">
+            <div>
+              <h3 class="font-semibold text-gray-800 text-lg">Inbox</h3>
+              <p class="text-gray-500 text-xs mt-1" *ngIf="filteredEmails.length > 0">
+                Showing {{ filteredEmails.length }} of {{ emails.length }} messages
+              </p>
+            </div>
+            <div class="flex gap-2 items-center">
+              <button (click)="refreshEmails()" class="p-2 hover:bg-gray-100/50 rounded-xl transition-all duration-200"
+                [class.animate-spin]="isLoading" title="Refresh messages">
+                <mat-icon class="!text-gray-600">refresh</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div *ngIf="isLoading" class="p-12 text-center">
+            <div class="inline-flex flex-col items-center">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+              <p class="text-gray-600 text-sm">Loading your messages...</p>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!isLoading && filteredEmails.length === 0" class="p-12 text-center text-gray-500">
+            <div class="inline-flex flex-col items-center">
+              <mat-icon class="!text-6xl text-gray-300/60 mb-4">inbox</mat-icon>
+              <p class="text-gray-600 font-medium mb-2">No messages found</p>
+              <p class="text-gray-500 text-sm" *ngIf="searchTerm">
+                No results for "{{ searchTerm }}". Try different keywords.
+              </p>
+              <p class="text-gray-500 text-sm" *ngIf="!searchTerm && filter === 'unread'">
+                You're all caught up! No unread messages.
+              </p>
+              <button *ngIf="searchTerm || filter !== 'all'" (click)="clearSearch(); applyFilter('all')"
+                class="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium rounded-lg border border-blue-200 hover:border-blue-300 transition">
+                Show all messages
+              </button>
+            </div>
+          </div>
+
+          <!-- Email List - Enhanced cards -->
+          <div class="overflow-y-auto h-full custom-scrollbar">
+            <div *ngFor="let email of filteredEmails; trackBy: trackByEmailId" (click)="selectEmail(email)"
+              class="cursor-pointer border-b border-gray-100/30 p-4 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-white transition-all duration-200 relative group"
+              [class.bg-gradient-to-r]="selectedEmail?.id === email.id"
+              [class.from-blue-100/70]="selectedEmail?.id === email.id"
+              [class.to-white]="selectedEmail?.id === email.id" [class.border-l-4]="email.status !== 'viewed'"
+              [class.border-l-blue-500]="email.status !== 'viewed'" [class.shadow-sm]="selectedEmail?.id === email.id">
+              <!-- Email Header -->
+              <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <div [class]="email.status !== 'viewed' 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'bg-gray-100 text-gray-500'" class="p-2 rounded-lg transition-colors">
+                    <mat-icon class="!text-sm">{{ getEmailIcon(email.type) }}</mat-icon>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4
+                      class="text-sm font-semibold text-gray-800 truncate group-hover:text-blue-700 transition-colors">
+                      {{ email.subject }}
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-1">{{ getSenderDisplay(email) }}</p>
+                  </div>
+                </div>
+                <div class="text-xs text-gray-400 whitespace-nowrap ml-2">
+                  {{ getRelativeTime(email.createdAt) }}
+                </div>
+              </div>
+
+              <!-- Role Change Badge -->
+              <div *ngIf="email.type === 'role_update' && email.metadata" class="mb-3">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200/50">
+                  <mat-icon class="!text-xs mr-1">swap_horiz</mat-icon>
+                  {{ email.metadata.oldRole }} → {{ email.metadata.newRole }}
+                </span>
+              </div>
+
+              <!-- Email Preview -->
+              <p class="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-3">
+                {{ getEmailPreview(email.body) }}
+              </p>
+
+              <!-- Email Footer -->
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400 truncate flex-1 mr-2">{{ email.toEmail }}</span>
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button (click)="markSingleAsRead(email, $event)" *ngIf="email.status !== 'viewed'"
+                    class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    title="Mark as read">
+                    <mat-icon class="!text-sm">mark_email_read</mat-icon>
+                  </button>
+                  <button (click)="deleteSingle(email, $event)"
+                    class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Delete message">
+                    <mat-icon class="!text-sm">delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Unread Indicator -->
+              <div *ngIf="email.status !== 'viewed'"
+                class="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full shadow-sm" title="Unread"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: EMAIL DETAILS - Enhanced layout -->
+        <div class="flex-1 bg-gradient-to-br from-gray-50/30 to-blue-50/20">
+          <div *ngIf="!selectedEmail" class="h-full flex items-center justify-center text-center p-8">
+            <div class="max-w-sm">
+              <div class="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-6 inline-flex mb-4">
+                <mat-icon class="!text-4xl text-blue-600">drafts</mat-icon>
+              </div>
+              <h2 class="text-xl font-semibold text-gray-700 mb-2">Select a Message</h2>
+              <p class="text-gray-500 text-sm">Choose a message from your inbox to view its contents</p>
+            </div>
+          </div>
+
+          <div *ngIf="selectedEmail" class="h-full flex flex-col">
+            <!-- EMAIL HEADER - Improved styling -->
+            <div class="p-6 border-b border-gray-100/50 bg-white/60 backdrop-blur-sm">
+              <div class="flex justify-between items-start gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-3 mb-3">
+                    <div [class]="selectedEmail.status !== 'viewed' 
+                        ? 'bg-blue-100 text-blue-600' 
+                        : 'bg-gray-100 text-gray-500'" class="p-3 rounded-xl">
+                      <mat-icon class="!text-xl">{{ getEmailIcon(selectedEmail.type) }}</mat-icon>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h2 class="text-2xl font-bold text-gray-800 truncate">{{ selectedEmail.subject }}</h2>
+
+                      <!-- Role Change Badge -->
+                      <div *ngIf="selectedEmail.type === 'role_update' && selectedEmail.metadata" class="mt-2">
+                        <span
+                          class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200/50">
+                          <mat-icon class="!text-base mr-1.5">admin_panel_settings</mat-icon>
+                          {{ selectedEmail.metadata.oldRole }} → {{ selectedEmail.metadata.newRole }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Email Metadata Grid -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                    <div class="flex items-center gap-2 text-gray-600">
+                      <mat-icon class="!text-gray-400 !text-sm">person</mat-icon>
+                      <span><strong class="text-gray-700">From:</strong> {{ getSenderDisplay(selectedEmail) }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600">
+                      <mat-icon class="!text-gray-400 !text-sm">email</mat-icon>
+                      <span><strong class="text-gray-700">To:</strong> {{ selectedEmail.toEmail }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600">
+                      <mat-icon class="!text-gray-400 !text-sm">schedule</mat-icon>
+                      <span><strong class="text-gray-700">Sent:</strong> {{ getDetailedTime(selectedEmail.createdAt)
+                        }}</span>
+                    </div>
+                    <div *ngIf="selectedEmail.viewedAt" class="flex items-center gap-2 text-gray-600">
+                      <mat-icon class="!text-gray-400 !text-sm">visibility</mat-icon>
+                      <span><strong class="text-gray-700">Viewed:</strong> {{ getRelativeTime(selectedEmail.viewedAt)
+                        }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="flex gap-2 shrink-0">
+                  <button (click)="deleteSingle(selectedEmail!)"
+                    class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all duration-200 border border-red-200 hover:border-red-300">
+                    <mat-icon class="!text-sm">delete</mat-icon>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- EMAIL BODY - Better container styling -->
+            <div class="flex-1 overflow-y-auto p-6">
+              <div class="max-w-4xl mx-auto">
+                <!-- Email Content -->
+                <div class="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden">
+                  <div [innerHTML]="getSanitizedHtml(selectedEmail.body)" class="email-content-container"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="mt-6 text-sm text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <div class="flex items-center gap-2">
+        <mat-icon class="!text-sm text-gray-400">schedule</mat-icon>
+        <span>Last updated: {{ getCurrentTime() }}</span>
+      </div>
+      <span class="text-xs uppercase tracking-wide text-gray-400 font-medium">
+        FundTrackr Message Center • Secure Communication
+      </span>
+    </div>
+  </div>
+</div>

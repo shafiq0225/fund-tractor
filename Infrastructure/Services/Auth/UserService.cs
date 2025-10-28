@@ -1,6 +1,8 @@
 ﻿using Core.DTOs.Auth;
+using Core.DTOs.Notifications;
 using Core.Entities.Auth;
 using Core.Interfaces.Auth;
+using Core.Interfaces.Notification;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +16,14 @@ namespace Infrastructure.Services.Auth
         private readonly IPasswordService _passwordService;
         private readonly ITokenService _tokenService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public UserService(StoreContext context, IPasswordService passwordService, ITokenService tokenService, IHttpContextAccessor httpContextAccessor)
+        private readonly INotificationService _notificationService;
+        public UserService(StoreContext context, IPasswordService passwordService, ITokenService tokenService, IHttpContextAccessor httpContextAccessor, INotificationService notificationService)
         {
             _context = context;
             _passwordService = passwordService;
             _tokenService = tokenService;
             _httpContextAccessor = httpContextAccessor;
+            _notificationService = notificationService;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
@@ -266,7 +269,7 @@ namespace Infrastructure.Services.Auth
         }
 
 
-        public async Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedBy)
+        public async Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedByUserId)
         {
             // Validate role
             var validRoles = new[] { "Admin", "Employee", "HeadOfFamily", "FamilyMember" };
@@ -287,7 +290,7 @@ namespace Infrastructure.Services.Auth
             // Check if the user performing the update is an admin
             var currentUser = await _context.Users
                 .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == updatedBy);
+                .FirstOrDefaultAsync(u => u.Id == updatedByUserId);
 
             if (currentUser == null || !currentUser.UserRoles.Any(r => r.RoleName == "Admin"))
             {
@@ -295,10 +298,12 @@ namespace Infrastructure.Services.Auth
             }
 
             // Prevent admin from removing their own admin role
-            if (userId == updatedBy && newRole != "Admin")
+            if (userId == updatedByUserId && newRole != "Admin")
             {
                 throw new InvalidOperationException("Cannot remove admin role from yourself");
             }
+
+            var oldRole = user.UserRoles.FirstOrDefault()?.RoleName ?? "No Role";
 
             // Remove existing roles and add new one
             user.UserRoles.Clear();
@@ -308,6 +313,24 @@ namespace Infrastructure.Services.Auth
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            var updatedByUser = await _context.Users
+               .FirstOrDefaultAsync(u => u.Id == updatedByUserId);
+
+            var updatedBy = updatedByUser != null
+                ? $"{updatedByUser.FirstName} {updatedByUser.LastName}"
+                : "System Administrator";
+
+            await _notificationService.SendRoleUpdateNotificationAsync(new RoleUpdateNotificationDto
+            {
+                UserId = userId,
+                UserEmail = user.Email,
+                UserName = $"{user.FirstName} {user.LastName}",
+                OldRole = oldRole,
+                NewRole = newRole,
+                UpdatedBy = updatedBy
+            });
+
             return true;
         }
 

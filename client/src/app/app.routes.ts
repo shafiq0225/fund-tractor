@@ -16,6 +16,7 @@ import { UnauthorizedComponent } from './features/unauthorized/unauthorized.comp
 import { SettingsDashboardComponent } from './features/settings/settings-dashboard/settings-dashboard.component';
 import { ChangePasswordComponent } from './features/settings/change-password/change-password.component';
 import { UserManagementComponent } from './features/settings/user-management/user-management.component';
+import { EmailComponent } from './features/email/email.component';
 
 export const routes: Routes = [
     // Public routes - no layout
@@ -36,12 +37,13 @@ export const routes: Routes = [
     {
         path: '',
         component: LayoutComponent,
-        canActivate: [authGuard], // Only check authentication for parent
+        canActivate: [authGuard],
         children: [
             // Main Dashboard - Accessible to all authenticated users
             { 
                 path: '', 
-                component: DashboardComponent
+                component: DashboardComponent,
+                pathMatch: 'full'
             },
             
             // NAV Management Section
@@ -67,7 +69,7 @@ export const routes: Routes = [
                     { 
                         path: 'import', 
                         component: NavImportComponent,
-                        canActivate: [roleGuard], // Add roleGuard here
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee'] }
                     },
                     
@@ -75,7 +77,7 @@ export const routes: Routes = [
                     { 
                         path: 'manage', 
                         component: ManageSchemesComponent,
-                        canActivate: [roleGuard], // Add roleGuard here
+                        canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee'] }
                     },
                     
@@ -120,6 +122,13 @@ export const routes: Routes = [
                 canActivate: [roleGuard],
                 data: { roles: ['Admin'] }
             },
+            
+            // Email Section
+            { 
+                path: 'emails', 
+                component: EmailComponent
+            },
+            
             // Other main app routes
             { 
                 path: 'portfolio', 
@@ -140,7 +149,6 @@ export const routes: Routes = [
         ]
     },
     
-    // Fallback routes
-    { path: '', redirectTo: '/login', pathMatch: 'full' },
+    // Fallback routes - ONLY the wildcard route
     { path: '**', redirectTo: '/login' }
 ];

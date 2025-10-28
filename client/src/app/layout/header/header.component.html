@@ -13,9 +13,9 @@
                         class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
                         Investments
                     </a>
-                    <a routerLink="/portfolio"
+                    <a routerLink="/emails"
                         class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
-                        Portfolio
+                        Email
                     </a>
                     <a routerLink="/profile"
                         class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
@@ -47,60 +47,70 @@
                             <div class="px-4 py-2 border-b border-slate-200">
                                 <div class="flex justify-between items-center">
                                     <h3 class="text-sm font-semibold text-slate-800">Notifications</h3>
-                                    <span *ngIf="unreadNotifications > 0"
-                                        class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                                        {{ unreadNotifications }} new
-                                    </span>
+                                    <div class="flex items-center space-x-2">
+                                        <span *ngIf="unreadNotifications > 0"
+                                            class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                                            {{ unreadNotifications }} new
+                                        </span>
+                                        <button *ngIf="unreadNotifications > 0" (click)="markAllAsRead()"
+                                            class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                                            Mark all read
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Notifications List -->
-                            <div class="divide-y divide-slate-100">
-                                <!-- Sample Notification Items -->
-                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="bg-green-100 p-2 rounded-full">
-                                            <mat-icon class="!text-lg text-green-600">trending_up</mat-icon>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-slate-800 font-medium">Investment Update</p>
-                                            <p class="text-xs text-slate-500 mt-1">Your portfolio gained 2.3% today</p>
-                                            <span class="text-xs text-slate-400 mt-1">2 hours ago</span>
-                                        </div>
+                            <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                                <!-- Loading State -->
+                                <div *ngIf="isLoadingNotifications" class="px-4 py-3 text-center">
+                                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto">
                                     </div>
+                                    <p class="text-xs text-slate-500 mt-2">Loading notifications...</p>
                                 </div>
 
-                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="bg-blue-100 p-2 rounded-full">
-                                            <mat-icon class="!text-lg text-blue-600">info</mat-icon>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-slate-800 font-medium">Market Alert</p>
-                                            <p class="text-xs text-slate-500 mt-1">New investment opportunities
-                                                available</p>
-                                            <span class="text-xs text-slate-400 mt-1">5 hours ago</span>
-                                        </div>
-                                    </div>
+                                <!-- Empty State -->
+                                <div *ngIf="!isLoadingNotifications && notifications.length === 0"
+                                    class="px-4 py-8 text-center">
+                                    <mat-icon class="!text-3xl text-slate-300 mb-2">notifications_off</mat-icon>
+                                    <p class="text-sm text-slate-500">No notifications yet</p>
                                 </div>
 
-                                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors duration-200">
+                                <!-- Notification Items -->
+                                <div *ngFor="let notification of notifications"
+                                    (click)="onNotificationClick(notification)" [class]="'px-4 py-3 cursor-pointer transition-colors duration-200 ' + 
+                                             (notification.isRead ? 'bg-white' : 'bg-blue-50')">
                                     <div class="flex items-start space-x-3">
-                                        <div class="bg-yellow-100 p-2 rounded-full">
-                                            <mat-icon class="!text-lg text-yellow-600">warning</mat-icon>
+                                        <div
+                                            [class]="'p-2 rounded-full ' + getNotificationIconBgColor(notification.type)">
+                                            <mat-icon
+                                                [class]="'!text-lg ' + getNotificationIconColor(notification.type)">
+                                                {{ getNotificationIcon(notification.type) }}
+                                            </mat-icon>
                                         </div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-slate-800 font-medium">Reminder</p>
-                                            <p class="text-xs text-slate-500 mt-1">Complete your profile setup</p>
-                                            <span class="text-xs text-slate-400 mt-1">1 day ago</span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-slate-800 truncate">
+                                                {{ notification.title }}
+                                            </p>
+                                            <p class="text-xs text-slate-600 mt-1 line-clamp-2">
+                                                {{ notification.message }}
+                                            </p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span class="text-xs text-slate-400">
+                                                    {{ getNotificationTime(notification.createdAt) }}
+                                                </span>
+                                                <span *ngIf="!notification.isRead"
+                                                    class="h-2 w-2 bg-blue-500 rounded-full"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Notifications Footer -->
+                            <!-- In the Notifications Footer section -->
                             <div class="px-4 py-2 border-t border-slate-200">
-                                <button
+                                <button (click)="navigateToNotifications()"
                                     class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2">
                                     View All Notifications
                                 </button>

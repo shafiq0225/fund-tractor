@@ -1,6 +1,8 @@
 using System;
 using Core.Entities.AMFI;
 using Core.Entities.Auth;
+using Core.Entities.Email;
+using Core.Entities.Notification;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
@@ -119,5 +121,6 @@ public class StoreContext(DbContextOptions options) : DbContext(options)
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
-
+    public DbSet<StoredEmail> StoredEmails { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 }
