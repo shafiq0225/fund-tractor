@@ -2,7 +2,9 @@ using System;
 using Core.Entities.AMFI;
 using Core.Entities.Auth;
 using Core.Entities.Email;
+using Core.Entities.Investment;
 using Core.Entities.Notification;
+using Infrastructure.Data.Config;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
@@ -13,6 +15,7 @@ public class StoreContext(DbContextOptions options) : DbContext(options)
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(InvestmentConfiguration).Assembly);
         // Your existing AMFI configuration
         modelBuilder.Entity<SchemeDetail>()
             .Property(a => a.Nav)
@@ -123,4 +126,6 @@ public class StoreContext(DbContextOptions options) : DbContext(options)
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<StoredEmail> StoredEmails { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Investment> Investments { get; set; }
+
 }

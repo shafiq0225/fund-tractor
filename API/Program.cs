@@ -10,6 +10,8 @@ using Core.Interfaces.Auth;
 using Infrastructure.Services.Auth;
 using Core.Interfaces.Notification;
 using Infrastructure.Services.Notification;
+using Core.Interfaces.InvestmentRepo;
+using Infrastructure.Services.Investment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +37,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IInvestmentRepository, InvestmentRepository>();
 
 // NEW: JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
