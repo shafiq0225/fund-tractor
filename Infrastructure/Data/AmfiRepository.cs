@@ -530,7 +530,6 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
     {
         try
         {
-
             var schemeCodes = await GetDistinctSchemeCodesAsync();
             var schemes = new List<SchemeHistory>();
             var allDates = new List<DateTime>();
@@ -540,7 +539,7 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
             {
                 try
                 {
-                    // Get the last 3 records to calculate percentages properly
+                    // Get the last 3 available records (with fallback logic)
                     var schemeRecords = await GetLastThreeNavRecordsAsync(schemeCode, request.CurrentDate);
 
                     if (schemeRecords.Count >= 2)
@@ -555,6 +554,8 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
                 catch (Exception ex)
                 {
                     // Continue with other schemes even if one fails
+                    Console.WriteLine($"Error processing scheme {schemeCode}: {ex.Message}");
+                    continue;
                 }
             }
 
@@ -574,81 +575,127 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
         }
         catch (Exception ex)
         {
+            // Log the error
+            Console.WriteLine($"Error in GetNavHistoryAsync: {ex.Message}");
             throw;
         }
     }
 
+
+    private async Task<List<NavRecord>> GetLastAvailableNavRecordsAsync(string schemeCode, int count)
+    {
+        // Get the last 'count' available records regardless of date
+        var allRecords = await storeContext.SchemeDetails
+            .Where(x => x.SchemeCode == schemeCode && x.IsVisible)
+            .OrderByDescending(x => x.Date)
+            .Take(count)
+            .Select(x => new NavRecord
+            {
+                Id = x.Id,
+                FundHouse = x.FundCode,
+                FundName = x.FundName,
+                SchemeCode = x.SchemeCode,
+                SchemeName = x.SchemeName,
+                IsActive = x.IsVisible ? 1 : 0,
+                NavDate = x.Date,
+                NavValue = x.Nav
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Return in chronological order (oldest first)
+        return allRecords.OrderBy(x => x.NavDate).ToList();
+    }
+
     private async Task<List<NavRecord>> GetLastThreeNavRecordsAsync(string schemeCode, DateTime currentDate)
     {
-        var (startDate, endDate) = CalculateDateRange(currentDate);
+        try
+        {
+            // First, try to get records within a reasonable date range (last 30 days)
+            var endDate = currentDate.Date;
+            var startDate = endDate.AddDays(-30); // Look back 30 days to ensure we find data
 
-        // Get more records to ensure we have data for percentage calculation
-        var allRecords = await GetNavRecordsAsync(schemeCode, startDate.AddDays(-5), endDate);
+            var dateRangeRecords = await GetNavRecordsAsync(schemeCode, startDate, endDate);
 
-        // Take the last 3 records
-        return allRecords
-            .OrderByDescending(x => x.NavDate)
-            .Take(3)
-            .OrderBy(x => x.NavDate)
-            .ToList();
+            // If we have enough records in the date range, use the last 3
+            if (dateRangeRecords.Count >= 2)
+            {
+                return dateRangeRecords
+                    .OrderByDescending(x => x.NavDate)
+                    .Take(3)
+                    .OrderBy(x => x.NavDate)
+                    .ToList();
+            }
+
+            // If not enough records in date range, FALL BACK to last available records regardless of date
+            var lastAvailableRecords = await storeContext.SchemeDetails
+                .Where(x => x.SchemeCode == schemeCode && x.IsVisible)
+                .OrderByDescending(x => x.Date)
+                .Take(3)
+                .Select(x => new NavRecord
+                {
+                    Id = x.Id,
+                    FundHouse = x.FundCode,
+                    FundName = x.FundName,
+                    SchemeCode = x.SchemeCode,
+                    SchemeName = x.SchemeName,
+                    IsActive = x.IsVisible ? 1 : 0,
+                    NavDate = x.Date,
+                    NavValue = x.Nav
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Return in chronological order (oldest first) for percentage calculation
+            return lastAvailableRecords.OrderBy(x => x.NavDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetLastThreeNavRecordsAsync for scheme {schemeCode}: {ex.Message}");
+            return new List<NavRecord>();
+        }
     }
+
 
     private SchemeHistory BuildSchemeHistoryWithIndividualPercentages(List<NavRecord> records, string schemeCode)
     {
         var history = new List<NavHistory>();
-        var firstRecord = records.First();
 
-        // We need at least 2 records
-        if (records.Count < 2)
+        if (records == null || !records.Any())
+            return CreateEmptySchemeHistory(schemeCode);
+
+        // Sort by date to ensure chronological order
+        var sortedRecords = records.OrderBy(x => x.NavDate).ToList();
+        var firstRecord = sortedRecords.First();
+
+        // We need at least 2 records for meaningful percentage calculation
+        if (sortedRecords.Count < 2)
         {
-            return BuildFallbackSchemeHistory(records, schemeCode);
+            return CreateFallbackSchemeHistory(sortedRecords, schemeCode);
         }
 
-        // The records are ordered by date (oldest first)
-        NavRecord baseRecord = null;
-        NavRecord firstHistoryRecord = null;
-        NavRecord secondHistoryRecord = null;
-
-        if (records.Count >= 3)
+        // Calculate percentages between consecutive records
+        for (int i = 1; i < sortedRecords.Count; i++)
         {
-            // We have: [base], [first history], [second history]
-            baseRecord = records[0];
-            firstHistoryRecord = records[1];
-            secondHistoryRecord = records[2];
+            var previousRecord = sortedRecords[i - 1];
+            var currentRecord = sortedRecords[i];
+
+            var percentageChange = CalculatePercentageChange(previousRecord.NavValue, currentRecord.NavValue);
+
+            var navHistory = new NavHistory
+            {
+                Date = currentRecord.NavDate,
+                Nav = currentRecord.NavValue,
+                Percentage = percentageChange.ToString("F2"),
+                IsTradingHoliday = false,
+                IsGrowth = percentageChange > 0
+            };
+
+            history.Add(navHistory);
         }
-        else if (records.Count == 2)
-        {
-            // We only have two records, use the older one as base for both
-            baseRecord = records[0];
-            firstHistoryRecord = records[0]; // Same as base
-            secondHistoryRecord = records[1];
-        }
 
-        // Calculate percentages from base record
-        var firstPercentage = CalculatePercentageChange(baseRecord.NavValue, firstHistoryRecord.NavValue);
-        var secondPercentage = CalculatePercentageChange(firstHistoryRecord.NavValue, secondHistoryRecord.NavValue);
-
-        // Build history entries - BOTH show actual percentages, NO "100"
-        var navHistory1 = new NavHistory
-        {
-            Date = firstHistoryRecord.NavDate,
-            Nav = firstHistoryRecord.NavValue,
-            Percentage = firstPercentage.ToString("F2"), // Show actual percentage
-            IsTradingHoliday = false,
-            IsGrowth = firstPercentage > 0
-        };
-
-        var navHistory2 = new NavHistory
-        {
-            Date = secondHistoryRecord.NavDate,
-            Nav = secondHistoryRecord.NavValue,
-            Percentage = secondPercentage.ToString("F2"), // Show actual percentage
-            IsTradingHoliday = false,
-            IsGrowth = secondPercentage > 0
-        };
-
-        history.Add(navHistory1);
-        history.Add(navHistory2);
+        // If we only have 2 records, we'll have 1 history entry
+        // If we have 3 records, we'll have 2 history entries (showing changes from record1→record2 and record2→record3)
 
         return new SchemeHistory
         {
@@ -659,6 +706,67 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
             Rank = null
         };
     }
+
+    private SchemeHistory CreateFallbackSchemeHistory(List<NavRecord> records, string schemeCode)
+    {
+        var history = new List<NavHistory>();
+        var firstRecord = records.First();
+
+        if (records.Count == 1)
+        {
+            // Single record - create two entries with 0% change
+            var singleRecord = records.First();
+            var previousDate = singleRecord.NavDate.AddDays(-1);
+
+            // First history entry (previous day)
+            history.Add(new NavHistory
+            {
+                Date = previousDate,
+                Nav = singleRecord.NavValue,
+                Percentage = "0.00",
+                IsTradingHoliday = false,
+                IsGrowth = false
+            });
+
+            // Second history entry (current day)
+            history.Add(new NavHistory
+            {
+                Date = singleRecord.NavDate,
+                Nav = singleRecord.NavValue,
+                Percentage = "0.00",
+                IsTradingHoliday = false,
+                IsGrowth = false
+            });
+        }
+
+        return new SchemeHistory
+        {
+            FundName = firstRecord.FundName,
+            SchemeCode = firstRecord.SchemeCode,
+            SchemeName = firstRecord.SchemeName,
+            History = history,
+            Rank = null
+        };
+    }
+
+    private SchemeHistory CreateEmptySchemeHistory(string schemeCode)
+    {
+        // Get basic scheme info from database if possible
+        var schemeInfo = storeContext.SchemeDetails
+            .Where(x => x.SchemeCode == schemeCode)
+            .OrderByDescending(x => x.Date)
+            .FirstOrDefault();
+
+        return new SchemeHistory
+        {
+            FundName = schemeInfo?.FundName ?? "Unknown Fund",
+            SchemeCode = schemeCode,
+            SchemeName = schemeInfo?.SchemeName ?? "Unknown Scheme",
+            History = new List<NavHistory>(),
+            Rank = null
+        };
+    }
+
 
     private SchemeHistory BuildFallbackSchemeHistory(List<NavRecord> records, string schemeCode)
     {
@@ -702,16 +810,18 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
         };
     }
 
-    private decimal CalculatePercentageChange(decimal baseNav, decimal currentNav)
+    private decimal CalculatePercentageChange(decimal previousNav, decimal currentNav)
     {
-        if (baseNav == 0) return 0;
-        return ((currentNav - baseNav) / baseNav) * 100;
+        if (previousNav == 0) return 0;
+        return ((currentNav - previousNav) / previousNav) * 100;
     }
 
     private (DateTime startDate, DateTime endDate) CalculateDateRange(DateTime currentDate)
     {
-        var endDate = GetLastTradingDate(currentDate);
-        var startDate = GetLastTradingDate(endDate.AddDays(-7));
+        // Look for data from the last 7 days to ensure we find something
+        var endDate = currentDate.Date;
+        var startDate = endDate.AddDays(-7);
+
         return (startDate, endDate);
     }
 
@@ -729,6 +839,7 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
     {
         if (!allDates.Any())
         {
+            // Default to last 2 days if no data
             var defaultEndDate = DateTime.Today.AddDays(-1);
             var defaultStartDate = defaultEndDate.AddDays(-1);
             return (defaultStartDate, defaultEndDate);
@@ -739,6 +850,7 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
         return (minDate, maxDate);
     }
 
+
     private List<SchemeHistory> ApplyRanking(List<SchemeHistory> schemes)
     {
         if (!schemes.Any())
@@ -748,7 +860,7 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
             .Select(s => new
             {
                 Scheme = s,
-                // Use the second history entry's percentage for ranking
+                // Use the most recent history entry's percentage for ranking
                 LatestPercentage = s.History
                     .OrderByDescending(h => h.Date)
                     .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
@@ -758,14 +870,20 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
             .ThenBy(s => s.Scheme.FundName)
             .Select((s, index) =>
             {
+                // Rank logic: top 3 = 1,2,3; all others = 4
                 s.Scheme.Rank = index < 3 ? index + 1 : 4;
                 return s.Scheme;
             })
             .OrderBy(s => s.Rank)
+            .ThenByDescending(s => s.History
+                .OrderByDescending(h => h.Date)
+                .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+                .FirstOrDefault())
             .ToList();
 
         return schemesWithRank;
     }
+
 
     public async Task<FundDataResponse> GetFundsBySchemeCodes(List<string> schemeCodes)
     {
