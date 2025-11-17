@@ -539,46 +539,170 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
             {
                 try
                 {
-                    // Get the last 3 available records (with fallback logic)
-                    var schemeRecords = await GetLastThreeNavRecordsAsync(schemeCode, request.CurrentDate);
+                    var schemeRecords = await GetLastTwoDistinctDatesAsync(schemeCode);
 
-                    if (schemeRecords.Count >= 2)
+                    if (schemeRecords.Any())
                     {
-                        var schemeHistory = BuildSchemeHistoryWithIndividualPercentages(schemeRecords, schemeCode);
+                        var schemeHistory = BuildSimpleSchemeHistory(schemeRecords, schemeCode);
                         schemes.Add(schemeHistory);
 
-                        // Collect all dates from this scheme's history
+                        // Collect all dates
                         allDates.AddRange(schemeHistory.History.Select(h => h.Date));
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Continue with other schemes even if one fails
-                    Console.WriteLine($"Error processing scheme {schemeCode}: {ex.Message}");
                     continue;
                 }
             }
 
-            // Calculate actual start and end dates from all scheme data
-            var (actualStartDate, actualEndDate) = CalculateActualDateRange(allDates);
+            // Calculate date range
+            var (startDate, endDate) = CalculateDateRangeFromData(allDates);
 
-            // Apply ranking logic
-            var rankedSchemes = ApplyRanking(schemes);
+            // Apply ranking
+            var rankedSchemes = ApplySimpleRanking(schemes);
 
             return new NavHistoryResponse
             {
-                StartDate = actualStartDate,
-                EndDate = actualEndDate,
+                StartDate = startDate,
+                EndDate = endDate,
                 Message = $"Retrieved {rankedSchemes.Count} schemes successfully.",
                 Schemes = rankedSchemes
             };
         }
         catch (Exception ex)
         {
-            // Log the error
-            Console.WriteLine($"Error in GetNavHistoryAsync: {ex.Message}");
             throw;
         }
+    }
+
+    private async Task<List<NavRecord>> GetLastTwoDistinctDatesAsync(string schemeCode)
+    {
+        try
+        {
+            // Get distinct dates for this scheme, ordered by date descending
+            var distinctDates = await storeContext.SchemeDetails
+                .Where(x => x.SchemeCode == schemeCode && x.IsVisible)
+                .Select(x => x.Date.Date)
+                .Distinct()
+                .OrderByDescending(x => x)
+                .Take(2)
+                .ToListAsync();
+
+            // For each distinct date, get the latest record
+            var records = new List<NavRecord>();
+            foreach (var date in distinctDates.OrderBy(x => x)) // Order by date ascending for calculation
+            {
+                var record = await storeContext.SchemeDetails
+                    .Where(x => x.SchemeCode == schemeCode && x.IsVisible && x.Date.Date == date)
+                    .OrderByDescending(x => x.Date)
+                    .Select(x => new NavRecord
+                    {
+                        Id = x.Id,
+                        FundHouse = x.FundCode,
+                        FundName = x.FundName,
+                        SchemeCode = x.SchemeCode,
+                        SchemeName = x.SchemeName,
+                        IsActive = x.IsVisible ? 1 : 0,
+                        NavDate = x.Date,
+                        NavValue = x.Nav
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (record != null)
+                {
+                    records.Add(record);
+                }
+            }
+
+            return records;
+        }
+        catch (Exception ex)
+        {
+            return new List<NavRecord>();
+        }
+    }
+
+    private SchemeHistory BuildSimpleSchemeHistory(List<NavRecord> records, string schemeCode)
+    {
+        var history = new List<NavHistory>();
+
+        if (!records.Any())
+            return CreateEmptySchemeHistory(schemeCode);
+
+        // Sort by date to ensure chronological order
+        var sortedRecords = records.OrderBy(x => x.NavDate).ToList();
+        var firstRecord = sortedRecords.First();
+
+        // Create history entries
+        for (int i = 0; i < sortedRecords.Count; i++)
+        {
+            var currentRecord = sortedRecords[i];
+            decimal percentageChange = 0;
+
+            if (i > 0)
+            {
+                // Calculate percentage change from previous record
+                var previousRecord = sortedRecords[i - 1];
+                percentageChange = CalculatePercentageChange(previousRecord.NavValue, currentRecord.NavValue);
+            }
+
+            var navHistory = new NavHistory
+            {
+                Date = currentRecord.NavDate,
+                Nav = currentRecord.NavValue,
+                Percentage = percentageChange.ToString("F2"),
+                IsTradingHoliday = false,
+                IsGrowth = percentageChange > 0
+            };
+
+            history.Add(navHistory);
+        }
+
+        return new SchemeHistory
+        {
+            FundName = firstRecord.FundName,
+            SchemeCode = firstRecord.SchemeCode,
+            SchemeName = firstRecord.SchemeName,
+            History = history,
+            Rank = null
+        };
+    }
+
+    private List<SchemeHistory> ApplySimpleRanking(List<SchemeHistory> schemes)
+    {
+        if (!schemes.Any()) return schemes;
+
+        return schemes
+            .Select(s => new
+            {
+                Scheme = s,
+                // Use the latest percentage for ranking
+                LatestPercentage = s.History
+                    .OrderByDescending(h => h.Date)
+                    .Select(h => decimal.TryParse(h.Percentage, out var pct) ? pct : 0m)
+                    .FirstOrDefault()
+            })
+            .OrderByDescending(s => s.LatestPercentage)
+            .ThenBy(s => s.Scheme.FundName)
+            .Select((s, index) =>
+            {
+                s.Scheme.Rank = index < 3 ? index + 1 : 4;
+                return s.Scheme;
+            })
+            .OrderBy(s => s.Rank)
+            .ToList();
+    }
+
+    private (DateTime startDate, DateTime endDate) CalculateDateRangeFromData(List<DateTime> allDates)
+    {
+        if (!allDates.Any())
+        {
+            var defaultDate = DateTime.Today.AddDays(-1);
+            return (defaultDate, defaultDate);
+        }
+
+        return (allDates.Min(), allDates.Max());
     }
 
 
@@ -651,7 +775,6 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in GetLastThreeNavRecordsAsync for scheme {schemeCode}: {ex.Message}");
             return new List<NavRecord>();
         }
     }
@@ -813,7 +936,9 @@ public class AmfiRepository(StoreContext storeContext, IUserService _userService
     private decimal CalculatePercentageChange(decimal previousNav, decimal currentNav)
     {
         if (previousNav == 0) return 0;
-        return ((currentNav - previousNav) / previousNav) * 100;
+
+        var change = ((currentNav - previousNav) / previousNav) * 100;
+        return Math.Round(change, 2);
     }
 
     private (DateTime startDate, DateTime endDate) CalculateDateRange(DateTime currentDate)

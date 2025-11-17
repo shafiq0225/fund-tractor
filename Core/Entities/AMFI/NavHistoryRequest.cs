@@ -10,6 +10,7 @@ namespace Core.Entities.AMFI
     public class NavHistoryRequest
     {
         public DateTime CurrentDate { get; set; }
+        public int DaysBack { get; set; } = 2;
     }
 
     public class NavHistoryResponse

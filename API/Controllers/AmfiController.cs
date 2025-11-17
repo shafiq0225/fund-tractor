@@ -627,27 +627,25 @@ namespace API.Controllers
 
         [HttpGet("schemes/today")]
         [Authorize]
-        public async Task<ActionResult<NavHistoryResponse>> GetNavHistoryForTodayAsync()
+        public async Task<ActionResult<NavHistoryResponse>> GetNavHistoryForTodayAsync([FromQuery] int daysBack = 2)
         {
             try
             {
                 var currentDate = DateTime.Today;
-                //_logger.LogInformation("Received NAV history request for today: {CurrentDate}",currentDate.ToString("yyyy-MM-dd"));
 
                 var request = new NavHistoryRequest
                 {
-                    CurrentDate = currentDate
+                    CurrentDate = currentDate,
+                    DaysBack = daysBack
                 };
 
                 var result = await amfiRepository.GetNavHistoryAsync(request);
 
-                //_logger.LogInformation("Successfully returned NAV history with {SchemeCount} schemes", result.Schemes.Count);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                //_logger.LogError(ex, "Error in GetNavHistoryForTodayAsync");
                 return StatusCode(500, new { message = $"An error occurred: {ex.Message}" });
             }
         }
