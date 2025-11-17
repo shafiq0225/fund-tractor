@@ -17,22 +17,24 @@ import { SettingsDashboardComponent } from './features/settings/settings-dashboa
 import { ChangePasswordComponent } from './features/settings/change-password/change-password.component';
 import { UserManagementComponent } from './features/settings/user-management/user-management.component';
 import { EmailComponent } from './features/email/email.component';
+import { InvestmentDashboardComponent } from './features/investment/investment-dashboard/investment-dashboard.component';
+import { CreateInvestmentComponent } from './features/investment/create-investment/create-investment.component';
 
 export const routes: Routes = [
     // Public routes - no layout
-    { 
-        path: 'login', 
-        component: LoginComponent 
+    {
+        path: 'login',
+        component: LoginComponent
     },
-    { 
-        path: 'signup', 
-        component: SignupComponent 
+    {
+        path: 'signup',
+        component: SignupComponent
     },
-    { 
-        path: 'unauthorized', 
-        component: UnauthorizedComponent 
+    {
+        path: 'unauthorized',
+        component: UnauthorizedComponent
     },
-    
+
     // Protected routes - with layout
     {
         path: '',
@@ -40,115 +42,140 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
             // Main Dashboard - Accessible to all authenticated users
-            { 
-                path: '', 
+            {
+                path: '',
                 component: DashboardComponent,
                 pathMatch: 'full'
             },
-            
+
             // NAV Management Section
             {
                 path: 'nav',
                 component: NavComponent,
                 children: [
-                    { 
-                        path: '', 
-                        redirectTo: 'dashboard', 
-                        pathMatch: 'full' 
+                    {
+                        path: '',
+                        redirectTo: 'dashboard',
+                        pathMatch: 'full'
                     },
-                    
+
                     // Accessible to all authenticated users
-                    { 
-                        path: 'dashboard', 
+                    {
+                        path: 'dashboard',
                         component: NavDashboardComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
-                    
+
                     // RESTRICTED to Admin and Employee only
-                    { 
-                        path: 'import', 
+                    {
+                        path: 'import',
                         component: NavImportComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee'] }
                     },
-                    
+
                     // RESTRICTED to Admin and Employee only
-                    { 
-                        path: 'manage', 
+                    {
+                        path: 'manage',
                         component: ManageSchemesComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee'] }
                     },
-                    
+
                     // Accessible to all authenticated users
-                    { 
-                        path: 'report', 
+                    {
+                        path: 'report',
                         component: NavReportComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
-                    
+
                     // Accessible to all authenticated users
-                    { 
-                        path: 'scheme', 
+                    {
+                        path: 'scheme',
                         component: SchemePerformanceComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
-                    
+
                     // Accessible to all authenticated users
-                    { 
-                        path: 'compare', 
+                    {
+                        path: 'compare',
                         component: NavCompareComponent,
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
                     },
                 ]
             },
-            
+            {
+                path: 'portfolio',
+                children: [
+                    {
+                        path: '',
+                        component: InvestmentDashboardComponent,
+                        pathMatch: 'full'
+                    },
+                    {
+                        path: 'create-investment',
+                        component: CreateInvestmentComponent,
+                        canActivate: [roleGuard],
+                        data: { roles: ['Admin', 'Employee'] }
+                    },
+                    // You can add more portfolio routes here
+                    {
+                        path: 'my-investments',
+                        component: InvestmentDashboardComponent, // Replace with actual component
+                        canActivate: [roleGuard],
+                        data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                    },
+                    {
+                        path: 'summary',
+                        component: InvestmentDashboardComponent, // Replace with actual component
+                        canActivate: [roleGuard],
+                        data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                    }
+                ]
+            },
+
             // Settings Section
-            { 
-                path: 'settings', 
+            {
+                path: 'settings',
                 component: SettingsDashboardComponent
             },
-            { 
-                path: 'settings/change-password', 
+            {
+                path: 'settings/change-password',
                 component: ChangePasswordComponent
             },
-            { 
-                path: 'settings/user-management', 
+            {
+                path: 'settings/user-management',
                 component: UserManagementComponent,
                 canActivate: [roleGuard],
                 data: { roles: ['Admin'] }
             },
-            
+
             // Email Section
-            { 
-                path: 'emails', 
+            {
+                path: 'emails',
                 component: EmailComponent
             },
-            
-            // Other main app routes
-            { 
-                path: 'portfolio', 
-                component: DashboardComponent
+
+            // Other main app routes (these might need to be updated to actual components)
+            {
+                path: 'funds',
+                component: DashboardComponent // Replace with actual component
             },
-            { 
-                path: 'funds', 
-                component: DashboardComponent
+            {
+                path: 'transactions',
+                component: DashboardComponent // Replace with actual component
             },
-            { 
-                path: 'transactions', 
-                component: DashboardComponent
-            },
-            { 
-                path: 'performance', 
-                component: DashboardComponent
+            {
+                path: 'performance',
+                component: DashboardComponent // Replace with actual component
             },
         ]
     },
-    
+
     // Fallback routes - ONLY the wildcard route
     { path: '**', redirectTo: '/login' }
 ];
