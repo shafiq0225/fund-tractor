@@ -26,7 +26,8 @@ namespace Core.DTOs.Investment
         public string FundName { get; set; }
 
         [Required]
-        public Decimal NavRate { get; set; }
+        [Range(0.0001, double.MaxValue)]
+        public decimal NavRate { get; set; }
 
         [Required]
         public DateTime DateOfPurchase { get; set; }
@@ -36,10 +37,6 @@ namespace Core.DTOs.Investment
         public decimal InvestAmount { get; set; }
 
         [Required]
-        [Range(0.0001, double.MaxValue)]
-        public decimal NumberOfUnits { get; set; }
-
-        [Required]
         [RegularExpression("^(online|offline)$", ErrorMessage = "Mode must be either 'online' or 'offline'")]
         public string ModeOfInvestment { get; set; }
 
@@ -47,5 +44,4 @@ namespace Core.DTOs.Investment
 
         public string? Remarks { get; set; }
     }
-
 }

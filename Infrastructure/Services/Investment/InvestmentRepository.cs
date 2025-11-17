@@ -60,6 +60,14 @@ namespace Infrastructure.Services.Investment
                 if (!createdByUser.UserRoles.Any(r => validCreatorRoles.Contains(r.RoleName)))
                     return (false, "Only Admin or Employee can create investments.", null);
 
+                if (createDto.NavRate <= 0)
+                {
+                    return (false, "NavRate must be greater than zero.", null);
+                }
+
+                decimal numberOfUnits = createDto.InvestAmount / createDto.NavRate;
+                numberOfUnits = Math.Round(numberOfUnits, 4);
+
                 string imagePath = null;
                 if (createDto.ImageFile != null && createDto.ImageFile.Length > 0)
                 {
@@ -75,7 +83,7 @@ namespace Infrastructure.Services.Investment
                     NavRate = createDto.NavRate,
                     DateOfPurchase = createDto.DateOfPurchase,
                     InvestAmount = createDto.InvestAmount,
-                    NumberOfUnits = createDto.NumberOfUnits,
+                    NumberOfUnits = numberOfUnits,
                     ModeOfInvestment = createDto.ModeOfInvestment,
                     ImagePath = imagePath,
                     Status = "in progress",
