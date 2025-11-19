@@ -16,7 +16,7 @@ import { Subject, takeUntil } from 'rxjs';
 })
 export class SchemePerformanceComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>(); // Add this for cleanup
-  
+
   schemeCode!: string;
   schemePerformance: SchemePerformance | null = null;
   performanceMetrics: PerformanceMetric[] = [];
@@ -25,32 +25,93 @@ export class SchemePerformanceComponent implements OnInit, OnDestroy {
   error = '';
   lastUpdated = '';
   reportService = inject(AmfiService);
-  
+  currentSlide = 0;
+  slidesToShow = 3; // Default number of cards to show
+  slideWidth = 100 / 3; // Default slide width (33.33%)
   constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.route.queryParams.pipe(
-      takeUntil(this.destroy$) // Add this to auto-unsubscribe
-    ).subscribe(params => {
-      this.schemeCode = params['scheme'];
-      console.log("Scheme Code:", this.schemeCode);
-      this.loadPerformanceData(this.schemeCode);
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (params) => {
+        this.schemeCode = params['scheme'];
+        console.log("Scheme Code:", this.schemeCode);
+
+        if (this.schemeCode) {
+          this.loadPerformanceData(this.schemeCode);
+        } else {
+          this.error = 'No scheme code provided';
+        }
+      },
+      error: (error) => {
+        console.error('Route params error:', error);
+        this.error = 'Failed to read route parameters';
+      }
     });
+
+    // Update slides on window resize
+    this.updateSlidesToShow();
+    window.addEventListener('resize', this.updateSlidesToShow.bind(this));
   }
 
+
   ngOnDestroy(): void {
-    this.destroy$.next(); // Clean up all subscriptions
+    console.log('🔴 SchemePerformanceComponent destroyed');
+    this.destroy$.next();
     this.destroy$.complete();
-    
-    // Additional cleanup
-    this.schemePerformance = null;
-    this.performanceMetrics = [];
-    this.performanceSummary = null;
+    window.removeEventListener('resize', this.updateSlidesToShow.bind(this));
+  }
+
+
+  // Carousel Methods
+  slideNext(): void {
+    const maxSlide = this.performanceMetrics.length - this.slidesToShow;
+    if (this.currentSlide < maxSlide) {
+      this.currentSlide++;
+    }
+  }
+
+  slidePrev(): void {
+    if (this.currentSlide > 0) {
+      this.currentSlide--;
+    }
+  }
+
+  goToSlide(index: number): void {
+    const maxSlide = this.performanceMetrics.length - this.slidesToShow;
+    this.currentSlide = Math.min(index, maxSlide);
+  }
+
+  getVisibleSlides(): any[] {
+    const totalSlides = Math.max(1, this.performanceMetrics.length - this.slidesToShow + 1);
+    return Array(totalSlides).fill(0);
+  }
+
+  updateSlidesToShow(): void {
+    const width = window.innerWidth;
+
+    if (width < 768) {
+      this.slidesToShow = 1;
+    } else if (width < 1024) {
+      this.slidesToShow = 2;
+    } else {
+      this.slidesToShow = 3;
+    }
+
+    // Adjust slide width to fill available space
+    this.slideWidth = 100 / this.slidesToShow;
+
+    // Reset current slide if it's beyond new limits
+    const maxSlide = Math.max(0, this.performanceMetrics.length - this.slidesToShow);
+    if (this.currentSlide > maxSlide) {
+      this.currentSlide = maxSlide;
+    }
   }
 
   loadPerformanceData(schemeCode: string): void {
     if (!schemeCode) return;
-    
+
     this.loading = true;
     this.error = '';
 
@@ -69,7 +130,7 @@ export class SchemePerformanceComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         if (this.destroy$.isStopped) return;
-        
+
         this.error = 'Failed to load performance data. Please try again later.';
         this.loading = false;
         console.error('Error loading performance data:', error);

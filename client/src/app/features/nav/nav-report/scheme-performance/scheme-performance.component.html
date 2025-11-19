@@ -2,6 +2,7 @@
 <app-breadcrumb [links]="[{ label: 'AMFI Performance Report', route: '/nav/report', icon: 'dashboard' }]"
     current="AMFI Data Import">
 </app-breadcrumb>
+
 <!-- nav-performance.component.html -->
 <div class="nav-performance-container">
     <!-- Loading State -->
@@ -53,15 +54,52 @@
             </div>
         </div>
 
-        <!-- Performance Metrics Grid -->
+        <!-- Performance Metrics Carousel -->
         <div class="performance-section">
             <h2 class="section-title">Performance Overview</h2>
-            <div class="cards-row-container">
-                <app-performance-card *ngFor="let metric of performanceMetrics" [metric]="metric">
-                </app-performance-card>
+            
+            <!-- Carousel Container -->
+            <div class="carousel-container">
+                <!-- Navigation Buttons - Only show if we have more than visible cards -->
+                <button *ngIf="performanceMetrics.length > slidesToShow" 
+                        class="carousel-btn prev-btn" 
+                        (click)="slidePrev()" 
+                        title="Previous"
+                        [disabled]="currentSlide === 0">
+                    ‹
+                </button>
+                
+                <!-- Carousel Wrapper -->
+                <div class="carousel-wrapper">
+                    <div class="carousel-track" [style.transform]="'translateX(' + currentSlide * -slideWidth + '%)'">
+                        <div class="carousel-slide" *ngFor="let metric of performanceMetrics; let i = index">
+                            <app-performance-card [metric]="metric" class="carousel-card"></app-performance-card>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons - Only show if we have more than visible cards -->
+                <button *ngIf="performanceMetrics.length > slidesToShow" 
+                        class="carousel-btn next-btn" 
+                        (click)="slideNext()" 
+                        title="Next"
+                        [disabled]="currentSlide >= performanceMetrics.length - slidesToShow">
+                    ›
+                </button>
+            </div>
+
+            <!-- Carousel Indicators - Only show if we have more than visible cards -->
+            <div *ngIf="performanceMetrics.length > slidesToShow" class="carousel-indicators">
+                <button *ngFor="let item of getVisibleSlides(); let i = index" 
+                        class="indicator" 
+                        [class.active]="i === currentSlide"
+                        (click)="goToSlide(i)"
+                        [attr.aria-label]="'Go to slide ' + (i + 1)">
+                </button>
             </div>
         </div>
 
+        <!-- Rest of your content remains the same -->
         <!-- Performance Summary -->
         <div *ngIf="performanceSummary" class="performance-summary">
             <h2 class="section-title">Performance Summary</h2>
@@ -107,7 +145,7 @@
             </div>
         </div>
 
-        <!-- In scheme-performance.component.html -->
+        <!-- Historical NAV Chart -->
         <div class="historical-section" *ngIf="schemePerformance">
             <h2 class="section-title">Historical NAV Trend</h2>
             <app-nav-chart [historicalData]="schemePerformance.historicalData" [chartType]="'line'">
