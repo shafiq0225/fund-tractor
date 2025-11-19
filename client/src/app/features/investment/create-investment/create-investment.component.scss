@@ -1,95 +1,150 @@
-// ... existing styles ...
-
-// Snackbar styles
-.success-snackbar {
-  background: #10b981;
-  color: white;
-  
-  .mat-mdc-snack-bar-label {
-    font-weight: 500;
-  }
+/* create-investment.component.scss */
+.compact-section {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  margin-bottom: 16px;
 }
 
-.error-snackbar {
-  background: #ef4444;
-  color: white;
-  
-  .mat-mdc-snack-bar-label {
-    font-weight: 500;
-  }
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.info-snackbar {
-  background: #3b82f6;
-  color: white;
-  
-  .mat-mdc-snack-bar-label {
-    font-weight: 500;
-  }
+/* DROPDOWN FIX - Add these specific styles */
+.dropdown-container {
+  width: 100%;
 }
 
-// Form completion indicator
-.form-completion {
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #10b981, #3b82f6);
-    transition: width 0.3s ease;
-  }
+.dropdown-option {
+  padding: 8px 0;
 }
 
-// Loading overlay
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+.dropdown-option-content {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.option-primary {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+}
+
+.option-secondary {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.option-tertiary {
+  color: #059669;
+  font-size: 12px;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+/* Mode buttons */
+.mode-button {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  gap: 4px;
 }
 
-// Responsive improvements
-@media (max-width: 1024px) {
-  .grid-cols-1 {
-    .form-field-enhanced {
-      .mat-mdc-form-field {
-        margin-bottom: 1rem;
-      }
-    }
-  }
+.mode-button:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
 }
 
-@media (max-width: 768px) {
-  .p-6 {
-    padding: 1rem;
-  }
-  
-  .gap-6 {
-    gap: 1rem;
-  }
-  
-  .space-y-6 > * + * {
-    margin-top: 1rem;
-  }
+.mode-button-selected {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+  background: #eff6ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-// Print styles
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .mat-mdc-card {
-    box-shadow: none !important;
-    border: 1px solid #000 !important;
-  }
+/* Financial fields */
+.financial-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.financial-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.financial-value {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.bg-blue-50 {
+  background-color: #eff6ff;
+}
+
+/* File upload */
+.file-upload-compact {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+
+.file-upload-compact.upload-drag-over {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* Summary cards */
+.summary-card-compact {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-radius: 12px;
+  border: none;
+}
+
+/* Sticky sidebar */
+.sticky {
+  position: sticky;
+  top: 16px;
 }

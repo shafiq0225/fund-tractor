@@ -1,283 +1,230 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/20 py-6">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+<app-breadcrumb [links]="[{ label: 'Portfolio', route: '/portfolio', icon: 'dashboard' }]" current="Create Investment">
+</app-breadcrumb>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/20 py-4">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Compact Header -->
-    <div class="mb-6">
+    <!-- <div class="mb-4">
       <div class="flex items-center gap-3">
-        <button mat-icon-button routerLink="/portfolio" 
-                class="!bg-white !shadow-sm hover:!shadow-md transition-all duration-200 hover:scale-105 border border-gray-200 !rounded-lg">
-          <mat-icon class="text-gray-500 !text-xl">arrow_back_ios</mat-icon>
+        <button mat-icon-button routerLink="/portfolio"
+          class="bg-white shadow-sm border border-gray-200 rounded-lg w-10 h-10">
+          <mat-icon class="text-gray-500 text-lg">arrow_back_ios</mat-icon>
         </button>
         <div class="flex-1">
-          <h1 class="text-2xl font-bold text-gray-800">
-            Create Investment
-          </h1>
-          <p class="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
-            <mat-icon class="!text-base text-blue-500">add_chart</mat-icon>
+          <h1 class="text-xl font-bold text-gray-800">Create Investment</h1>
+          <p class="text-gray-600 text-xs flex items-center gap-1">
+            <mat-icon class="text-blue-500 text-sm">add_chart</mat-icon>
             Add new investment to portfolio
           </p>
         </div>
-        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-md">
-          <mat-icon class="text-white !text-lg">savings</mat-icon>
+        <div
+          class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+          <mat-icon class="text-white text-base">savings</mat-icon>
         </div>
       </div>
-    </div>
+    </div> -->
+    <h2 class="text-2xl font-bold mb-2 text-blue-700">Create Investment</h2>
+    <p class="text-gray-600 mb-6">
+      Add new investment to portfolio
+    </p>
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <!-- Main Form - 3 columns -->
+      <div class="lg:col-span-3">
+        <mat-card class="shadow-lg border-0 rounded-xl">
+          <mat-card-content class="p-4">
+            <form [formGroup]="investmentForm" (ngSubmit)="onSubmit()" class="space-y-4">
 
-    <!-- Enhanced Form Layout -->
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <!-- Main Form - Improved Styling -->
-      <div class="xl:col-span-3">
-        <mat-card class="shadow-lg border-0 rounded-xl overflow-hidden border border-gray-100">
-          <mat-card-content class="p-6">
-            <form [formGroup]="investmentForm" (ngSubmit)="onSubmit()" class="space-y-6">
-              
-              <!-- Investor & Mode Selection - Compact -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/30 rounded-lg border border-blue-100">
-                <!-- Investor Dropdown -->
-                <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                  <mat-label class="font-medium text-gray-700">Select Investor</mat-label>
-                  <mat-select formControlName="investorId">
-                    <mat-option *ngFor="let investor of investors" [value]="investor.id" class="py-2">
-                      <div class="flex flex-col">
-                        <span class="font-medium text-gray-900 text-sm">
-                          {{ investor.firstName }} {{ investor.lastName }}
-                        </span>
-                        <span class="text-xs text-gray-500">{{ investor.email }}</span>
-                      </div>
-                    </mat-option>
-                    <mat-option *ngIf="isLoadingInvestors" disabled>
-                      <div class="flex items-center gap-2">
-                        <mat-spinner diameter="16"></mat-spinner>
-                        <span class="text-gray-500">Loading investors...</span>
-                      </div>
-                    </mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix class="text-gray-400 !text-lg">person_search</mat-icon>
-                  <mat-error *ngIf="investorId?.hasError('required')" class="text-xs error-message">
-                    Please select an investor
-                  </mat-error>
-                </mat-form-field>
-
-                <!-- Mode of Investment - Compact -->
-                <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                  <mat-label class="font-medium text-gray-700">Investment Mode</mat-label>
-                  <mat-select formControlName="modeOfInvestment">
-                    <mat-option *ngFor="let mode of modeOfInvestmentOptions" [value]="mode.value">
-                      <span class="font-medium text-sm">{{ mode.label }}</span>
-                    </mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix class="text-gray-400 !text-lg">swap_horiz</mat-icon>
-                </mat-form-field>
-              </div>
-
-              <!-- Scheme Selection - Enhanced with Auto-populate -->
-              <div class="space-y-4 p-4 bg-gradient-to-r from-purple-50/50 to-pink-50/30 rounded-lg border border-purple-100">
-                <div class="flex items-center gap-2 text-gray-700 mb-3">
-                  <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <mat-icon class="!text-lg text-purple-600">account_balance</mat-icon>
+              <!-- Investor & Mode in one row -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Investor Selection -->
+                <!-- Investor Selection - UPDATED -->
+                <div class="compact-section">
+                  <label class="section-label">
+                    <mat-icon class="text-blue-500" style="font-size: 16px;">person</mat-icon>
+                    Investor
+                  </label>
+                  <div class="dropdown-container">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-select formControlName="investorId">
+                        <mat-option *ngFor="let investor of investors" [value]="investor.id">
+                          <div class="dropdown-option">
+                            <div class="dropdown-option-content">
+                              <div class="option-primary">{{ investor.firstName }} {{ investor.lastName }}</div>
+                              <div class="option-secondary">{{ investor.email }}</div>
+                            </div>
+                          </div>
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
                   </div>
-                  <span class="font-semibold text-sm uppercase tracking-wide">Fund Scheme Details</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                    <mat-label class="font-medium">Select Scheme</mat-label>
+
+                <!-- Investment Mode -->
+                <div class="compact-section">
+                  <label class="section-label">
+                    <mat-icon class="text-blue-500 text-base">swap_horiz</mat-icon>
+                    Investment Mode
+                  </label>
+                  <div class="flex gap-2">
+                    <button *ngFor="let mode of modeOfInvestmentOptions" type="button"
+                      [class]="modeOfInvestment?.value === mode.value ? 'mode-button-selected' : 'mode-button'"
+                      (click)="investmentForm.patchValue({ modeOfInvestment: mode.value })">
+                      <mat-icon class="text-sm mr-1">{{ mode.icon }}</mat-icon>
+                      <span class="text-xs">{{ mode.label }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Scheme Selection - UPDATED -->
+              <div class="compact-section">
+                <label class="section-label">
+                  <mat-icon class="text-blue-500" style="font-size: 16px;">person</mat-icon>
+                  Select Scheme
+                </label>
+                <div class="dropdown-container">
+                  <mat-form-field appearance="outline" class="w-full">
                     <mat-select formControlName="schemeCode" (selectionChange)="onSchemeChange($event)">
-                      <mat-option *ngFor="let scheme of fundSchemes" [value]="scheme.code" class="py-3">
-                        <div class="flex flex-col space-y-1">
-                          <span class="font-semibold text-gray-900 text-sm leading-tight">
-                            {{ scheme.code }}
-                          </span>
-                          <span class="text-xs text-gray-600 leading-tight whitespace-normal break-words">
-                            {{ scheme.name }}
-                          </span>
-                          <span class="text-xs text-green-600 font-mono font-semibold">
-                            NAV: ₹{{ formatNavRate(scheme.currentNav) }}
-                          </span>
+                      <mat-option *ngFor="let scheme of fundSchemes" [value]="scheme.code">
+                        <div class="dropdown-option">
+                          <div class="dropdown-option-content">
+                            <div class="option-primary">{{ scheme.code }}</div>
+                            <div class="option-secondary">{{ scheme.name }}</div>
+                            <div class="option-tertiary">NAV: ₹{{ formatNavRate(scheme.currentNav) }}</div>
+                          </div>
                         </div>
                       </mat-option>
                     </mat-select>
-                    <mat-icon matSuffix class="text-gray-400">search</mat-icon>
-                    <mat-error *ngIf="schemeCode?.hasError('required')" class="text-xs error-message">
-                      Please select a scheme
-                    </mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                    <mat-label class="font-medium">Selected Scheme</mat-label>
-                    <input matInput formControlName="schemeName" readonly 
-                           class="bg-gray-50/50 font-medium text-sm leading-tight h-20 resize-none">
-                    <mat-icon matSuffix class="text-gray-400">title</mat-icon>
                   </mat-form-field>
                 </div>
               </div>
 
-              <!-- Financial Details - Enhanced Readability -->
-              <div class="space-y-4 p-4 bg-gradient-to-r from-green-50/50 to-emerald-50/30 rounded-lg border border-green-100">
-                <div class="flex items-center gap-2 text-gray-700 mb-3">
-                  <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <mat-icon class="!text-lg text-green-600">trending_up</mat-icon>
+              <!-- Financial Details - Compact -->
+              <div class="compact-section">
+                <label class="section-label">
+                  <mat-icon class="text-blue-500 text-base">calculate</mat-icon>
+                  Financial Details
+                </label>
+
+                <!-- Quick Amounts -->
+                <div *ngIf="!investAmount?.value" class="mb-3 p-3 bg-blue-50 rounded-lg">
+                  <div class="text-xs font-medium text-gray-600 mb-2">Quick amount:</div>
+                  <div class="flex flex-wrap gap-2">
+                    <button *ngFor="let amount of [5000, 10000, 25000, 50000]" type="button"
+                      (click)="setQuickAmount(amount)"
+                      class="px-3 py-1 bg-white border border-blue-200 rounded text-xs text-blue-600 hover:bg-blue-50">
+                      ₹{{ amount | number }}
+                    </button>
                   </div>
-                  <span class="font-semibold text-sm uppercase tracking-wide">Investment Details</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <!-- NAV Rate -->
-                  <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                    <mat-label class="font-medium">NAV Rate (₹)</mat-label>
-                    <input matInput formControlName="navRate" type="number" step="0.0001" 
-                           class="text-right font-mono font-medium text-base" readonly>
-                    <mat-icon matSuffix class="text-gray-400">show_chart</mat-icon>
-                    <mat-hint class="text-xs">Auto-populated from scheme</mat-hint>
-                  </mat-form-field>
-
-                  <!-- Date -->
-                  <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                    <mat-label class="font-medium">Purchase Date</mat-label>
-                    <input matInput [matDatepicker]="picker" formControlName="dateOfPurchase">
-                    <mat-datepicker-toggle matSuffix [for]="picker">
-                      <mat-icon class="text-gray-400 !text-lg">event</mat-icon>
-                    </mat-datepicker-toggle>
-                    <mat-datepicker #picker></mat-datepicker>
-                    <mat-error *ngIf="dateOfPurchase?.hasError('required')" class="text-xs error-message">
-                      Purchase date is required
-                    </mat-error>
-                  </mat-form-field>
-
-                  <!-- Amount -->
-                  <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                    <mat-label class="font-medium">Investment Amount (₹)</mat-label>
-                    <input matInput formControlName="investAmount" type="number" step="0.01"
-                           (blur)="calculateUnits()" placeholder="Enter amount" 
-                           class="text-right font-mono font-medium text-base">
-                    <mat-icon matSuffix class="text-gray-400">payments</mat-icon>
-                    <mat-error *ngIf="investAmount?.hasError('required')" class="text-xs error-message">
-                      Investment amount is required
-                    </mat-error>
-                    <mat-error *ngIf="investAmount?.hasError('min')" class="text-xs error-message">
-                      Amount must be greater than 0
-                    </mat-error>
-                  </mat-form-field>
-                </div>
-
-                <!-- Calculated Units Display - Enhanced -->
-                <div *ngIf="calculatedUnits > 0" 
-                     class="mt-4 p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg border-0 shadow-sm">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <mat-icon class="text-white !text-lg">pie_chart</mat-icon>
-                      <span class="text-white font-semibold">Calculated Units</span>
+                  <div class="financial-compact">
+                    <label class="financial-label">NAV Rate</label>
+                    <div class="financial-value bg-gray-50">
+                      <span class="text-green-600 font-mono text-sm">₹{{ navRate?.value || '0.0000' }}</span>
                     </div>
-                    <span class="text-xl font-bold text-white font-mono">
-                      {{ calculatedUnits | number:'1.4-4' }}
-                    </span>
                   </div>
-                  <p class="text-blue-100 text-xs mt-2">
-                    Units calculated based on NAV rate and investment amount
-                  </p>
+
+                  <!-- Investment Amount -->
+                  <div class="financial-compact">
+                    <label class="financial-label">Amount</label>
+                    <div class="relative">
+                      <input type="number" step="0.01" formControlName="investAmount" (input)="onAmountInput()"
+                        placeholder="0.00"
+                        class="w-full h-9 px-3 pr-8 font-mono text-sm border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none text-right">
+                      <span class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                    </div>
+                  </div>
+
+                  <!-- Calculated Units -->
+                  <div class="financial-compact">
+                    <label class="financial-label">Units</label>
+                    <div class="financial-value bg-blue-50">
+                      <span class="text-blue-600 font-mono text-sm">{{ calculatedUnits | number:'1.4-4' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Purchase Date -->
+                  <div class="financial-compact">
+                    <label class="financial-label">Date</label>
+                    <mat-form-field appearance="outline" class="w-full compact-date-field">
+                      <input matInput [matDatepicker]="picker" formControlName="dateOfPurchase">
+                      <mat-datepicker-toggle matSuffix [for]="picker">
+                        <mat-icon class="text-gray-400 text-base">event</mat-icon>
+                      </mat-datepicker-toggle>
+                      <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+                  </div>
                 </div>
               </div>
 
-              <!-- Document Upload Section - Mandatory -->
-              <div class="space-y-4 p-4 bg-gradient-to-r from-orange-50/50 to-amber-50/30 rounded-lg border border-orange-100">
-                <div class="flex items-center gap-2 text-gray-700 mb-3">
-                  <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <mat-icon class="!text-lg text-orange-600">image</mat-icon>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold text-sm uppercase tracking-wide">Document Upload</span>
-                    <span class="text-red-500 text-sm font-medium">*</span>
-                  </div>
-                </div>
-                
-                <div class="space-y-4">
-                  <!-- File Upload Area -->
-                  <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors duration-200"
-                       [class.border-blue-400]="imagePreview"
-                       [class.border-red-300]="imageFile?.invalid && imageFile?.touched">
-                    <input #fileInput type="file" (change)="onFileSelected($event)" 
-                           accept="image/*,.pdf" class="hidden">
-                    
-                    <div *ngIf="!imagePreview && !selectedFile" class="space-y-3">
-                      <mat-icon class="text-gray-400 !text-4xl">cloud_upload</mat-icon>
-                      <div>
-                        <p class="font-medium text-gray-700">Upload investment document</p>
-                        <p class="text-sm text-gray-500 mt-1">PNG, JPG, PDF up to 5MB</p>
-                        <p class="text-xs text-red-500 mt-1 font-medium">* Required field</p>
-                      </div>
-                      <button type="button" mat-stroked-button 
-                              (click)="triggerFileInput()"
-                              class="!border-gray-300 !text-gray-700">
-                        <mat-icon class="!text-lg mr-2">upload</mat-icon>
+              <!-- Document & Remarks in one row -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Document Upload -->
+                <div class="compact-section">
+                  <label class="section-label">
+                    <mat-icon class="text-blue-500 text-base">cloud_upload</mat-icon>
+                    Document
+                    <span class="required-dot"></span>
+                  </label>
+                  <div class="file-upload-compact" [class.upload-drag-over]="isDragOver" (drop)="onFileDrop($event)"
+                    (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)">
+                    <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*,.pdf"
+                      class="hidden">
+
+                    <div *ngIf="!selectedFile" class="text-center p-3">
+                      <mat-icon class="text-gray-400 text-lg">cloud_upload</mat-icon>
+                      <div class="text-xs text-gray-600 mt-1">Drop file or click to upload</div>
+                      <button type="button" (click)="triggerFileInput()"
+                        class="mt-2 px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50">
                         Choose File
                       </button>
                     </div>
 
-                    <!-- File Preview -->
-                    <div *ngIf="imagePreview || selectedFile" class="space-y-3">
-                      <div *ngIf="imagePreview" class="flex justify-center">
-                        <img [src]="imagePreview" alt="Preview" class="max-h-32 rounded-lg shadow-md">
-                      </div>
-                      <div *ngIf="selectedFile && !imagePreview" class="flex items-center justify-center gap-2">
-                        <mat-icon class="text-blue-500">description</mat-icon>
-                        <span class="font-medium text-gray-700">{{ selectedFile.name }}</span>
-                      </div>
-                      <div class="flex gap-2 justify-center">
-                        <button type="button" mat-stroked-button color="warn" 
-                                (click)="removeImage()" class="!text-sm">
-                          <mat-icon class="!text-lg">delete</mat-icon>
-                          Remove
-                        </button>
-                        <button type="button" mat-stroked-button 
-                                (click)="triggerFileInput()"
-                                class="!text-sm">
-                          <mat-icon class="!text-lg">swap_horiz</mat-icon>
-                          Change
+                    <div *ngIf="selectedFile" class="p-2 bg-green-50 rounded border border-green-200">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <mat-icon class="text-green-600 text-base">description</mat-icon>
+
+                          <span class="text-xs font-medium text-gray-700 truncate max-w-120px">
+                            {{ selectedFile.name }}
+                          </span>
+                        </div>
+                        <button type="button" (click)="removeImage()" class="text-red-500 hover:text-red-700">
+                          <mat-icon class="text-base">close</mat-icon>
                         </button>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- Validation Error for Document Upload -->
-                  <div *ngIf="imageFile?.invalid && imageFile?.touched" class="text-red-500 text-xs font-medium bg-red-50 p-2 rounded border border-red-200">
-                    <mat-icon class="!text-sm mr-1">error</mat-icon>
-                    Document upload is required
-                  </div>
+                <!-- Remarks -->
+                <div class="compact-section">
+                  <label class="section-label">
+                    <mat-icon class="text-blue-500 text-base">notes</mat-icon>
+                    Remarks
+                    <span class="optional-text">Optional</span>
+                  </label>
+                  <mat-form-field appearance="outline" class="width-full form-field-compact">
+                    <textarea matInput formControlName="remarks" rows="2" placeholder="Additional notes..."
+                      class="text-sm">
+                    </textarea>
+                  </mat-form-field>
                 </div>
               </div>
 
-              <!-- Remarks - Enhanced -->
-              <div class="space-y-4 p-4 bg-gradient-to-r from-gray-50/50 to-slate-50/30 rounded-lg border border-gray-100">
-                <div class="flex items-center gap-2 text-gray-700 mb-3">
-                  <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <mat-icon class="!text-lg text-gray-600">notes</mat-icon>
-                  </div>
-                  <span class="font-semibold text-sm uppercase tracking-wide">Additional Notes (Optional)</span>
-                </div>
-                <mat-form-field appearance="fill" class="w-full form-field-enhanced">
-                  <mat-label class="font-medium">Remarks & Comments</mat-label>
-                  <textarea matInput formControlName="remarks" rows="3" 
-                            placeholder="Enter any additional notes, comments, or special instructions regarding this investment..."
-                            class="resize-none"></textarea>
-                  <mat-icon matSuffix class="text-gray-400">chat</mat-icon>
-                </mat-form-field>
-              </div>
-
-              <!-- Enhanced Action Buttons -->
-              <div class="flex gap-4 pt-6 border-t border-gray-200">
-                <button type="button" mat-stroked-button 
-                        (click)="onCancel()" [disabled]="isSubmitting" 
-                        class="flex-1 py-3 !rounded-xl font-semibold text-gray-700 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200">
-                  <mat-icon class="!text-lg mr-2">close</mat-icon>
+              <!-- Compact Action Buttons -->
+              <div class="flex gap-3 pt-4 border-t border-gray-200">
+                <button type="button" (click)="onCancel()" [disabled]="isSubmitting"
+                  class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">
                   Cancel
                 </button>
-                <button type="submit" mat-raised-button
-                        [disabled]="isSubmitting || investmentForm.invalid" 
-                        class="flex-1 py-3 !rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        [class]="investmentForm.valid ? 
-                        'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white' : 
-                        'bg-gray-300 text-gray-500'">
-                  <div class="flex items-center justify-center">
-                    <mat-icon *ngIf="!isSubmitting" class="!text-lg mr-2">add_circle</mat-icon>
-                    <mat-spinner diameter="20" *ngIf="isSubmitting" class="mr-2"></mat-spinner>
-                    {{ isSubmitting ? 'Creating Investment...' : 'Create Investment' }}
+                <button type="submit" [disabled]="isSubmitting || investmentForm.invalid"
+                  class="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-purple-600 disabled:opacity-50">
+                  <div class="flex items-center justify-center gap-2">
+                    <mat-spinner diameter="16" *ngIf="isSubmitting" class="text-white"></mat-spinner>
+                    <mat-icon *ngIf="!isSubmitting" class="text-base">add_circle</mat-icon>
+                    <span>{{ isSubmitting ? 'Creating...' : 'Create Investment' }}</span>
                   </div>
                 </button>
               </div>
@@ -286,118 +233,60 @@
         </mat-card>
       </div>
 
-      <!-- Enhanced Sidebar -->
-      <div class="xl:col-span-2 space-y-4">
-        <!-- Quick Summary Card - Enhanced -->
-        <mat-card class="shadow-lg border-0 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <mat-card-content class="p-5">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <mat-icon class="text-white !text-xl">insights</mat-icon>
-              </div>
-              <div>
-                <h3 class="font-bold text-lg">Investment Summary</h3>
-                <p class="text-blue-100 text-sm">Real-time overview</p>
-              </div>
-            </div>
-            <div class="space-y-3">
-              <div class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-sm text-blue-200">person</mat-icon>
-                  <span class="text-blue-100">Investor</span>
+      <!-- Sidebar - Right side, sticky -->
+      <div class="lg:col-span-1">
+        <div class="sticky top-4 space-y-4">
+          <!-- Summary Card -->
+          <mat-card class="summary-card-compact">
+            <mat-card-content class="p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <mat-icon class="text-white text-lg">insights</mat-icon>
+                <div>
+                  <h3 class="text-white font-semibold text-sm">Investment Summary</h3>
+                  <p class="text-blue-100 text-xs">Real-time overview</p>
                 </div>
-                <span class="font-bold text-sm text-right">{{ getSelectedInvestorName() }}</span>
               </div>
-              <div class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-sm text-blue-200">payments</mat-icon>
-                  <span class="text-blue-100">Amount</span>
+              <div class="space-y-2">
+                <div *ngFor="let item of summaryItems" class="flex justify-between items-center text-xs">
+                  <div class="flex items-center gap-1 text-blue-100">
+                    <mat-icon class="text-xs">{{ item.icon }}</mat-icon>
+                    <span>{{ item.label }}</span>
+                  </div>
+                  <span class="text-white font-medium">{{ item.value }}</span>
                 </div>
-                <span class="font-bold text-lg">₹{{ investmentForm.get('investAmount')?.value || '0.00' }}</span>
               </div>
-              <div class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-sm text-blue-200">show_chart</mat-icon>
-                  <span class="text-blue-100">NAV Rate</span>
-                </div>
-                <span class="font-bold">{{ investmentForm.get('navRate')?.value || '0.0000' }}</span>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-sm text-blue-200">pie_chart</mat-icon>
-                  <span class="text-blue-100">Units</span>
-                </div>
-                <span class="font-bold">{{ calculatedUnits | number:'1.4-4' }}</span>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-sm text-blue-200">description</mat-icon>
-                  <span class="text-blue-100">Document</span>
-                </div>
-                <span class="font-bold text-sm" [class]="selectedFile ? 'text-green-300' : 'text-red-300'">
-                  {{ selectedFile ? 'Uploaded' : 'Required' }}
-                </span>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
 
-        <!-- Simple Validation Status -->
-        <mat-card class="shadow-lg border-0 rounded-xl overflow-hidden">
-          <mat-card-content class="p-5">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                <mat-icon class="!text-xl text-green-500">check_circle</mat-icon>
+          <!-- Progress Card -->
+          <mat-card class="bg-white shadow-lg rounded-xl border-0">
+            <mat-card-content class="p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <mat-icon class="text-green-500 text-lg">check_circle</mat-icon>
+                <div>
+                  <h3 class="text-gray-800 font-semibold text-sm">Form Status</h3>
+                  <p class="text-gray-600 text-xs">{{ investmentForm.valid ? 'Ready to submit' : 'Fill required fields'
+                    }}</p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-bold text-gray-800">Form Status</h3>
-                <p class="text-gray-500 text-sm" [class]="investmentForm.valid ? 'text-green-600' : 'text-orange-600'">
-                  {{ investmentForm.valid ? 'Ready to submit' : 'Fill required fields' }}
-                </p>
+              <div class="space-y-2">
+                <div class="flex justify-between text-xs">
+                  <span class="text-gray-600">Completion:</span>
+                  <span class="font-semibold" [class.text-green-600]="getFormCompletion() === 100"
+                    [class.text-blue-600]="getFormCompletion() < 100">
+                    {{ getFormCompletion() }}%
+                  </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="h-2 rounded-full transition-all duration-300"
+                    [class.bg-green-500]="getFormCompletion() === 100" [class.bg-blue-500]="getFormCompletion() < 100"
+                    [style.width]="getFormCompletion() + '%'">
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-3">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600">Completion:</span>
-                <span class="font-semibold" [class]="getFormCompletion() === 100 ? 'text-green-600' : 'text-blue-600'">
-                  {{ getFormCompletion() }}%
-                </span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                     [style.width]="getFormCompletion() + '%'"
-                     [class]="getFormCompletion() === 100 ? 'bg-green-500' : 'bg-blue-500'"></div>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Quick Actions - Enhanced -->
-        <mat-card class="shadow-lg border-0 rounded-xl overflow-hidden">
-          <mat-card-content class="p-5">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                <mat-icon class="!text-xl text-purple-500">flash_on</mat-icon>
-              </div>
-              <div>
-                <h3 class="font-bold text-gray-800">Quick Actions</h3>
-                <p class="text-gray-500 text-sm">Form utilities</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <button mat-stroked-button (click)="clearForm()" 
-                      class="!py-2.5 !rounded-lg !border-gray-300 hover:!border-gray-400 hover:!bg-gray-50">
-                <mat-icon class="!text-lg mr-2">clear_all</mat-icon>
-                Clear Form
-              </button>
-              <button mat-stroked-button (click)="calculateUnits()" 
-                      class="!py-2.5 !rounded-lg !border-blue-300 hover:!border-blue-400 hover:!bg-blue-50">
-                <mat-icon class="!text-lg mr-2">calculate</mat-icon>
-                Recalculate
-              </button>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
+        </div>
       </div>
     </div>
   </div>

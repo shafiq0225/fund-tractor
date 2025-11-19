@@ -42,6 +42,9 @@ export class BreadcrumbComponent {
     else if (currentUrl.startsWith('/settings')) {
       this.router.navigate(['/settings']);
     }
+    else if (currentUrl.startsWith('/portfolio')) {
+      this.router.navigate(['/portfolio']); // Add this line
+    }
     else {
       // fallback
       this.router.navigate(['/dashboard']);

@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -12,8 +12,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatRadioModule } from '@angular/material/radio';
 import { AuthService, User } from '../../../core/services/auth.service';
 import { InvestmentService } from '../../../core/services/investment.service';
+import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
 
 // Define interface for form fields
 interface FormField {
@@ -50,8 +52,11 @@ interface FundScheme {
     MatNativeDateModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatRadioModule,
+    BreadcrumbComponent
   ],
+  providers: [DecimalPipe],
   templateUrl: './create-investment.component.html',
   styleUrls: ['./create-investment.component.scss']
 })
@@ -96,8 +101,8 @@ export class CreateInvestmentComponent implements OnInit {
   ];
 
   modeOfInvestmentOptions = [
-    { value: 'online', label: 'Online' },
-    { value: 'offline', label: 'Offline' }
+    { value: 'online', label: 'Online', icon: 'public', description: 'Digital investment through online platforms' },
+    { value: 'offline', label: 'Offline', icon: 'store', description: 'Traditional investment through branches' }
   ];
 
   constructor(
@@ -105,7 +110,8 @@ export class CreateInvestmentComponent implements OnInit {
     private investmentService: InvestmentService,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private decimalPipe: DecimalPipe
   ) {
     this.investmentForm = this.createForm();
   }
@@ -115,6 +121,88 @@ export class CreateInvestmentComponent implements OnInit {
     this.loadInvestors();
     this.setupFormFields();
     this.setDefaultDate();
+  }
+  // Drag and drop handlers
+  isDragOver = false;
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = false;
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.onFileSelected({ target: { files: [files[0]] } });
+    }
+  }
+  private formatNumber(value: number | null | undefined, format: string = '1.4-4'): string {
+    if (value === null || value === undefined) return '0.0000';
+    return this.decimalPipe.transform(value, format) || '0.0000';
+  }
+
+  // Add this method to your component class
+  getSelectedSchemeCode(): string {
+    const schemeCode = this.investmentForm.get('schemeCode')?.value;
+    if (schemeCode) {
+      const selectedScheme = this.fundSchemes.find(scheme => scheme.code === schemeCode);
+      return selectedScheme ? selectedScheme.code : 'Not selected';
+    }
+    return 'Not selected';
+  }
+  // Your existing formatNavRate method should work, but here it is for reference:
+  formatNavRate(navRate: number): string {
+    if (!navRate) return '0.0000';
+    return this.decimalPipe.transform(navRate, '1.4-4') || '0.0000';
+  }
+  // Summary items for sidebar
+  get summaryItems(): any[] {
+    return [
+      {
+        label: 'Investor',
+        value: this.getSelectedInvestorName(),
+        icon: 'person',
+        valueClass: 'text-sm'
+      },
+      {
+        label: 'Mode',
+        value: this.modeOfInvestment?.value ? this.modeOfInvestment.value.charAt(0).toUpperCase() + this.modeOfInvestment.value.slice(1) : 'Not selected',
+        icon: 'swap_horiz',
+        valueClass: 'text-sm capitalize'
+      },
+      {
+        label: 'Amount',
+        value: `₹${this.investmentForm.get('investAmount')?.value || '0.00'}`,
+        icon: 'payments',
+        valueClass: 'text-lg'
+      },
+      {
+        label: 'NAV Rate',
+        value: this.formatNumber(this.investmentForm.get('navRate')?.value),
+        icon: 'show_chart',
+        valueClass: 'text-sm'
+      },
+      {
+        label: 'Units',
+        value: this.formatNumber(this.calculatedUnits), // Clean and readable
+        icon: 'pie_chart',
+        valueClass: 'text-sm'
+      },
+      {
+        label: 'Document',
+        value: this.selectedFile ? 'Uploaded' : 'Required',
+        icon: 'description',
+        valueClass: this.selectedFile ? 'text-green-300 text-sm' : 'text-red-300 text-sm'
+      }
+    ];
   }
 
   private loadCurrentUser(): void {
@@ -160,7 +248,7 @@ export class CreateInvestmentComponent implements OnInit {
       navRate: [{ value: '', disabled: false }, [Validators.required, Validators.min(0.0001)]],
       dateOfPurchase: ['', [Validators.required]],
       investAmount: ['', [Validators.required, Validators.min(0.01)]],
-      modeOfInvestment: ['online', [Validators.required]],
+      modeOfInvestment: ['online', [Validators.required]], // Default to online
       remarks: [''],
       imageFile: [null, [Validators.required]] // Made mandatory
     });
@@ -346,12 +434,12 @@ export class CreateInvestmentComponent implements OnInit {
   }
 
   // Format NAV rate for display
-  formatNavRate(navRate: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4
-    }).format(navRate);
-  }
+  // formatNavRate(navRate: number): string {
+  //   return new Intl.NumberFormat('en-IN', {
+  //     minimumFractionDigits: 4,
+  //     maximumFractionDigits: 4
+  //   }).format(navRate);
+  // }
 
   // Getters for form controls for easy template access
   get investorId() { return this.investmentForm.get('investorId'); }
@@ -378,5 +466,37 @@ export class CreateInvestmentComponent implements OnInit {
     }).length;
 
     return Math.round((filledFields / totalFields) * 100);
+  }
+
+  // Add these methods to your component
+
+  // Add this method to handle quick amount selection
+  setQuickAmount(amount: number): void {
+    this.investmentForm.patchValue({
+      investAmount: amount
+    });
+    this.calculateUnits();
+  }
+  // Clear calculation
+  clearCalculation(): void {
+    this.investmentForm.patchValue({
+      investAmount: null
+    });
+    this.calculatedUnits = 0;
+  }
+
+  // Get allocation percentage for visualization
+  getAllocationPercentage(): number {
+    if (!this.calculatedUnits) return 0;
+    // This can be enhanced based on your business logic
+    return Math.min(this.calculatedUnits * 100, 100);
+  }
+
+  // Real-time calculation on input
+  onAmountInput(): void {
+    // Calculate units as user types (optional - can be performance intensive)
+    setTimeout(() => {
+      this.calculateUnits();
+    }, 300);
   }
 }
