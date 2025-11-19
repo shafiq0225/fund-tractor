@@ -34,23 +34,20 @@
     </div>
   </div>
 
-  <!-- Improved Tiles Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-    <mat-card *ngFor="let tile of tiles"
-      class="cursor-pointer group transition-all duration-300 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-lg hover:scale-105 min-h-[180px]"
-      [routerLink]="tile.route">
-      <div
-        class="flex flex-col items-center justify-center w-full h-full rounded-xl text-white p-6 group-hover:shadow-inner transition-shadow"
-        [ngClass]="tile.color">
-        <mat-icon class="text-4xl mb-4 group-hover:scale-110 transition-transform">{{ tile.icon }}</mat-icon>
-        <h3 class="text-lg font-semibold text-center leading-tight mb-2">{{ tile.title }}</h3>
-        <p class="text-sm text-white/90 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          {{ tile.description }}
-        </p>
-      </div>
-    </mat-card>
-  </div>
-
+  <!-- Improved Tiles Grid - UPDATED WITH CLICK HANDLER -->
+ <!-- Remove the click handler and use only routerLink -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+  <mat-card *ngFor="let tile of tiles"
+    class="aspect-square flex items-center justify-center cursor-pointer group transition-all duration-300 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-lg hover:scale-105"
+    [routerLink]="tile.route">
+    <div
+      class="flex flex-col items-center justify-center w-full h-full rounded-xl text-white p-4 group-hover:shadow-inner transition-shadow"
+      [ngClass]="tile.color">
+      <mat-icon class="text-3xl mb-3 group-hover:scale-110 transition-transform">{{ tile.icon }}</mat-icon>
+      <h3 class="text-sm font-semibold text-center leading-tight">{{ tile.title }}</h3>
+    </div>
+  </mat-card>
+</div>
   <!-- Empty state if no tiles available -->
   <div *ngIf="tiles.length === 0" class="text-center py-12">
     <mat-icon class="text-6xl text-gray-300 mb-4">block</mat-icon>

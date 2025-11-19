@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ApiResponse, PerformanceMetric, PerformanceSummary, SchemePerformance } from '../../../../shared/models/Amfi/nav-performance.model';
 import { CommonModule } from '@angular/common';
 import { PerformanceCardComponent } from "./performance-card/performance-card.component";
@@ -6,6 +6,7 @@ import { NavChartComponent } from "./nav-chart/nav-chart.component";
 import { ActivatedRoute } from '@angular/router';
 import { AmfiService } from '../../../../core/services/amfi.service';
 import { BreadcrumbComponent } from "../../../../shared/components/breadcrumb/breadcrumb.component";
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-scheme-performance',
@@ -13,7 +14,9 @@ import { BreadcrumbComponent } from "../../../../shared/components/breadcrumb/br
   templateUrl: './scheme-performance.component.html',
   styleUrl: './scheme-performance.component.scss'
 })
-export class SchemePerformanceComponent implements OnInit {
+export class SchemePerformanceComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>(); // Add this for cleanup
+  
   schemeCode!: string;
   schemePerformance: SchemePerformance | null = null;
   performanceMetrics: PerformanceMetric[] = [];
@@ -22,28 +25,41 @@ export class SchemePerformanceComponent implements OnInit {
   error = '';
   lastUpdated = '';
   reportService = inject(AmfiService);
+  
   constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$) // Add this to auto-unsubscribe
+    ).subscribe(params => {
       this.schemeCode = params['scheme'];
       console.log("Scheme Code:", this.schemeCode);
-      // 🔥 Call API to load scheme details here
       this.loadPerformanceData(this.schemeCode);
     });
+  }
 
+  ngOnDestroy(): void {
+    this.destroy$.next(); // Clean up all subscriptions
+    this.destroy$.complete();
+    
+    // Additional cleanup
+    this.schemePerformance = null;
+    this.performanceMetrics = [];
+    this.performanceSummary = null;
   }
 
   loadPerformanceData(schemeCode: string): void {
+    if (!schemeCode) return;
+    
     this.loading = true;
     this.error = '';
 
-    this.reportService.getNavPerformance(schemeCode).subscribe({
+    this.reportService.getNavPerformance(schemeCode).pipe(
+      takeUntil(this.destroy$) // Auto-unsubscribe when component destroys
+    ).subscribe({
       next: (data: ApiResponse) => {
-
-        console.log('API Response:', data); // Add this line
-        console.log('Performance data:', data?.data.performance); // Add this line
-        console.log('Yesterday data:', data?.data.performance?.yesterday); // Add this line
+        // Check if component is still active
+        if (this.destroy$.isStopped) return;
 
         this.schemePerformance = data.data;
         this.performanceMetrics = this.getPerformanceMetrics();
@@ -52,6 +68,8 @@ export class SchemePerformanceComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
+        if (this.destroy$.isStopped) return;
+        
         this.error = 'Failed to load performance data. Please try again later.';
         this.loading = false;
         console.error('Error loading performance data:', error);

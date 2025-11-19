@@ -3,11 +3,3 @@
   min-height: calc(100vh - 64px);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
-
-.nav-item-active {
-  @apply bg-blue-50 text-blue-700 border-blue-200;
-  
-  .material-icons {
-    @apply text-blue-600;
-  }
-}

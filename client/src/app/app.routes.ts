@@ -17,8 +17,9 @@ import { SettingsDashboardComponent } from './features/settings/settings-dashboa
 import { ChangePasswordComponent } from './features/settings/change-password/change-password.component';
 import { UserManagementComponent } from './features/settings/user-management/user-management.component';
 import { EmailComponent } from './features/email/email.component';
-import { InvestmentDashboardComponent } from './features/investment/investment-dashboard/investment-dashboard.component';
-import { CreateInvestmentComponent } from './features/investment/create-investment/create-investment.component';
+import { PortfolioComponent } from './features/portfolio/portfolio.component';
+import { PortfolioDashboardComponent } from './features/portfolio/portfolio-dashboard/portfolio-dashboard.component';
+import { CreateInvestmentComponent } from './features/portfolio/create-investment/create-investment.component';
 
 export const routes: Routes = [
     // Public routes - no layout
@@ -110,12 +111,21 @@ export const routes: Routes = [
             },
             {
                 path: 'portfolio',
+                component: PortfolioComponent,
                 children: [
-                    {
+                     {
                         path: '',
-                        component: InvestmentDashboardComponent,
+                        redirectTo: 'dashboard',
                         pathMatch: 'full'
                     },
+                    // In app.routes.ts - TEMPORARILY COMMENT OUT THE GUARD
+                    {
+                        path: 'dashboard',
+                        component: PortfolioDashboardComponent,
+                        canActivate: [roleGuard],
+                         data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                    },
+                     // RESTRICTED to Admin and Employee only
                     {
                         path: 'create-investment',
                         component: CreateInvestmentComponent,
@@ -123,18 +133,18 @@ export const routes: Routes = [
                         data: { roles: ['Admin', 'Employee'] }
                     },
                     // You can add more portfolio routes here
-                    {
-                        path: 'my-investments',
-                        component: InvestmentDashboardComponent, // Replace with actual component
-                        canActivate: [roleGuard],
-                        data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
-                    },
-                    {
-                        path: 'summary',
-                        component: InvestmentDashboardComponent, // Replace with actual component
-                        canActivate: [roleGuard],
-                        data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
-                    }
+                    // {
+                    //     path: 'my-investments',
+                    //     component: InvestmentDashboardComponent, // Replace with actual component
+                    //     canActivate: [roleGuard],
+                    //     data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                    // },
+                    // {
+                    //     path: 'summary',
+                    //     component: InvestmentDashboardComponent, // Replace with actual component
+                    //     canActivate: [roleGuard],
+                    //     data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
+                    // }
                 ]
             },
 

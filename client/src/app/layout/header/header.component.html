@@ -29,13 +29,10 @@
                 <!-- User Info when logged in -->
                 <div *ngIf="isLoggedIn" class="flex items-center space-x-4">
                     <!-- Notification Component -->
-  <app-notification 
-    [userId]="userId"
-    [isOpen]="isNotificationsOpen"
-    (isOpenChange)="onNotificationsOpenChange($event)"
-    (closeAllMenus)="closeAllMenus()">
-  </app-notification>
-                   
+                    <app-notification [userId]="userId" [isOpen]="isNotificationsOpen"
+                        (isOpenChange)="onNotificationsOpenChange($event)" (closeAllMenus)="closeAllMenus()">
+                    </app-notification>
+
 
                     <!-- User Welcome Message -->
                     <div class="hidden sm:flex flex-col text-right">

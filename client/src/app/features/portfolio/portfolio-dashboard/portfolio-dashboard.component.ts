@@ -1,29 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService, User } from '../../../core/services/auth.service';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-investment-dashboard',
+  selector: 'app-portfolio-dashboard',
   imports: [CommonModule, RouterModule, MatCardModule, MatIconModule],
-  templateUrl: './investment-dashboard.component.html',
-  styleUrl: './investment-dashboard.component.scss'
+  templateUrl: './portfolio-dashboard.component.html',
+  styleUrl: './portfolio-dashboard.component.scss'
 })
-export class InvestmentDashboardComponent implements OnInit {
+export class PortfolioDashboardComponent implements OnInit {
   tiles: any[] = [];
   currentUser: User | null = null;
   hasAdminAccess: boolean = false;
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit(): void {
     this.loadCurrentUser();
     this.checkUserRole();
     this.setupTiles();
   }
-
   private loadCurrentUser(): void {
     this.currentUser = this.authService.getCurrentUser();
   }
@@ -78,7 +77,7 @@ export class InvestmentDashboardComponent implements OnInit {
     ];
 
     // Filter tiles based on user roles
-    this.tiles = allTiles.filter(tile => 
+    this.tiles = allTiles.filter(tile =>
       this.authService.hasAnyRole(tile.roles)
     );
   }
@@ -99,4 +98,5 @@ export class InvestmentDashboardComponent implements OnInit {
   getUserRoles(): string[] {
     return this.currentUser?.roles || [];
   }
+
 }

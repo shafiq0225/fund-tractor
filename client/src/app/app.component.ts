@@ -21,10 +21,6 @@ export class AppComponent implements OnInit, OnDestroy {
   private routerSub!: Subscription;
 
   ngOnInit() {
-    console.log('🏁 App initialized');
-    console.log('User logged in:', this.authService.isLoggedIn());
-    console.log('Current user:', this.authService.getCurrentUser());
-
     this.splashStartTime = Date.now();
 
     // FIX: Use a more reliable way to hide splash
