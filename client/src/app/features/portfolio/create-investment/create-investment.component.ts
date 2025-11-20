@@ -456,17 +456,30 @@ export class CreateInvestmentComponent implements OnInit {
   isFormDirty(): boolean {
     return this.investmentForm.dirty;
   }
-
-  // Helper method to get form completion percentage
+  
   getFormCompletion(): number {
-    const totalFields = 7; // Required fields including document upload
-    const filledFields = Object.keys(this.investmentForm.controls).filter(key => {
-      const control = this.investmentForm.get(key);
-      return control?.value && control.valid;
-    }).length;
+  const requiredFields = [
+    'investorId',
+    'schemeCode', 
+    'navRate',
+    'investAmount',
+    'dateOfPurchase',
+    'modeOfInvestment',
+    'imageFile'
+  ];
 
-    return Math.round((filledFields / totalFields) * 100);
-  }
+  let filledFields = 0;
+
+  requiredFields.forEach(field => {
+    const control = this.investmentForm.get(field);
+    if (control && control.value && control.valid) {
+      filledFields++;
+    }
+  });
+
+  const percentage = Math.round((filledFields / requiredFields.length) * 100);
+  return Math.min(percentage, 100);
+}
 
   // Add these methods to your component
 

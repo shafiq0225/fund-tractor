@@ -86,12 +86,16 @@
                 </label>
 
                 <!-- Quick Amounts -->
-                <div *ngIf="!investAmount?.value" class="mb-3 p-3 bg-blue-50 rounded-lg">
-                  <div class="text-xs font-medium text-gray-600 mb-2">Quick amount:</div>
+                <div *ngIf="!investAmount?.value"
+                  class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div class="flex items-center gap-2 mb-3">
+                    <mat-icon class="text-blue-500 text-base">bolt</mat-icon>
+                    <span class="text-sm font-semibold text-blue-700">Quick Amount</span>
+                  </div>
                   <div class="flex flex-wrap gap-2">
                     <button *ngFor="let amount of [5000, 10000, 25000, 50000]" type="button"
                       (click)="setQuickAmount(amount)"
-                      class="px-3 py-1 bg-white border border-blue-200 rounded text-xs text-blue-600 hover:bg-blue-50">
+                      class="px-4 py-2 bg-white border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all duration-200">
                       ₹{{ amount | number }}
                     </button>
                   </div>
@@ -183,11 +187,10 @@
                 <div class="compact-section">
                   <label class="section-label">
                     <mat-icon class="text-blue-500 text-base">notes</mat-icon>
-                    Remarks
-                    <span class="optional-text">Optional</span>
+                    Remarks Optional
                   </label>
-                  <mat-form-field appearance="outline" class="width-full form-field-compact">
-                    <textarea matInput formControlName="remarks" rows="2" placeholder="Additional notes..."
+                  <mat-form-field appearance="outline" style="width: 375px" class="form-field-compact">
+                    <textarea matInput formControlName="remarks" rows="3" placeholder="Additional notes..."
                       class="text-sm">
                     </textarea>
                   </mat-form-field>
@@ -195,20 +198,27 @@
               </div>
 
               <!-- Compact Action Buttons -->
-              <div class="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="button" (click)="onCancel()" [disabled]="isSubmitting"
-                  class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">
-                  Cancel
-                </button>
-                <button type="submit" [disabled]="isSubmitting || investmentForm.invalid"
-                  class="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-purple-600 disabled:opacity-50">
-                  <div class="flex items-center justify-center gap-2">
-                    <mat-spinner diameter="16" *ngIf="isSubmitting" class="text-white"></mat-spinner>
-                    <mat-icon *ngIf="!isSubmitting" class="text-base">add_circle</mat-icon>
-                    <span>{{ isSubmitting ? 'Creating...' : 'Create Investment' }}</span>
-                  </div>
-                </button>
-              </div>
+              <!-- Exact same styling as Fetch & Save Data button -->
+<div class="flex gap-3 pt-6 border-t border-gray-200">
+  <button type="button" (click)="onCancel()" [disabled]="isSubmitting"
+    class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+    Cancel
+  </button>
+  
+  <button type="submit" [disabled]="isSubmitting || investmentForm.invalid"
+    class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]">
+    <ng-container *ngIf="!isSubmitting; else loadingTemplate">
+      <mat-icon class="text-base !w-5 !h-5">add_circle</mat-icon>
+      <span>Create Investment</span>
+    </ng-container>
+    
+    <ng-template #loadingTemplate>
+      <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
+        class="!w-4 !h-4 !text-white"></mat-progress-spinner>
+      <span class="text-sm">Creating...</span>
+    </ng-template>
+  </button>
+</div>
             </form>
           </mat-card-content>
         </mat-card>
@@ -246,8 +256,11 @@
                 <mat-icon class="text-green-500 text-lg">check_circle</mat-icon>
                 <div>
                   <h3 class="text-gray-800 font-semibold text-sm">Form Status</h3>
-                  <p class="text-gray-600 text-xs">{{ investmentForm.valid ? 'Ready to submit' : 'Fill required fields'
-                    }}</p>
+                  <p class="text-gray-600 text-xs">
+                    {{ getFormCompletion() === 100 ? 'Ready to submit' :
+                    getFormCompletion() >= 80 ? 'Almost there' :
+                    'Fill required fields' }}
+                  </p>
                 </div>
               </div>
               <div class="space-y-2">
