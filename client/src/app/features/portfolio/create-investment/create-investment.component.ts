@@ -83,13 +83,15 @@ export class CreateInvestmentComponent implements OnInit {
   ];
 
   // Mock data for investors - replace with API call
-  investors: Investor[] = [
-    { id: 1, firstName: 'Rajesh', lastName: 'Kumar', email: 'rajesh.kumar@email.com' },
-    { id: 2, firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@email.com' },
-    { id: 3, firstName: 'Amit', lastName: 'Verma', email: 'amit.verma@email.com' },
-    { id: 4, firstName: 'Sneha', lastName: 'Patel', email: 'sneha.patel@email.com' },
-    { id: 5, firstName: 'Vikram', lastName: 'Singh', email: 'vikram.singh@email.com' }
-  ];
+  // investors: Investor[] = [
+  //   { id: 1, firstName: 'Rajesh', lastName: 'Kumar', email: 'rajesh.kumar@email.com' },
+  //   { id: 2, firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@email.com' },
+  //   { id: 3, firstName: 'Amit', lastName: 'Verma', email: 'amit.verma@email.com' },
+  //   { id: 4, firstName: 'Sneha', lastName: 'Patel', email: 'sneha.patel@email.com' },
+  //   { id: 5, firstName: 'Vikram', lastName: 'Singh', email: 'vikram.singh@email.com' }
+  // ];
+
+    investors: Investor[] = [];
 
   // Mock data for fund schemes with NAV rates
   fundSchemes: FundScheme[] = [
@@ -212,11 +214,22 @@ export class CreateInvestmentComponent implements OnInit {
 
   private loadInvestors(): void {
     this.isLoadingInvestors = true;
-
-    // Simulate API call to load investors
-    setTimeout(() => {
-      this.isLoadingInvestors = false;
-    }, 1000);
+    
+    this.investmentService.getInvestors().subscribe({
+      next: (investors) => {
+        this.investors = investors;
+        this.isLoadingInvestors = false;
+        console.log('Loaded investors:', investors);
+      },
+      error: (error) => {
+        console.error('Error loading investors:', error);
+        this.isLoadingInvestors = false;
+        this.snackBar.open('Failed to load investors', 'Close', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
   }
 
   private setupFormFields(): void {
@@ -248,11 +261,12 @@ export class CreateInvestmentComponent implements OnInit {
       navRate: [{ value: '', disabled: false }, [Validators.required, Validators.min(0.0001)]],
       dateOfPurchase: ['', [Validators.required]],
       investAmount: ['', [Validators.required, Validators.min(0.01)]],
-      modeOfInvestment: ['online', [Validators.required]], // Default to online
+      modeOfInvestment: ['online', [Validators.required]],
       remarks: [''],
-      imageFile: [null, [Validators.required]] // Made mandatory
+      imageFile: [null, [Validators.required]]
     });
   }
+
 
   onInvestorChange(event: any): void {
     // Investor selection logic if needed

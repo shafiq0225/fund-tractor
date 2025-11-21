@@ -9,7 +9,6 @@ namespace Core.Entities.Auth
 {
     public class User
     {
-        [Key]
         public int Id { get; set; }
 
         [Required]
@@ -20,36 +19,35 @@ namespace Core.Entities.Auth
         [StringLength(50)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required]
         [EmailAddress]
-        [StringLength(100)]
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(10)]
+        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$")]
         public string PanNumber { get; set; } = string.Empty;
 
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
-        // Family relationship (for Head and Family Members)
-        //public int? FamilyHeadId { get; set; } // Reference to Head of Family
-        public virtual User? FamilyHead { get; set; }
-        public virtual ICollection<User> FamilyMembers { get; set; } = new List<User>();
-
-        // Employee specific fields
+        // Optional fields (can be null)
         public string? EmployeeId { get; set; }
         public string? Department { get; set; }
         public DateTime? DateOfJoining { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
+
+        // Audit fields
+        public int CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public int? UpdatedBy { get; set; }
+        public DateTime? UpdatedDate { get; set; }
 
         // Navigation properties
         public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public virtual UserProfile? UserProfile { get; set; }
+        public virtual User CreatedByUser { get; set; }
     }
+
 
     public class UserRole
     {

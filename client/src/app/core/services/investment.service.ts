@@ -20,6 +20,13 @@ export interface InvestmentResponse {
   data?: any;
 }
 
+export interface Investor {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -50,4 +57,9 @@ export class InvestmentService {
   deleteInvestment(id: number): Observable<InvestmentResponse> {
     return this.http.delete<InvestmentResponse>(`${this.apiUrl}/investment/${id}`);
   }
+
+// Add this method to AuthService class
+getInvestors(): Observable<Investor[]> {
+  return this.http.get<Investor[]>(`${this.apiUrl}/investment/investors`);
+}
 }

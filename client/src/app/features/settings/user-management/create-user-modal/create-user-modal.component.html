@@ -1,0 +1,121 @@
+<div class="w-full max-w-lg rounded-2xl shadow-xl bg-white">
+  <!-- Header -->
+  <div class="px-8 pt-6 pb-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
+    <h2 class="text-2xl font-bold text-blue-700 flex items-center gap-2">
+      <mat-icon class="text-blue-600">person_add</mat-icon>
+      Create User
+    </h2>
+    <p class="text-sm text-gray-500 mt-1">Create a new user account. The user can then register with this PAN number.</p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="userForm" class="px-8 py-6 space-y-6">
+    <!-- First Name -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+        <mat-icon class="text-blue-500 text-base">badge</mat-icon>
+        First Name
+      </label>
+      <input type="text" formControlName="firstName" class="w-full rounded-lg border border-gray-300 px-3 py-2 
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+             placeholder="Enter first name" />
+      <div class="h-5">
+        <p *ngIf="userForm.get('firstName')?.touched && userForm.get('firstName')?.errors?.['required']"
+          class="text-red-500 text-xs">First Name is required</p>
+        <p *ngIf="userForm.get('firstName')?.touched && userForm.get('firstName')?.errors?.['maxlength']"
+          class="text-red-500 text-xs">First Name cannot exceed 50 characters</p>
+      </div>
+    </div>
+
+    <!-- Last Name -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+        <mat-icon class="text-blue-500 text-base">badge</mat-icon>
+        Last Name
+      </label>
+      <input type="text" formControlName="lastName" class="w-full rounded-lg border border-gray-300 px-3 py-2 
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+        placeholder="Enter last name" />
+      <div class="h-5">
+        <p *ngIf="userForm.get('lastName')?.touched && userForm.get('lastName')?.errors?.['required']"
+          class="text-red-500 text-xs">Last Name is required</p>
+        <p *ngIf="userForm.get('lastName')?.touched && userForm.get('lastName')?.errors?.['maxlength']"
+          class="text-red-500 text-xs">Last Name cannot exceed 50 characters</p>
+      </div>
+    </div>
+
+    <!-- PAN Number -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+        <mat-icon class="text-blue-500 text-base">fingerprint</mat-icon>
+        PAN Number
+      </label>
+      <input type="text" formControlName="panNumber" (input)="onPanInput($event)"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono
+               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+        placeholder="Enter PAN number (e.g., ABCDE1234F)" />
+      <div class="h-5">
+        <p *ngIf="userForm.get('panNumber')?.touched && userForm.get('panNumber')?.errors?.['required']"
+          class="text-red-500 text-xs">PAN Number is required</p>
+        <p *ngIf="userForm.get('panNumber')?.touched && userForm.get('panNumber')?.errors?.['pattern']"
+          class="text-red-500 text-xs">Invalid PAN format. Example: ABCDE1234F</p>
+      </div>
+    </div>
+
+    <!-- Active Status Toggle -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <mat-icon class="text-green-500 text-base">toggle_on</mat-icon>
+        <span class="text-gray-700 font-medium">Active Status</span>
+      </div>
+
+      <!-- Toggle with text -->
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" formControlName="isActive" class="sr-only peer" />
+
+        <!-- Switch track -->
+        <div class="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-600 transition"></div>
+        <!-- Switch knob -->
+        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full 
+                peer-checked:translate-x-5 transition"></div>
+
+        <!-- ON/OFF text -->
+        <span class="ml-3 text-sm font-medium"
+          [ngClass]="userForm.get('isActive')?.value ? 'text-green-600' : 'text-gray-300'">
+          {{ userForm.get('isActive')?.value ? 'ACTIVE' : 'INACTIVE' }}
+        </span>
+      </label>
+    </div>
+
+    <!-- Information Box - FIXED: Removed overflow-hidden -->
+    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+      <div class="flex items-start gap-3">
+        <mat-icon class="text-blue-500 text-base mt-0.5 flex-shrink-0">info</mat-icon>
+        <div class="text-sm text-blue-700 min-w-0"> <!-- Added min-w-0 for proper text wrapping -->
+          <p class="font-semibold">User Registration Process</p>
+          <p class="mt-1 text-xs">
+            After creating this user account, the user can register on the signup page using their PAN number. 
+            They will need to provide their email and set a password to complete the registration.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- Footer -->
+  <div class="flex justify-end gap-3 px-8 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+    <button (click)="cancel()" class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 
+                   hover:bg-gray-100 transition font-medium flex items-center gap-1">
+      <mat-icon class="text-gray-500 text-base">close</mat-icon>
+      Cancel
+    </button>
+    <button (click)="onCreate()" [disabled]="loading" 
+            class="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold 
+                   hover:bg-green-700 shadow-sm transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+      <mat-icon class="text-white text-base" *ngIf="!loading">person_add</mat-icon>
+      <div *ngIf="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+      {{ loading ? 'Creating...' : 'Create User' }}
+    </button>
+  </div>
+</div>

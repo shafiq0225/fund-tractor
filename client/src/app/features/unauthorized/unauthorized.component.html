@@ -1,21 +1,21 @@
 <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 py-12 px-4 sm:px-6 lg:px-8">
   <mat-card class="max-w-md w-full p-8 text-center rounded-2xl shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-    <!-- Animated Icon -->
+    <!-- Dynamic Animated Icon -->
     <div class="mb-6">
       <div class="relative inline-block">
-        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-          <mat-icon class="text-3xl text-red-500">admin_panel_settings</mat-icon>
+        <div [class]="getIconContainerClass()" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <mat-icon class="text-3xl" [class]="getIconColorClass()">{{ getIcon() }}</mat-icon>
         </div>
-        <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
+        <div [class]="getBadgeClass()" class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center animate-bounce">
           <mat-icon class="text-white text-sm">priority_high</mat-icon>
         </div>
       </div>
       
       <h1 class="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-3">
-        Access Restricted
+        {{ getTitle() }}
       </h1>
       <p class="text-gray-600 leading-relaxed">
-        You don't have the required permissions to access this page. 
+        {{ getMessage() }}
         <span class="block text-sm text-gray-500 mt-2">
           Please contact your administrator if you believe this is an error.
         </span>
@@ -25,9 +25,10 @@
     <!-- Action Buttons -->
     <div class="space-y-3">
       <button 
+        *ngIf="reason !== 'inactive' && reason !== 'no-roles'"
         mat-raised-button 
         color="primary" 
-        routerLink="/"
+        (click)="goToDashboard()"
         class="w-full py-3 font-semibold rounded-xl transition-all duration-300 hover:shadow-lg">
         <div class="flex items-center justify-center gap-2">
           <mat-icon>dashboard</mat-icon>
@@ -36,13 +37,25 @@
       </button>
       
       <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="goToLogin()"
+        class="w-full py-3 font-semibold rounded-xl transition-all duration-300 hover:shadow-lg">
+        <div class="flex items-center justify-center gap-2">
+          <mat-icon>login</mat-icon>
+          <span>Back to Login</span>
+        </div>
+      </button>
+
+      <button 
+        *ngIf="reason === 'inactive' || reason === 'no-roles'"
         mat-stroked-button 
         color="primary"
-        routerLink="/login"
+        (click)="contactAdmin()"
         class="w-full py-3 font-medium rounded-xl border-2 transition-all duration-300 hover:bg-blue-50">
         <div class="flex items-center justify-center gap-2">
-          <mat-icon>switch_account</mat-icon>
-          <span>Switch Account</span>
+          <mat-icon>email</mat-icon>
+          <span>Contact Administrator</span>
         </div>
       </button>
     </div>

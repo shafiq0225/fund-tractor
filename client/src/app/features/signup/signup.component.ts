@@ -8,10 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService, RegisterRequest } from '../../core/services/auth.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
+import { ApiResponse } from '../../shared/models/Amfi/Scheme'; // Import ApiResponse
 
 // Custom validator for password confirmation
 export function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -97,25 +97,67 @@ export class SignupComponent implements OnInit {
 
   private handleSignup(): void {
     const registerData: RegisterRequest = {
-      ...this.signupForm.value,
-      role: 'FamilyMember'
+      ...this.signupForm.value
+      // Remove role: 'FamilyMember' - backend doesn't accept role in registration
     };
 
     this.authService.register(registerData).subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        if (response.success) {
-          this.snackBarService.success(response.message || 'Account created successfully! Please login.');
-          this.navigateToLogin();
-        } else {
-          this.snackBarService.error(response.message || 'Registration failed!.');
-        }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        this.snackBarService.error(error.error?.message || 'Registration failed!.');
+    next: (response: ApiResponse<any>) => {
+      console.log('✅ Registration response:', response);
+      this.isLoading = false;
+      if (response.success) {
+        this.snackBarService.success(response.message || 'Account created successfully! Please login.');
+        this.navigateToLogin();
+      } else {
+        this.snackBarService.error(response.message || 'Registration failed!');
       }
-    });
+    },
+    error: (error) => {
+      console.log('❌ Registration error:', error);
+      console.log('🔍 Error details:', {
+        status: error.status,
+        statusText: error.statusText,
+        error: error.error,
+        message: error.message,
+        url: error.url
+      });
+      
+      this.isLoading = false;
+      
+      // Check for "user not found" error and navigate accordingly
+      const errorMessage = error.error?.message || '';
+      console.log('📝 Error message:', errorMessage);
+      
+      if (errorMessage.includes('User not found in system') || 
+          errorMessage.includes('not found in system') ||
+          errorMessage.includes('contact admin')) {
+        
+        console.log('🚨 Navigating to user-not-found page...');
+        
+        // Navigate to user-not-found page with the PAN number
+        this.router.navigate(['/user-not-found'], {
+          queryParams: { 
+            panNumber: this.signupForm.get('panNumber')?.value,
+            email: this.signupForm.get('email')?.value
+          }
+        });
+      } else if (errorMessage.includes('PAN already exists') || 
+                 errorMessage.includes('already registered')) {
+        this.snackBarService.error('This PAN number is already registered. Please try signing in.');
+        this.router.navigate(['/user-not-found'], {
+          queryParams: { 
+            panNumber: this.signupForm.get('panNumber')?.value,
+            email: this.signupForm.get('email')?.value
+          }
+        });
+        // this.navigateToLogin();
+      } else if (errorMessage.includes('email is already registered')) {
+        this.snackBarService.error('This email is already registered with another account.');
+      } else {
+        this.snackBarService.error(errorMessage || 'Registration failed!');
+      }
+    }
+  });
   }
 
   checkPasswordValidity(): void {

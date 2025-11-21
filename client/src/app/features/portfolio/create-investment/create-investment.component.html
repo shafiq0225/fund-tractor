@@ -18,6 +18,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Investor Selection -->
                 <!-- Investor Selection - UPDATED -->
+                <!-- Investor Selection -->
                 <div class="compact-section">
                   <label class="section-label">
                     <mat-icon class="text-blue-500" style="font-size: 16px;">person</mat-icon>
@@ -26,11 +27,26 @@
                   <div class="dropdown-container">
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-select formControlName="investorId">
+                        <!-- Loading State -->
+                        <mat-option *ngIf="isLoadingInvestors" disabled>
+                          <div class="flex items-center gap-2">
+                            <mat-progress-spinner diameter="16" strokeWidth="2"
+                              mode="indeterminate"></mat-progress-spinner>
+                            <span class="text-gray-500">Loading investors...</span>
+                          </div>
+                        </mat-option>
+
+                        <!-- Empty State -->
+                        <mat-option *ngIf="!isLoadingInvestors && investors.length === 0" disabled>
+                          <div class="text-gray-500">No investors found</div>
+                        </mat-option>
+
+                        <!-- Investors List -->
                         <mat-option *ngFor="let investor of investors" [value]="investor.id">
                           <div class="dropdown-option">
                             <div class="dropdown-option-content">
                               <div class="option-primary">{{ investor.firstName }} {{ investor.lastName }}</div>
-                              <div class="option-secondary">{{ investor.email }}</div>
+                              <!-- <div class="option-secondary">{{ investor.email }}</div> -->
                             </div>
                           </div>
                         </mat-option>
@@ -199,26 +215,26 @@
 
               <!-- Compact Action Buttons -->
               <!-- Exact same styling as Fetch & Save Data button -->
-<div class="flex gap-3 pt-6 border-t border-gray-200">
-  <button type="button" (click)="onCancel()" [disabled]="isSubmitting"
-    class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-    Cancel
-  </button>
-  
-  <button type="submit" [disabled]="isSubmitting || investmentForm.invalid"
-    class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]">
-    <ng-container *ngIf="!isSubmitting; else loadingTemplate">
-      <mat-icon class="text-base !w-5 !h-5">add_circle</mat-icon>
-      <span>Create Investment</span>
-    </ng-container>
-    
-    <ng-template #loadingTemplate>
-      <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
-        class="!w-4 !h-4 !text-white"></mat-progress-spinner>
-      <span class="text-sm">Creating...</span>
-    </ng-template>
-  </button>
-</div>
+              <div class="flex gap-3 pt-6 border-t border-gray-200">
+                <button type="button" (click)="onCancel()" [disabled]="isSubmitting"
+                  class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  Cancel
+                </button>
+
+                <button type="submit" [disabled]="isSubmitting || investmentForm.invalid"
+                  class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed h-[42px]">
+                  <ng-container *ngIf="!isSubmitting; else loadingTemplate">
+                    <mat-icon class="text-base !w-5 !h-5">add_circle</mat-icon>
+                    <span>Create Investment</span>
+                  </ng-container>
+
+                  <ng-template #loadingTemplate>
+                    <mat-progress-spinner mode="indeterminate" diameter="16" strokeWidth="2"
+                      class="!w-4 !h-4 !text-white"></mat-progress-spinner>
+                    <span class="text-sm">Creating...</span>
+                  </ng-template>
+                </button>
+              </div>
             </form>
           </mat-card-content>
         </mat-card>

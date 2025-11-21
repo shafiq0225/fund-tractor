@@ -23,6 +23,36 @@ namespace Core.DTOs.Auth
 
     public class RegisterDto
     {
+        [Required(ErrorMessage = "First Name is required")]
+        [StringLength(50)]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last Name is required")]
+        [StringLength(50)]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "PAN Card Number is required")]
+        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", ErrorMessage = "Invalid PAN format")]
+        public string PanNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password is required")]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Confirm Password is required")]
+        [Compare("Password", ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+
+    public class UserDto
+    {
+        public int Id { get; set; }
+
         [Required]
         [StringLength(50)]
         public string FirstName { get; set; } = string.Empty;
@@ -36,49 +66,68 @@ namespace Core.DTOs.Auth
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", ErrorMessage = "Invalid PAN format")]
+        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$")]
         public string PanNumber { get; set; } = string.Empty;
 
-        [Required]
-        [MinLength(6)]
-        public string Password { get; set; } = string.Empty;
-
-        [Required]
-        [Compare("Password")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-
-        // Role assignment (default to FamilyMember)
-        public string Role { get; set; } = "FamilyMember";
-        // Additional fields for employees
-        public string? EmployeeId { get; set; }
-        public string? Department { get; set; }
-        public DateTime? DateOfJoining { get; set; }
-
-        // For family members
-        //public int? FamilyHeadId { get; set; }
-    }
-
-    public class UserDto
-    {
-        public int Id { get; set; }
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string PanNumber { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
         public List<string> Permissions { get; set; } = new List<string>();
+
+        // Additional fields
         public string? EmployeeId { get; set; }
         public string? Department { get; set; }
-        public int? FamilyHeadId { get; set; }
-        public string? FamilyHeadName { get; set; }
+        public DateTime? DateOfJoining { get; set; }
         public bool IsActive { get; set; }
+
+        // Audit fields
+        public int CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public int? UpdatedBy { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+        public string? CreatedByName { get; set; }
+        public string? UpdatedByName { get; set; }
+
+        // Computed properties for frontend
+        public bool HasAccess => IsActive && Roles.Any();
+        public string AccessStatus => !IsActive ? "Inactive" : !Roles.Any() ? "No Roles" : "Active";
     }
 
-    public class CreateUserDto : RegisterDto
+    public class CreateUserDto
     {
-        // Additional fields for admin creating users
+        [Required(ErrorMessage = "First Name is required")]
+        [StringLength(50, ErrorMessage = "First Name cannot exceed 50 characters")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last Name is required")]
+        [StringLength(50, ErrorMessage = "Last Name cannot exceed 50 characters")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "PAN Card Number is required")]
+        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", ErrorMessage = "Invalid PAN format. Example: ABCDE1234F")]
+        public string PanNumber { get; set; } = string.Empty;
+
         public bool IsActive { get; set; } = true;
+
+    }
+
+    public class UpdateUserDto
+    {
+        [Required(ErrorMessage = "First Name is required")]
+        [StringLength(50, ErrorMessage = "First Name cannot exceed 50 characters")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last Name is required")]
+        [StringLength(50, ErrorMessage = "Last Name cannot exceed 50 characters")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "PAN Card Number is required")]
+        [RegularExpression(@"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", ErrorMessage = "Invalid PAN format. Example: ABCDE1234F")]
+        public string PanNumber { get; set; } = string.Empty;
+
+        public bool IsActive { get; set; } = true;
+
+        // Optional fields that admin can update
+        public string? EmployeeId { get; set; }
     }
 
     public class AssignFamilyMemberDto

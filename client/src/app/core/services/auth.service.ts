@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
 import { ApiResponse } from '../../shared/models/Amfi/Scheme';
 import { NotificationService } from './notification.service';
 
@@ -28,6 +28,9 @@ export interface User {
   createdAt: string;
   roles: string[];
   permissions: string[];
+  isActive: boolean;
+  hasAccess?: boolean;
+  accessStatus?: string;
 }
 
 export interface RegisterRequest {
@@ -43,6 +46,8 @@ export interface RegisterResponse {
   success: boolean;
   message: string;
   data: User;
+  errors?: string[]; // Add errors array to match ApiResponse<T>
+
 }
 
 export interface UpdateRoleRequest {
@@ -62,6 +67,13 @@ export interface AdminChangePasswordRequest {
   confirmPassword: string;
 }
 
+
+export interface CreateUserRequest {
+  firstName: string;
+  lastName: string;
+  panNumber: string;
+  isActive: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -85,15 +97,24 @@ export class AuthService {
             this.setAuthData(response.data.token, response.data.user);
 
             if (response.data.user.id) {
-            this.notificationService.getUnreadCount(response.data.user.id);
-          }
+              this.notificationService.getUnreadCount(response.data.user.id);
+            }
           }
         })
       );
   }
 
-  register(registerData: RegisterRequest): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(`${this.apiUrl}/auth/register`, registerData);
+  register(registerData: RegisterRequest): Observable<ApiResponse<User>> {
+    console.log('📤 Sending registration request:', registerData);
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/auth/register`, registerData)
+      .pipe(
+        tap(response => console.log('📥 Registration API response:', response)),
+        catchError(error => {
+          console.log('🚨 Registration API error:', error);
+          // Re-throw the error so the component can handle it
+          return throwError(() => error);
+        })
+      );
   }
 
   logout(): void {
@@ -131,6 +152,17 @@ export class AuthService {
   hasAnyRole(roles: string[]): boolean {
     const user = this.currentUserSubject.value;
     return user ? roles.some(role => user.roles.includes(role)) : false;
+  }
+
+  hasPermission(permission: string): boolean {
+    const user = this.currentUserSubject.value;
+    return user ? user.permissions.includes(permission) : false;
+  }
+
+  // Check if user has access (active and has roles)
+  hasAccess(): boolean {
+    const user = this.currentUserSubject.value;
+    return user ? user.isActive && user.roles.length > 0 : false;
   }
 
   getCurrentUser(): User | null {
@@ -222,5 +254,8 @@ export class AuthService {
       adminChangePasswordData
     );
   }
-
+  // Add this method to your AuthService class
+  createUser(userData: CreateUserRequest): Observable<ApiResponse<User>> {
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/auth/admin/create-user`, userData);
+  }
 }

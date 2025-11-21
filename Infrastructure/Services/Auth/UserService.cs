@@ -1,4 +1,5 @@
 ﻿using Core.DTOs.Auth;
+using Core.DTOs.Investment;
 using Core.DTOs.Notifications;
 using Core.Entities.Auth;
 using Core.Interfaces.Auth;
@@ -26,93 +27,26 @@ namespace Infrastructure.Services.Auth
             _notificationService = notificationService;
         }
 
-        public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
+        public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto, int createdByUserId)
         {
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive);
-
-            // Use the same message for both cases for security
-            if (user == null || !_passwordService.VerifyPassword(loginDto.Password, user.PasswordHash))
+            // Validate PAN number uniqueness
+            if (await _context.Users.AnyAsync(u => u.PanNumber == createUserDto.PanNumber.ToUpper()))
             {
-                throw new UnauthorizedAccessException("Invalid Email ID or Password");
+                throw new ArgumentException("This PAN number is already registered.");
             }
-
-            var token = _tokenService.GenerateToken(user);
-
-            return new LoginResponseDto
-            {
-                Token = token,
-                Expires = DateTime.UtcNow.AddHours(24),
-                User = new UserDto
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email,
-                    PanNumber = user.PanNumber,
-                    CreatedAt = user.CreatedAt,
-                    Roles = user.UserRoles.Select(r => r.RoleName).ToList()
-                }
-            };
-        }
-        public async Task<UserDto> RegisterAsync(RegisterDto registerDto)
-        {
-            if (await UserExistsAsync(registerDto.Email))
-            {
-                throw new ArgumentException("An account with this email address already exists. Please use a different email or try signing in.");
-            }
-
-            if (await _context.Users.AnyAsync(u => u.PanNumber == registerDto.PanNumber.ToUpper()))
-            {
-                throw new ArgumentException("This PAN number is already registered. Please check the number or contact support if you believe this is an error.");
-            }
-
-            // Validate role
-            var validRoles = new[] { "Admin", "Employee", "HeadOfFamily", "FamilyMember" };
-            if (!validRoles.Contains(registerDto.Role))
-            {
-                throw new ArgumentException("Invalid role specified");
-            }
-
-            // Validate family relationship
-            //if (registerDto.Role == "FamilyMember" && !registerDto.FamilyHeadId.HasValue)
-            //{
-            //    throw new ArgumentException("Family members must be associated with a family head");
-            //}
-
-            //if (registerDto.FamilyHeadId.HasValue)
-            //{
-            //    var familyHead = await _context.Users
-            //        .Include(u => u.UserRoles)
-            //        .FirstOrDefaultAsync(u => u.Id == registerDto.FamilyHeadId && u.IsActive);
-
-            //    if (familyHead == null || !familyHead.UserRoles.Any(r => r.RoleName == "HeadOfFamily"))
-            //    {
-            //        throw new ArgumentException("Invalid family head specified");
-            //    }
-            //}
 
             var user = new User
             {
-                FirstName = registerDto.FirstName,
-                LastName = registerDto.LastName,
-                Email = registerDto.Email,
-                PanNumber = registerDto.PanNumber.ToUpper(),
-                PasswordHash = _passwordService.HashPassword(registerDto.Password),
-                EmployeeId = registerDto.EmployeeId,
-                Department = registerDto.Department,
-                DateOfJoining = registerDto.DateOfJoining,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true,
-                UserRoles = new List<UserRole>() // Initialize the collection
+                FirstName = createUserDto.FirstName,
+                LastName = createUserDto.LastName,
+                PanNumber = createUserDto.PanNumber.ToUpper(),
+                Email = string.Empty, // Empty initially - will be set during public registration
+                IsActive = createUserDto.IsActive,
+                CreatedBy = createdByUserId,
+                CreatedDate = DateTime.UtcNow,
+                UserRoles = new List<UserRole>(), // Start with empty roles
+                UserProfile = new UserProfile() // Auto-create profile
             };
-
-            // Add the role from registerDto (based on your business logic)
-            user.UserRoles.Add(new UserRole { RoleName = registerDto.Role });
-
-            // Auto-create UserProfile
-            user.UserProfile = new UserProfile();
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -120,14 +54,139 @@ namespace Infrastructure.Services.Auth
             return await GetUserDtoAsync(user);
         }
 
-        public async Task<List<string>> GetUserPermissionsAsync(int userId)
+        public async Task<(bool Success, string Message, UserDto? Data)> UpdateUserAsync(int userId, UpdateUserDto updateUserDto, int updatedByUserId)
         {
-            // Return basic permissions based on roles for now
+            try
+            {
+                // Find the user to update
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null)
+                {
+                    return (false, "User not found.", null);
+                }
+
+                // Check if PAN number is being changed and validate uniqueness
+                if (user.PanNumber != updateUserDto.PanNumber.ToUpper())
+                {
+                    if (await _context.Users.AnyAsync(u => u.PanNumber == updateUserDto.PanNumber.ToUpper() && u.Id != userId))
+                    {
+                        return (false, "This PAN number is already registered with another user.", null);
+                    }
+                    user.PanNumber = updateUserDto.PanNumber.ToUpper();
+                }
+
+                // Check if EmployeeId is being changed and validate uniqueness
+                if (user.EmployeeId != updateUserDto.EmployeeId && !string.IsNullOrEmpty(updateUserDto.EmployeeId))
+                {
+                    if (await _context.Users.AnyAsync(u => u.EmployeeId == updateUserDto.EmployeeId && u.Id != userId))
+                    {
+                        return (false, "This Employee ID is already registered with another user.", null);
+                    }
+                    user.EmployeeId = updateUserDto.EmployeeId;
+                }
+
+                // Update basic information
+                user.FirstName = updateUserDto.FirstName;
+                user.LastName = updateUserDto.LastName;
+                user.IsActive = updateUserDto.IsActive;
+
+                // Update audit fields
+                user.UpdatedBy = updatedByUserId;
+                user.UpdatedDate = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var updatedUserDto = await GetUserDtoAsync(user);
+                return (true, "User updated successfully.", updatedUserDto);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return (false, $"Database error: {dbEx.InnerException?.Message ?? dbEx.Message}", null);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Unexpected error: {ex.Message}", null);
+            }
+        }
+        public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
+        {
+            // Login only with email
             var user = await _context.Users
                 .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+                .FirstOrDefaultAsync(u => u.Email == loginDto.Email
+                                       && !string.IsNullOrEmpty(u.PasswordHash));
 
-            if (user == null) return new List<string>();
+            if (user == null || !_passwordService.VerifyPassword(loginDto.Password, user.PasswordHash))
+            {
+                throw new UnauthorizedAccessException("Invalid email or password");
+            }
+
+            // Check if user is active
+            if (!user.IsActive)
+            {
+                throw new UnauthorizedAccessException("Your account has been deactivated. Please contact administrator.");
+            }
+
+            // Check if user has any roles assigned
+            if (!user.UserRoles.Any())
+            {
+                throw new UnauthorizedAccessException("No roles assigned to your account. Please contact administrator to assign roles.");
+            }
+
+            var token = _tokenService.GenerateToken(user);
+            var userDto = await GetUserDtoAsync(user);
+
+            return new LoginResponseDto
+            {
+                Token = token,
+                Expires = DateTime.UtcNow.AddHours(24),
+                User = userDto
+            };
+        }
+        public async Task<UserDto> RegisterAsync(RegisterDto registerDto)
+        {
+            // Check if user exists in UserMaster (by PAN only)
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.PanNumber == registerDto.PanNumber.ToUpper() && u.IsActive);
+
+            if (existingUser == null)
+            {
+                throw new ArgumentException("User not found in system. Please contact admin to create your account first.");
+            }
+
+            // Check if user already has password set (already registered)
+            if (!string.IsNullOrEmpty(existingUser.PasswordHash))
+            {
+                throw new ArgumentException("An account with this PAN already exists. Please try signing in.");
+            }
+
+            // Validate email uniqueness
+            if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email && u.Id != existingUser.Id && !string.IsNullOrEmpty(u.Email)))
+            {
+                throw new ArgumentException("This email is already registered with another account.");
+            }
+
+            // Update user details from registration
+            existingUser.Email = registerDto.Email;
+            existingUser.PasswordHash = _passwordService.HashPassword(registerDto.Password);
+            existingUser.UpdatedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return await GetUserDtoAsync(existingUser);
+        }
+
+        public async Task<List<string>> GetUserPermissionsAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            // Return empty permissions if user is inactive OR has no roles
+            if (user == null || !user.IsActive || !user.UserRoles.Any())
+                return new List<string>();
 
             var permissions = new List<string>();
 
@@ -136,13 +195,13 @@ namespace Infrastructure.Services.Auth
                 switch (role.RoleName)
                 {
                     case "Admin":
-                        permissions.AddRange(new[] { "ViewDashboard", "ManageUsers", "ViewReports", "ManageInvestments" });
+                        permissions.AddRange(new[] { "ViewDashboard", "ManageUsers", "ViewReports", "ManageInvestments", "ExportData", "SystemConfig" });
                         break;
                     case "Employee":
-                        permissions.AddRange(new[] { "ViewDashboard", "ViewReports", "ManageInvestments" });
+                        permissions.AddRange(new[] { "ViewDashboard", "ViewReports", "ManageInvestments", "ExportData" });
                         break;
                     case "HeadOfFamily":
-                        permissions.AddRange(new[] { "ViewDashboard", "ManageInvestments", "ViewFamilyData", "ManageFamily" });
+                        permissions.AddRange(new[] { "ViewDashboard", "ManageInvestments", "ViewFamilyData", "ManageFamily", "ExportData" });
                         break;
                     case "FamilyMember":
                         permissions.AddRange(new[] { "ViewDashboard", "ManageInvestments" });
@@ -155,6 +214,14 @@ namespace Infrastructure.Services.Auth
 
         public async Task<bool> HasPermissionAsync(int userId, string permissionName)
         {
+            // First check if user is active and has roles
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || !user.IsActive || !user.UserRoles.Any())
+                return false;
+
             var permissions = await GetUserPermissionsAsync(userId);
             return permissions.Contains(permissionName);
         }
@@ -163,6 +230,18 @@ namespace Infrastructure.Services.Auth
         {
             var permissions = await GetUserPermissionsAsync(user.Id);
 
+            // Get created by user name
+            var createdByUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.CreatedBy);
+            var createdByName = createdByUser != null ? $"{createdByUser.FirstName} {createdByUser.LastName}" : "System";
+
+            // Get updated by user name if exists
+            string? updatedByName = null;
+            if (user.UpdatedBy.HasValue)
+            {
+                var updatedByUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.UpdatedBy.Value);
+                updatedByName = updatedByUser != null ? $"{updatedByUser.FirstName} {updatedByUser.LastName}" : "Unknown";
+            }
+
             return new UserDto
             {
                 Id = user.Id,
@@ -170,14 +249,18 @@ namespace Infrastructure.Services.Auth
                 LastName = user.LastName,
                 Email = user.Email,
                 PanNumber = user.PanNumber,
-                CreatedAt = user.CreatedAt,
                 Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
                 Permissions = permissions,
                 EmployeeId = user.EmployeeId,
                 Department = user.Department,
-                //FamilyHeadId = user.FamilyHeadId,
-                //FamilyHeadName = user.FamilyHeadId.HasValue ?
-                //    $"{user.FamilyHead!.FirstName} {user.FamilyHead.LastName}" : null
+                DateOfJoining = user.DateOfJoining,
+                IsActive = user.IsActive,
+                CreatedBy = user.CreatedBy,
+                CreatedDate = user.CreatedDate,
+                UpdatedBy = user.UpdatedBy,
+                UpdatedDate = user.UpdatedDate,
+                CreatedByName = createdByName,
+                UpdatedByName = updatedByName
             };
         }
 
@@ -215,28 +298,14 @@ namespace Infrastructure.Services.Auth
         {
             var users = await _context.Users
                 .Include(u => u.UserRoles)
-                .Where(u => u.IsActive)
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
+                .OrderByDescending(u => u.CreatedDate)
                 .ToListAsync();
 
             var userDtos = new List<UserDto>();
             foreach (var user in users)
             {
-                var permissions = await GetUserPermissionsAsync(user.Id);
-                userDtos.Add(new UserDto
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email,
-                    PanNumber = user.PanNumber,
-                    CreatedAt = user.CreatedAt,
-                    Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
-                    Permissions = permissions,
-                    EmployeeId = user.EmployeeId,
-                    IsActive = user.IsActive
-                });
+                var userDto = await GetUserDtoAsync(user);
+                userDtos.Add(userDto);
             }
 
             return userDtos;
@@ -247,27 +316,12 @@ namespace Infrastructure.Services.Auth
         {
             var user = await _context.Users
                 .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null) return null;
 
-            var permissions = await GetUserPermissionsAsync(user.Id);
-            return new UserDto
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                PanNumber = user.PanNumber,
-                CreatedAt = user.CreatedAt,
-                Roles = user.UserRoles.Select(r => r.RoleName).ToList(),
-                Permissions = permissions,
-                EmployeeId = user.EmployeeId,
-                Department = user.Department,
-                IsActive = user.IsActive
-            };
+            return await GetUserDtoAsync(user);
         }
-
 
         public async Task<bool> UpdateUserRoleAsync(int userId, string newRole, int updatedByUserId)
         {
@@ -310,7 +364,7 @@ namespace Infrastructure.Services.Auth
             user.UserRoles.Add(new UserRole { RoleName = newRole });
 
             // Update timestamp
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -363,7 +417,7 @@ namespace Infrastructure.Services.Auth
 
             // Soft delete
             user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
@@ -405,7 +459,7 @@ namespace Infrastructure.Services.Auth
 
             // Update password
             user.PasswordHash = _passwordService.HashPassword(changePasswordDto.NewPassword);
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
@@ -454,7 +508,7 @@ namespace Infrastructure.Services.Auth
             }
             // Update password
             targetUser.PasswordHash = _passwordService.HashPassword(adminChangePasswordDto.NewPassword);
-            targetUser.UpdatedAt = DateTime.UtcNow;
+            targetUser.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             // Send notification after successful password reset
@@ -471,6 +525,27 @@ namespace Infrastructure.Services.Auth
             });
 
             return true;
+        }
+
+        public async Task<List<InvestorDto>> GetInvestorsAsync()
+        {
+            var validRoles = new[] { "HeadOfFamily", "FamilyMember" };
+
+            var investors = await _context.Users
+                .Include(u => u.UserRoles)
+                .Where(u => u.IsActive && u.UserRoles.Any(ur => validRoles.Contains(ur.RoleName)))
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .Select(u => new InvestorDto
+                {
+                    Id = u.Id,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email
+                })
+                .ToListAsync();
+
+            return investors;
         }
     }
 

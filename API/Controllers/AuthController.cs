@@ -18,6 +18,85 @@ namespace API.Controllers
             _userService = userService;
         }
 
+        [HttpPost("admin/create-user")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> CreateUser([FromBody] CreateUserDto createUserDto)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                if (!currentUserId.HasValue)
+                    return Unauthorized(new ApiResponse<object> { Success = false, Message = "Unable to identify current user." });
+
+                var user = await _userService.CreateUserAsync(createUserDto, currentUserId.Value);
+
+                return Ok(new ApiResponse<UserDto>
+                {
+                    Success = true,
+                    Message = "User created successfully",
+                    Data = user
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object> { Success = false, Message = "An error occurred while creating user" });
+            }
+        }
+
+        [HttpPut("admin/users/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUser(int userId, [FromBody] UpdateUserDto updateUserDto)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                if (!currentUserId.HasValue)
+                    return Unauthorized(new ApiResponse<object> { Success = false, Message = "Unable to identify current user." });
+
+                var result = await _userService.UpdateUserAsync(userId, updateUserDto, currentUserId.Value);
+
+                if (!result.Success)
+                    return BadRequest(new ApiResponse<object> { Success = false, Message = result.Message });
+
+                return Ok(new ApiResponse<UserDto>
+                {
+                    Success = true,
+                    Message = result.Message,
+                    Data = result.Data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object> { Success = false, Message = "An error occurred while updating user" });
+            }
+        }
+        [HttpGet("admin/users/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> GetUser(int userId)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(userId);
+
+                if (user == null)
+                    return NotFound(new ApiResponse<object> { Success = false, Message = "User not found" });
+
+                return Ok(new ApiResponse<UserDto>
+                {
+                    Success = true,
+                    Message = "User retrieved successfully",
+                    Data = user
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object> { Success = false, Message = "An error occurred while retrieving user" });
+            }
+        }
         [HttpPost("register")]
         public async Task<ActionResult<ApiResponse<UserDto>>> Register(RegisterDto registerDto)
         {

@@ -106,6 +106,12 @@ namespace API.Controllers
         {
             try
             {
+                // Validate user access first
+                var accessResult = await ValidateUserAccess(investorId);
+                if (accessResult is not OkResult)
+                    return accessResult;
+
+                // Rest of the existing code...
                 var currentUserId = GetCurrentUserId();
                 var currentUser = await _userService.GetUserByIdAsync(currentUserId.Value);
 
@@ -250,6 +256,21 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("investors")]
+        [Authorize(Roles = "Admin,Employee")]
+        public async Task<ActionResult<List<InvestorDto>>> GetInvestors()
+        {
+            try
+            {
+                var investors = await _userService.GetInvestorsAsync();
+                return Ok(investors);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving investors", error = ex.Message });
+            }
+        }
+        
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -285,6 +306,29 @@ namespace API.Controllers
                 UpdatedAt = investment.UpdatedAt,
                 Remarks = investment.Remarks
             };
+        }
+
+        private async Task<ActionResult> ValidateUserAccess(int? investorId = null)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (!currentUserId.HasValue)
+                return Unauthorized(new { Message = "Unable to identify current user." });
+
+            var currentUser = await _userService.GetUserByIdAsync(currentUserId.Value);
+
+            // Check if user is active and has roles
+            if (currentUser == null || !currentUser.IsActive || !currentUser.Roles.Any())
+                return Forbid("Your account is inactive or has no roles assigned.");
+
+            // For investor-specific endpoints, validate access
+            if (investorId.HasValue && currentUserId != investorId)
+            {
+                var isAdminOrEmployee = currentUser.Roles.Any(r => new[] { "Admin", "Employee" }.Contains(r));
+                if (!isAdminOrEmployee)
+                    return Forbid("You can only access your own investments.");
+            }
+
+            return Ok();
         }
     }
 }

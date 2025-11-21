@@ -20,6 +20,7 @@ import { EmailComponent } from './features/email/email.component';
 import { PortfolioComponent } from './features/portfolio/portfolio.component';
 import { PortfolioDashboardComponent } from './features/portfolio/portfolio-dashboard/portfolio-dashboard.component';
 import { CreateInvestmentComponent } from './features/portfolio/create-investment/create-investment.component';
+import { UserNotFoundComponent } from './features/user-not-found/user-not-found.component'; // Add this import
 
 export const routes: Routes = [
     // Public routes - no layout
@@ -30,6 +31,10 @@ export const routes: Routes = [
     {
         path: 'signup',
         component: SignupComponent
+    },
+        {
+        path: 'user-not-found',
+        component: UserNotFoundComponent
     },
     {
         path: 'unauthorized',
@@ -118,7 +123,6 @@ export const routes: Routes = [
                         redirectTo: 'dashboard',
                         pathMatch: 'full'
                     },
-                    // In app.routes.ts - TEMPORARILY COMMENT OUT THE GUARD
                     {
                         path: 'dashboard',
                         component: PortfolioDashboardComponent,
@@ -132,19 +136,6 @@ export const routes: Routes = [
                         canActivate: [roleGuard],
                         data: { roles: ['Admin', 'Employee'] }
                     },
-                    // You can add more portfolio routes here
-                    // {
-                    //     path: 'my-investments',
-                    //     component: InvestmentDashboardComponent, // Replace with actual component
-                    //     canActivate: [roleGuard],
-                    //     data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
-                    // },
-                    // {
-                    //     path: 'summary',
-                    //     component: InvestmentDashboardComponent, // Replace with actual component
-                    //     canActivate: [roleGuard],
-                    //     data: { roles: ['Admin', 'Employee', 'HeadOfFamily', 'FamilyMember'] }
-                    // }
                 ]
             },
 
@@ -170,22 +161,22 @@ export const routes: Routes = [
                 component: EmailComponent
             },
 
-            // Other main app routes (these might need to be updated to actual components)
+            // Other main app routes
             {
                 path: 'funds',
-                component: DashboardComponent // Replace with actual component
+                component: DashboardComponent
             },
             {
                 path: 'transactions',
-                component: DashboardComponent // Replace with actual component
+                component: DashboardComponent
             },
             {
                 path: 'performance',
-                component: DashboardComponent // Replace with actual component
+                component: DashboardComponent
             },
         ]
     },
 
-    // Fallback routes - ONLY the wildcard route
+    // Fallback routes
     { path: '**', redirectTo: '/login' }
 ];

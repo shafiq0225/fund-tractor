@@ -6,6 +6,8 @@ import { AuthService, AdminChangePasswordRequest, User } from '../../../core/ser
 import { MatIcon, MatIconModule } from '@angular/material/icon';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { MatTooltip } from '@angular/material/tooltip';
+import { CreateUserModalComponent } from './create-user-modal/create-user-modal.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-user-management',
@@ -16,7 +18,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class UserManagementComponent implements OnInit {
   private authService = inject(AuthService);
-
+   private dialog = inject(MatDialog);
   users: (User & { newRole?: string })[] = [];
   loading = false;
   passwordLoading = false;
@@ -35,6 +37,27 @@ export class UserManagementComponent implements OnInit {
   ngOnInit() {
     this.loadUsers();
   }
+
+  onCreateUser() {
+    const dialogRef = this.dialog.open(CreateUserModalComponent, {
+      width: '500px',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Refresh the user list to show the newly created user
+        this.loadUsers();
+        this.successMessage = `User "${result.firstName} ${result.lastName}" created successfully!`;
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          this.successMessage = '';
+        }, 3000);
+      }
+    });
+  }
+
 
   loadUsers() {
     this.loading = true;

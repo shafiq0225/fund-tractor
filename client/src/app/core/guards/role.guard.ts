@@ -15,8 +15,27 @@ export const roleGuard = (route: ActivatedRouteSnapshot) => {
     return false;
   }
 
+  const user = authService.getCurrentUser();
+  const userRoles = user?.roles || [];
+
+  // First check if user is active and has any roles
+  if (!user?.isActive) {
+    console.log('🚫 User account is inactive');
+    router.navigate(['/unauthorized'], {
+      queryParams: { reason: 'inactive' }
+    });
+    return false;
+  }
+
+  if (!userRoles || userRoles.length === 0) {
+    console.log('🚫 User has no roles assigned');
+    router.navigate(['/unauthorized'], {
+      queryParams: { reason: 'no-roles' }
+    });
+    return false;
+  }
+
   const requiredRoles = route.data['roles'] as string[];
-  const userRoles = authService.getCurrentUser()?.roles || [];
 
   console.log('👤 User roles:', userRoles);
   console.log('🔑 Required roles:', requiredRoles);
@@ -27,7 +46,9 @@ export const roleGuard = (route: ActivatedRouteSnapshot) => {
 
     if (!hasRequiredRole) {
       console.log('🚫 Access denied - insufficient permissions');
-      router.navigate(['/unauthorized']);
+      router.navigate(['/unauthorized'], {
+        queryParams: { reason: 'insufficient-permissions' }
+      });
       return false;
     }
   }

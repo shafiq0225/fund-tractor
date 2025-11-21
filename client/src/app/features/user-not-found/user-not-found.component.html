@@ -1,0 +1,76 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 py-12 px-4 sm:px-6 lg:px-8">
+  <mat-card class="max-w-md w-full p-8 text-center rounded-2xl shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+    <!-- Animated Icon -->
+    <div class="mb-6">
+      <div class="relative inline-block">
+        <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <mat-icon class="text-3xl text-purple-500">person_search</mat-icon>
+        </div>
+        <div class="absolute -top-2 -right-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center animate-bounce">
+          <mat-icon class="text-white text-sm">help</mat-icon>
+        </div>
+      </div>
+      
+      <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+        Account Not Found
+      </h1>
+      <p class="text-gray-600 leading-relaxed">
+        Your PAN number is not registered in our system. Please contact your administrator 
+        to create your account before you can register.
+      </p>
+    </div>
+
+    <!-- PAN Number Display -->
+    <div *ngIf="panNumber" class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+      <div class="flex items-center justify-center gap-2 text-blue-700">
+        <mat-icon class="text-blue-500">fingerprint</mat-icon>
+        <span class="font-mono font-semibold">{{ panNumber }}</span>
+      </div>
+      <p class="text-sm text-blue-600 mt-2">This PAN number needs to be registered by an administrator first.</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="space-y-3">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="goToLogin()"
+        class="w-full py-3 font-semibold rounded-xl transition-all duration-300 hover:shadow-lg">
+        <div class="flex items-center justify-center gap-2">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Back to Login</span>
+        </div>
+      </button>
+
+      <button 
+        mat-stroked-button 
+        color="primary"
+        (click)="contactAdmin()"
+        class="w-full py-3 font-medium rounded-xl border-2 transition-all duration-300 hover:bg-blue-50">
+        <div class="flex items-center justify-center gap-2">
+          <mat-icon>email</mat-icon>
+          <span>Contact Administrator</span>
+        </div>
+      </button>
+
+      <button 
+        mat-button 
+        color="accent"
+        (click)="goToSignup()"
+        class="w-full py-3 font-medium rounded-xl transition-all duration-300 hover:bg-purple-50">
+        <div class="flex items-center justify-center gap-2">
+          <mat-icon>refresh</mat-icon>
+          <span>Try Again</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 pt-4 border-t border-gray-200">
+      <p class="text-xs text-gray-500">
+        Already have an account? 
+        <a routerLink="/login" class="text-blue-600 hover:text-blue-700 font-medium">Sign in here</a>
+      </p>
+    </div>
+  </mat-card>
+</div>

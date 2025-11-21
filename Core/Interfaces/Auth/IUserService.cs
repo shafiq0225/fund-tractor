@@ -1,4 +1,5 @@
 ﻿using Core.DTOs.Auth;
+using Core.DTOs.Investment;
 using Core.Entities.Auth;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,8 @@ namespace Core.Interfaces.Auth
 {
     public interface IUserService
     {
+        Task<UserDto> CreateUserAsync(CreateUserDto createUserDto, int createdByUserId);
+        Task<(bool Success, string Message, UserDto? Data)> UpdateUserAsync(int userId, UpdateUserDto updateUserDto, int updatedByUserId);
         Task<LoginResponseDto> LoginAsync(LoginDto loginDto);
         Task<UserDto> RegisterAsync(RegisterDto registerDto);
         Task<bool> UserExistsAsync(string email);
@@ -22,6 +25,7 @@ namespace Core.Interfaces.Auth
         Task<bool> DeleteUserAsync(int userId, int deletedBy);
         Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto changePasswordDto);
         Task<bool> AdminChangePasswordAsync(int adminUserId, AdminChangePasswordDto adminChangePasswordDto);
+        Task<List<InvestorDto>> GetInvestorsAsync();
 
     }
 

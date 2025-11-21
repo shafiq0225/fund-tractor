@@ -12,6 +12,8 @@ using Core.Interfaces.Notification;
 using Infrastructure.Services.Notification;
 using Core.Interfaces.InvestmentRepo;
 using Infrastructure.Services.Investment;
+using System.Security.Claims;
+using API;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInvestmentRepository, InvestmentRepository>();
+builder.Services.AddScoped<ValidateUserStatusFilter>();
 
 // NEW: JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,7 +59,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ActiveUser", policy =>
+        policy.RequireAssertion(context =>
+        {
+            if (!context.User.Identity.IsAuthenticated)
+                return false;
+
+            var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return false;
+
+            // This will be validated in each request using a custom middleware or action filter
+            return true;
+        }));
+});
 
 builder.Services.AddCors();
 
