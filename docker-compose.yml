@@ -1,8 +1,25 @@
+version: '3.8'
+
 services:
   sql:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Password@1"
+      MSSQL_SA_PASSWORD: "${SQL_PASSWORD}"
     ports:
       - "1433:1433"
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - sql
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sql;Database=FundTrackrDB;User=sa;Password=${SQL_PASSWORD};TrustServerCertificate=true;"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_URLS: "http://+:8080"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
