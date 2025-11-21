@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
 import { ApiResponse } from '../../shared/models/Amfi/Scheme';
 import { NotificationService } from './notification.service';
+import { environment } from '../../../environments/environment';
 
 export interface LoginRequest {
   email: string;
@@ -81,7 +82,7 @@ export interface CreateUserRequest {
 export class AuthService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
-  apiUrl = 'https://localhost:5001/api';
+  private apiUrl = environment.apiUrl;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
