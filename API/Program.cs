@@ -1,4 +1,4 @@
-using API.Middleware;
+﻿using API.Middleware;
 using Core.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Services;
@@ -85,11 +85,16 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+// UPDATED CORS with Netlify URL
 app.UseCors(x => x
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()
-    .WithOrigins("http://localhost:4200", "https://localhost:4200"));
+    .WithOrigins(
+        "http://localhost:4200",
+        "https://localhost:4200",
+        "https://candid-flan-2ab0ac.netlify.app"  // Your Netlify URL
+    ));
 
 // NEW: Authentication & Authorization middleware
 app.UseAuthentication();
