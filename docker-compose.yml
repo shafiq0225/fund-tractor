@@ -6,8 +6,6 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${SQL_PASSWORD}"
-    ports:
-      - "1433:1433"
     restart: unless-stopped
 
   api:
@@ -20,6 +18,9 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sql;Database=FundTrackrDB;User=sa;Password=${SQL_PASSWORD};TrustServerCertificate=true;"
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://+:8080"
+    restart: unless-stopped
     ports:
       - "8080:8080"
-    restart: unless-stopped
+    # ADD THIS:
+    labels:
+      - "railway.service.port=8080"
