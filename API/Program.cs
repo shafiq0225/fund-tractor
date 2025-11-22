@@ -129,34 +129,48 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+// Apply pending migrations
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     var context = services.GetRequiredService<StoreContext>();
 
-    logger.LogInformation("Testing database connection...");
-    logger.LogInformation("Database Provider: {Provider}", context.Database.ProviderName);
-
     try
     {
-        var canConnect = await context.Database.CanConnectAsync();
-        if (canConnect)
-        {
-            logger.LogInformation("✅ Database connection successful!");
+        logger.LogInformation("Checking for pending migrations...");
 
-            // Ensure database is created and migrations are applied
+        var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToList();
+        logger.LogInformation("Pending migrations: {Count}", pendingMigrations.Count);
+
+        foreach (var migration in pendingMigrations)
+        {
+            logger.LogInformation("Pending: {Migration}", migration);
+        }
+
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count);
             await context.Database.MigrateAsync();
-            logger.LogInformation("✅ Database migrations applied!");
+            logger.LogInformation("✅ All migrations applied successfully!");
+
+            // Verify tables were created
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
+            var tableCount = await command.ExecuteScalarAsync();
+            logger.LogInformation("✅ Total tables after migration: {TableCount}", tableCount);
         }
         else
         {
-            logger.LogError("❌ Database connection failed!");
+            logger.LogInformation("✅ No pending migrations");
         }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "❌ Database connection failed with error: {ErrorMessage}", ex.Message);
+        logger.LogError(ex, "❌ Failed to apply migrations");
+        throw; // Re-throw to see the error in logs
     }
 }
 
