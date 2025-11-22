@@ -28,58 +28,60 @@ builder.Services.AddHostedService<AmfiNavBackgroundService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 // Database configuration - STRICT VERSION
+// Database configuration
 string connectionString;
 bool isUsingPostgreSQL = false;
 
 if (builder.Environment.IsDevelopment())
 {
-    // Local Development - SQL Server (Docker)
+    // Local Development - SQL Server
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     builder.Services.AddDbContext<StoreContext>(options =>
         options.UseSqlServer(connectionString));
-
-    Console.WriteLine("🔧 Using SQL Server for local development (Docker)");
+    Console.WriteLine("🔧 Using SQL Server for local development");
 }
 else
 {
-    // PRODUCTION - STRICT PostgreSQL Check
+    // Production - Use PostgreSQL from Railway
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    Console.WriteLine($"=== DEBUG: DATABASE_URL = {databaseUrl} ===");
+    Console.WriteLine($"=== Production: DATABASE_URL found = {!string.IsNullOrEmpty(databaseUrl)} ===");
 
-    // STRICT validation - only use PostgreSQL
-    if (string.IsNullOrEmpty(databaseUrl) || databaseUrl.Contains("${{"))
+    if (string.IsNullOrEmpty(databaseUrl))
     {
-        // Log detailed error
-        Console.WriteLine("❌ FATAL: DATABASE_URL is missing or invalid in production!");
-        Console.WriteLine($"❌ DATABASE_URL value: '{databaseUrl}'");
-
-        // Use a dummy PostgreSQL connection that will fail clearly
-        connectionString = "Host=invalid;Database=invalid;Username=invalid;Password=invalid";
-        builder.Services.AddDbContext<StoreContext>(options =>
-            options.UseNpgsql(connectionString));
-
-        Console.WriteLine("🚨 FORCING PostgreSQL (will fail with clear error)");
+        throw new InvalidOperationException("DATABASE_URL environment variable is required for production");
     }
-    else
+
+    // Parse the PostgreSQL connection string
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+
+    connectionString = new NpgsqlConnectionStringBuilder
     {
-        // Valid PostgreSQL connection
-        connectionString = ParsePostgresConnectionString(databaseUrl);
+        Host = uri.Host,
+        Port = uri.Port,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = userInfo[0],
+        Password = userInfo[1],
+        SslMode = SslMode.Prefer,  // Use Prefer instead of Require
+        TrustServerCertificate = true,
+        Timeout = 30,
+        CommandTimeout = 30,
+        KeepAlive = 30
+    }.ToString();
 
-        // PostgreSQL with retry logic
-        builder.Services.AddDbContext<StoreContext>(options =>
-            options.UseNpgsql(connectionString, npgsqlOptions =>
-            {
-                npgsqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(5),
-                    errorCodesToAdd: null);
-            }));
+    // Register DbContext with retry logic
+    builder.Services.AddDbContext<StoreContext>(options =>
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null);
+        }));
 
-        isUsingPostgreSQL = true;
-        Console.WriteLine("🚀 Using PostgreSQL for production (Railway)");
-        Console.WriteLine($"🔗 PostgreSQL Host: {new Uri(databaseUrl).Host}");
-    }
+    isUsingPostgreSQL = true;
+    Console.WriteLine($"🚀 Connected to PostgreSQL at {uri.Host}:{uri.Port}");
 }
 
 // Helper method to parse Railway's DATABASE_URL
