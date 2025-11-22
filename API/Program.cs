@@ -27,9 +27,7 @@ builder.Services.AddScoped<IAmfiNavService, AmfiNavService>();
 builder.Services.AddHostedService<AmfiNavBackgroundService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-// Database configuration - STRICT VERSION
 // Database configuration
-// SIMPLE DATABASE CONFIGURATION THAT WORKS
 string connectionString;
 
 if (builder.Environment.IsDevelopment())
@@ -38,29 +36,26 @@ if (builder.Environment.IsDevelopment())
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     builder.Services.AddDbContext<StoreContext>(options =>
         options.UseSqlServer(connectionString));
-    Console.WriteLine("🔧 Using SQL Server for development");
+    Console.WriteLine("🔧 Using SQL Server for local development");
 }
 else
 {
-    // Production - Simple PostgreSQL connection
-    var dbHost = Environment.GetEnvironmentVariable("PGHOST");
-    var dbPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-    var dbName = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
-    var dbUser = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
-    var dbPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+    // Production - Use Railway Private Network
+    var dbHost = "postgres.railway.internal"; // DIRECT private hostname
+    var dbPort = "5432";
+    var dbName = "railway";
+    var dbUser = "postgres";
+    var dbPassword = "qFpiRxJeAnquRMmqycYtathxcqWpcHvg";
 
-    if (string.IsNullOrEmpty(dbHost) || string.IsNullOrEmpty(dbPassword))
-    {
-        throw new InvalidOperationException("PostgreSQL environment variables are missing!");
-    }
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Prefer;Trust Server Certificate=true;Timeout=30";
 
-    // Simple connection string - NO COMPLEX PARSING
-    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Prefer;Trust Server Certificate=true";
-
-    Console.WriteLine($"🚀 Connecting to PostgreSQL at {dbHost}:{dbPort}");
+    Console.WriteLine($"🚀 Using PostgreSQL PRIVATE NETWORK: {dbHost}");
 
     builder.Services.AddDbContext<StoreContext>(options =>
-        options.UseNpgsql(connectionString));
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null);
+        }));
 }
 
 // Helper method to parse Railway's DATABASE_URL
