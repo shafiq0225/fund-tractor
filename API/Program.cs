@@ -190,6 +190,45 @@ app.MapGet("/simple-test", async () =>
         return Results.Json(new { error = ex.Message });
     }
 });
+app.MapGet("/network-test", async () =>
+{
+    var dbHost = Environment.GetEnvironmentVariable("PGHOST");
+    var dbPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    
+    try
+    {
+        using var tcpClient = new System.Net.Sockets.TcpClient();
+        var connectTask = tcpClient.ConnectAsync(dbHost, int.Parse(dbPort));
+        
+        if (await Task.WhenAny(connectTask, Task.Delay(5000)) == connectTask)
+        {
+            await connectTask;
+            return Results.Json(new { 
+                status = "TCP Connection SUCCESS", 
+                host = dbHost, 
+                port = dbPort 
+            });
+        }
+        else
+        {
+            return Results.Json(new { 
+                status = "TCP Connection TIMEOUT", 
+                host = dbHost, 
+                port = dbPort,
+                error = "Cannot reach PostgreSQL server on network level"
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { 
+            status = "TCP Connection FAILED", 
+            host = dbHost, 
+            port = dbPort,
+            error = ex.Message 
+        });
+    }
+});
 // Database test endpoint
 app.MapGet("/db-test", async (HttpContext httpContext) =>
 {
