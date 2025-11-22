@@ -1,8 +1,8 @@
 [build]
-builder = "DOCKERFILE"
+builder = "NIXPACKS"
 
 [deploy]
-numReplicas = 1
+startCommand = "dotnet API/API.dll"
 
 [[services]]
 name = "web"
@@ -10,6 +10,3 @@ sourcePath = "."
 
 [services.ports]
 http = "8080"
-
-[services.env]
-ASPNETCORE_URLS = "http://+:8080"
