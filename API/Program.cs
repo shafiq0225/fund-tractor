@@ -65,8 +65,16 @@ else
     {
         // Valid PostgreSQL connection
         connectionString = ParsePostgresConnectionString(databaseUrl);
+
+        // PostgreSQL with retry logic
         builder.Services.AddDbContext<StoreContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+            {
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null);
+            }));
 
         isUsingPostgreSQL = true;
         Console.WriteLine("🚀 Using PostgreSQL for production (Railway)");
@@ -87,10 +95,14 @@ static string ParsePostgresConnectionString(string databaseUrl)
         Database = uri.AbsolutePath.TrimStart('/'),
         Username = userInfo[0],
         Password = userInfo[1],
-        SslMode = SslMode.Require,
-        TrustServerCertificate = true
+        SslMode = SslMode.Prefer,  // ← CHANGED from Require to Prefer
+        TrustServerCertificate = true,
+        Timeout = 30,              // ← ADD timeout
+        CommandTimeout = 30,       // ← ADD command timeout
+        KeepAlive = 30             // ← ADD keepalive
     }.ToString();
 }
+
 
 builder.Services.AddScoped<IAmfiRepository, AmfiRepository>();
 builder.Services.AddHttpContextAccessor();
