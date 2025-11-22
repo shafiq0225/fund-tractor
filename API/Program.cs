@@ -136,7 +136,6 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-// Test database connection
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
