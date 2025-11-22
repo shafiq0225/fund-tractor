@@ -27,8 +27,7 @@ builder.Services.AddScoped<IAmfiNavService, AmfiNavService>();
 builder.Services.AddHostedService<AmfiNavBackgroundService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
-// Database configuration
+// Database configuration - STRICT VERSION
 string connectionString;
 bool isUsingPostgreSQL = false;
 
@@ -43,29 +42,35 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    // Production - Check for PostgreSQL first, then fallback to SQL Server
+    // PRODUCTION - STRICT PostgreSQL Check
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    if (!string.IsNullOrEmpty(databaseUrl))
+    Console.WriteLine($"=== DEBUG: DATABASE_URL = {databaseUrl} ===");
+
+    // STRICT validation - only use PostgreSQL
+    if (string.IsNullOrEmpty(databaseUrl) || databaseUrl.Contains("${{"))
     {
-        // Use PostgreSQL if DATABASE_URL is available (Railway)
+        // Log detailed error
+        Console.WriteLine("❌ FATAL: DATABASE_URL is missing or invalid in production!");
+        Console.WriteLine($"❌ DATABASE_URL value: '{databaseUrl}'");
+
+        // Use a dummy PostgreSQL connection that will fail clearly
+        connectionString = "Host=invalid;Database=invalid;Username=invalid;Password=invalid";
+        builder.Services.AddDbContext<StoreContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        Console.WriteLine("🚨 FORCING PostgreSQL (will fail with clear error)");
+    }
+    else
+    {
+        // Valid PostgreSQL connection
         connectionString = ParsePostgresConnectionString(databaseUrl);
         builder.Services.AddDbContext<StoreContext>(options =>
             options.UseNpgsql(connectionString));
 
         isUsingPostgreSQL = true;
         Console.WriteLine("🚀 Using PostgreSQL for production (Railway)");
-    }
-    else
-    {
-        // Fallback to SQL Server with environment variable or config
-        connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-                          ?? builder.Configuration.GetConnectionString("DefaultConnection");
-
-        builder.Services.AddDbContext<StoreContext>(options =>
-            options.UseSqlServer(connectionString));
-
-        Console.WriteLine("⚠️ Using SQL Server (DATABASE_URL not set)");
+        Console.WriteLine($"🔗 PostgreSQL Host: {new Uri(databaseUrl).Host}");
     }
 }
 
