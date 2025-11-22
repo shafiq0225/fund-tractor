@@ -83,19 +83,23 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+// ADD THESE HEALTH ENDPOINTS RIGHT HERE:
+app.MapGet("/", () => "FundTrackr API is running!");
+app.MapGet("/health", () => "Healthy");
+app.MapGet("/test", () => new { message = "API is working", time = DateTime.UtcNow });
+
 app.UseMiddleware<ExceptionMiddleware>();
 
-// UPDATED CORS with Netlify URL
 app.UseCors(x => x
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()
     .WithOrigins(
-        "http://localhost:4200",
+        "http://localhost:4200", 
         "https://localhost:4200",
         "https://candid-flan-2ab0ac.netlify.app"  // Your Netlify URL
     ));
-
+    
 // NEW: Authentication & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();

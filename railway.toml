@@ -1,12 +1,19 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "dotnet API/API.dll"
+numReplicas = 1
 
 [[services]]
 name = "web"
 sourcePath = "."
+type = "web"
 
 [services.ports]
 http = "8080"
+
+[services.healthcheck]
+httpPath = "/health"
+initialDelay = 10
+period = 30
+timeout = 10
