@@ -297,6 +297,70 @@ app.MapGet("/db-debug", async (HttpContext httpContext) =>
     }
 });
 
+app.MapGet("/check-tables", async (StoreContext context) =>
+{
+    try
+    {
+        var connection = context.Database.GetDbConnection();
+        await connection.OpenAsync();
+
+        var tables = new List<object>();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            SELECT 
+                table_name,
+                (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = t.table_name) as column_count
+            FROM information_schema.tables t 
+            WHERE table_schema = 'public' 
+            ORDER BY table_name";
+
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            tables.Add(new
+            {
+                table = reader.GetString(0),
+                columns = reader.GetInt32(1)
+            });
+        }
+
+        return Results.Json(new
+        {
+            success = true,
+            tables = tables,
+            totalTables = tables.Count
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message,
+            details = "Database might be empty or tables don't exist"
+        });
+    }
+});
+app.MapGet("/check-migrations", async (StoreContext context) =>
+{
+    try
+    {
+        var migrations = await context.Database.GetAppliedMigrationsAsync();
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+
+        return Results.Json(new
+        {
+            appliedMigrations = migrations.ToArray(),
+            pendingMigrations = pendingMigrations.ToArray(),
+            hasPendingMigrations = pendingMigrations.Any()
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { error = ex.Message });
+    }
+});
+
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseCors(x => x
