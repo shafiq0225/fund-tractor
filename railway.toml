@@ -3,3 +3,13 @@ builder = "DOCKERFILE"
 
 [deploy]
 numReplicas = 1
+
+[[services]]
+name = "web"
+sourcePath = "."
+
+[services.ports]
+http = "8080"
+
+[services.env]
+ASPNETCORE_URLS = "http://+:8080"
