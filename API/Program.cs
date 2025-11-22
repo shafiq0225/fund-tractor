@@ -83,10 +83,66 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-// ADD THESE HEALTH ENDPOINTS RIGHT HERE:
+// Test database connection
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<StoreContext>();
+
+    logger.LogInformation("Testing database connection...");
+
+    try
+    {
+        var canConnect = await context.Database.CanConnectAsync();
+        if (canConnect)
+        {
+            logger.LogInformation("✅ Database connection successful!");
+
+            // Ensure database is created and migrations are applied
+            await context.Database.MigrateAsync();
+            logger.LogInformation("✅ Database migrations applied!");
+        }
+        else
+        {
+            logger.LogError("❌ Database connection failed!");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ Database connection failed with error!");
+    }
+}
+
+// Your endpoints
 app.MapGet("/", () => "FundTrackr API is running!");
 app.MapGet("/health", () => "Healthy");
-app.MapGet("/test", () => new { message = "API is working", time = DateTime.UtcNow });
+
+// FIXED: Use Results.Json for async endpoints
+app.MapGet("/db-test", async (HttpContext httpContext) =>
+{
+    try
+    {
+        // Get StoreContext from service provider
+        var context = httpContext.RequestServices.GetRequiredService<StoreContext>();
+        var canConnect = await context.Database.CanConnectAsync();
+
+        return Results.Json(new
+        {
+            database = canConnect ? "Connected" : "Disconnected",
+            timestamp = DateTime.UtcNow
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            database = "Error",
+            error = ex.Message,
+            timestamp = DateTime.UtcNow
+        });
+    }
+});
 
 app.UseMiddleware<ExceptionMiddleware>();
 
@@ -95,11 +151,11 @@ app.UseCors(x => x
     .AllowAnyMethod()
     .AllowCredentials()
     .WithOrigins(
-        "http://localhost:4200", 
+        "http://localhost:4200",
         "https://localhost:4200",
         "https://cerulean-dango-230e36.netlify.app"  // Your Netlify URL
     ));
-    
+
 // NEW: Authentication & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();

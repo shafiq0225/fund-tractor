@@ -4,6 +4,7 @@ builder = "DOCKERFILE"
 [deploy]
 numReplicas = 1
 
+# Define both services
 [[services]]
 name = "web"
 sourcePath = "."
@@ -12,8 +13,10 @@ type = "web"
 [services.ports]
 http = "8080"
 
-[services.healthcheck]
-httpPath = "/health"
-initialDelay = 10
-period = 30
-timeout = 10
+[[services]]
+name = "db"
+sourcePath = "."
+type = "database"
+
+[services.ports]
+tcp = "1433"
