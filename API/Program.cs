@@ -97,7 +97,7 @@ app.UseCors(x => x
     .WithOrigins(
         "http://localhost:4200", 
         "https://localhost:4200",
-        "https://candid-flan-2ab0ac.netlify.app"  // Your Netlify URL
+        "https://cerulean-dango-230e36.netlify.app"  // Your Netlify URL
     ));
     
 // NEW: Authentication & Authorization middleware
