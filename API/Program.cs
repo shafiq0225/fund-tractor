@@ -138,39 +138,20 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        logger.LogInformation("Checking for pending migrations...");
-
-        var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToList();
-        logger.LogInformation("Pending migrations: {Count}", pendingMigrations.Count);
-
-        foreach (var migration in pendingMigrations)
+        // This will create tables without using migrations
+        var created = await context.Database.EnsureCreatedAsync();
+        if (created)
         {
-            logger.LogInformation("Pending: {Migration}", migration);
-        }
-
-        if (pendingMigrations.Any())
-        {
-            logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count);
-            await context.Database.MigrateAsync();
-            logger.LogInformation("✅ All migrations applied successfully!");
-
-            // Verify tables were created
-            var connection = context.Database.GetDbConnection();
-            await connection.OpenAsync();
-            using var command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
-            var tableCount = await command.ExecuteScalarAsync();
-            logger.LogInformation("✅ Total tables after migration: {TableCount}", tableCount);
+            logger.LogInformation("✅ Database tables created successfully");
         }
         else
         {
-            logger.LogInformation("✅ No pending migrations");
+            logger.LogInformation("✅ Database already exists");
         }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "❌ Failed to apply migrations");
-        throw; // Re-throw to see the error in logs
+        logger.LogError(ex, "❌ Database creation failed");
     }
 }
 
