@@ -29,59 +29,38 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 // Database configuration - STRICT VERSION
 // Database configuration
+// SIMPLE DATABASE CONFIGURATION THAT WORKS
 string connectionString;
-bool isUsingPostgreSQL = false;
 
 if (builder.Environment.IsDevelopment())
 {
-    // Local Development - SQL Server
+    // Development - SQL Server
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     builder.Services.AddDbContext<StoreContext>(options =>
         options.UseSqlServer(connectionString));
-    Console.WriteLine("🔧 Using SQL Server for local development");
+    Console.WriteLine("🔧 Using SQL Server for development");
 }
 else
 {
-    // Production - Use PostgreSQL from Railway
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    // Production - Simple PostgreSQL connection
+    var dbHost = Environment.GetEnvironmentVariable("PGHOST");
+    var dbPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    var dbName = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
+    var dbUser = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
+    var dbPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
 
-    Console.WriteLine($"=== Production: DATABASE_URL found = {!string.IsNullOrEmpty(databaseUrl)} ===");
-
-    if (string.IsNullOrEmpty(databaseUrl))
+    if (string.IsNullOrEmpty(dbHost) || string.IsNullOrEmpty(dbPassword))
     {
-        throw new InvalidOperationException("DATABASE_URL environment variable is required for production");
+        throw new InvalidOperationException("PostgreSQL environment variables are missing!");
     }
 
-    // Parse the PostgreSQL connection string
-    var uri = new Uri(databaseUrl);
-    var userInfo = uri.UserInfo.Split(':');
+    // Simple connection string - NO COMPLEX PARSING
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Prefer;Trust Server Certificate=true";
 
-    connectionString = new NpgsqlConnectionStringBuilder
-    {
-        Host = uri.Host,
-        Port = uri.Port,
-        Database = uri.AbsolutePath.TrimStart('/'),
-        Username = userInfo[0],
-        Password = userInfo[1],
-        SslMode = SslMode.Prefer,  // Use Prefer instead of Require
-        TrustServerCertificate = true,
-        Timeout = 30,
-        CommandTimeout = 30,
-        KeepAlive = 30
-    }.ToString();
+    Console.WriteLine($"🚀 Connecting to PostgreSQL at {dbHost}:{dbPort}");
 
-    // Register DbContext with retry logic
     builder.Services.AddDbContext<StoreContext>(options =>
-        options.UseNpgsql(connectionString, npgsqlOptions =>
-        {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorCodesToAdd: null);
-        }));
-
-    isUsingPostgreSQL = true;
-    Console.WriteLine($"🚀 Connected to PostgreSQL at {uri.Host}:{uri.Port}");
+        options.UseNpgsql(connectionString));
 }
 
 // Helper method to parse Railway's DATABASE_URL
@@ -190,6 +169,27 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/", () => "FundTrackr API is running!");
 app.MapGet("/health", () => "Healthy");
 
+// Simple connection test
+app.MapGet("/simple-test", async () =>
+{
+    try
+    {
+        var dbHost = Environment.GetEnvironmentVariable("PGHOST");
+        var dbUser = Environment.GetEnvironmentVariable("PGUSER");
+
+        return Results.Json(new
+        {
+            status = "Environment variables set",
+            host = dbHost,
+            user = dbUser,
+            hasPassword = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PGPASSWORD"))
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { error = ex.Message });
+    }
+});
 // Database test endpoint
 app.MapGet("/db-test", async (HttpContext httpContext) =>
 {
