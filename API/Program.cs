@@ -138,146 +138,22 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        logger.LogInformation("Setting up database...");
-
         if (context.Database.IsNpgsql())
         {
-            // Use manual table creation for PostgreSQL
-            await CreateTablesManually(context, logger);
-        }
-        else
-        {
-            // Use EnsureCreated for SQL Server (local development)
+            // Production - PostgreSQL: Use EnsureCreated (bypass migrations)
             var created = await context.Database.EnsureCreatedAsync();
-            logger.LogInformation(created ? "✅ SQL Server tables created" : "✅ SQL Server tables already exist");
+            logger.LogInformation(created ? "✅ PostgreSQL tables created" : "✅ PostgreSQL tables exist");
         }
-
-        // Additional verification
-        await VerifyTablesExist(context, logger);
+        else if (context.Database.IsSqlServer())
+        {
+            // Development - SQL Server: Use migrations
+            await context.Database.MigrateAsync();
+            logger.LogInformation("✅ SQL Server migrations applied");
+        }
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "❌ Database setup failed");
-    }
-}
-
-// Add verification method
-static async Task VerifyTablesExist(StoreContext context, ILogger logger)
-{
-    try
-    {
-        var connection = context.Database.GetDbConnection();
-        await connection.OpenAsync();
-
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name";
-
-        var tables = new List<string>();
-        using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            tables.Add(reader.GetString(0));
-        }
-
-        logger.LogInformation("📊 Current tables in database: {TableCount}", tables.Count);
-        foreach (var table in tables)
-        {
-            logger.LogInformation("   - {Table}", table);
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error verifying tables");
-    }
-}
-
-static async Task CreateTablesManually(StoreContext context, ILogger logger)
-{
-    try
-    {
-        var connection = context.Database.GetDbConnection();
-        await connection.OpenAsync();
-
-        logger.LogInformation("Creating tables manually for PostgreSQL...");
-
-        // Create Users table (essential for registration)
-        var commands = new[]
-        {
-            // Users table
-            @"CREATE TABLE IF NOT EXISTS ""Users"" (
-                ""Id"" SERIAL PRIMARY KEY,
-                ""FirstName"" TEXT NOT NULL,
-                ""LastName"" TEXT NOT NULL,
-                ""Email"" TEXT NOT NULL UNIQUE,
-                ""PasswordHash"" TEXT NOT NULL,
-                ""PanNumber"" TEXT,
-                ""IsActive"" BOOLEAN NOT NULL DEFAULT true,
-                ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-                ""LastUpdatedDate"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-            )",
-            
-            // AspNetUsers table (if using Identity)
-            @"CREATE TABLE IF NOT EXISTS ""AspNetUsers"" (
-                ""Id"" TEXT PRIMARY KEY,
-                ""UserName"" TEXT,
-                ""NormalizedUserName"" TEXT,
-                ""Email"" TEXT,
-                ""NormalizedEmail"" TEXT,
-                ""EmailConfirmed"" BOOLEAN NOT NULL,
-                ""PasswordHash"" TEXT,
-                ""SecurityStamp"" TEXT,
-                ""ConcurrencyStamp"" TEXT,
-                ""PhoneNumber"" TEXT,
-                ""PhoneNumberConfirmed"" BOOLEAN NOT NULL,
-                ""TwoFactorEnabled"" BOOLEAN NOT NULL,
-                ""LockoutEnd"" TIMESTAMP WITH TIME ZONE,
-                ""LockoutEnabled"" BOOLEAN NOT NULL,
-                ""AccessFailedCount"" INTEGER NOT NULL
-            )",
-            
-            // Create other essential tables based on your model
-            @"CREATE TABLE IF NOT EXISTS ""Investments"" (
-                ""Id"" SERIAL PRIMARY KEY,
-                ""UserId"" INTEGER NOT NULL,
-                ""Amount"" DECIMAL(18,2) NOT NULL,
-                ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-            )",
-
-            @"CREATE TABLE IF NOT EXISTS ""Notifications"" (
-                ""Id"" SERIAL PRIMARY KEY,
-                ""UserId"" INTEGER NOT NULL,
-                ""Message"" TEXT NOT NULL,
-                ""IsRead"" BOOLEAN NOT NULL DEFAULT false,
-                ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-            )"
-        };
-
-        foreach (var command in commands)
-        {
-            try
-            {
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = command;
-                await cmd.ExecuteNonQueryAsync();
-                logger.LogInformation("Executed: {Command}", command.Split(' ')[2]); // Log table name
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to create table with command: {Command}", command);
-            }
-        }
-
-        logger.LogInformation("✅ Manual table creation completed");
-
-        // Verify tables were created
-        using var countCmd = connection.CreateCommand();
-        countCmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
-        var tableCount = await countCmd.ExecuteScalarAsync();
-        logger.LogInformation("✅ Total tables after manual creation: {TableCount}", tableCount);
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "❌ Manual table creation failed");
     }
 }
 // Health check endpoints
