@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { AuthService, User } from '../../../core/services/auth.service';
 import { InvestmentService } from '../../../core/services/investment.service';
+import { AmfiService } from '../../../core/services/amfi.service'; // Add this import
 import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
 
 // Define interface for form fields
@@ -36,6 +37,24 @@ interface FundScheme {
   code: string;
   name: string;
   currentNav: number;
+  fundName?: string;
+}
+
+// Define interface for API scheme response
+interface ApiScheme {
+  schemeCode: string;
+  schemeName: string;
+  fundName: string;
+  history: Array<{
+    nav: number;
+  }>;
+}
+
+interface ApiResponse {
+  startDate: string;
+  endDate: string;
+  message: string;
+  schemes: ApiScheme[];
 }
 
 @Component({
@@ -66,6 +85,7 @@ export class CreateInvestmentComponent implements OnInit {
   calculatedUnits = 0;
   currentUser: User | null = null;
   isLoadingInvestors = false;
+  isLoadingSchemes = false; // Add loading state for schemes
   selectedFile: File | null = null;
   imagePreview: string | ArrayBuffer | null = null;
 
@@ -82,25 +102,10 @@ export class CreateInvestmentComponent implements OnInit {
     { label: 'Document Upload', control: null }
   ];
 
-  // Mock data for investors - replace with API call
-  // investors: Investor[] = [
-  //   { id: 1, firstName: 'Rajesh', lastName: 'Kumar', email: 'rajesh.kumar@email.com' },
-  //   { id: 2, firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@email.com' },
-  //   { id: 3, firstName: 'Amit', lastName: 'Verma', email: 'amit.verma@email.com' },
-  //   { id: 4, firstName: 'Sneha', lastName: 'Patel', email: 'sneha.patel@email.com' },
-  //   { id: 5, firstName: 'Vikram', lastName: 'Singh', email: 'vikram.singh@email.com' }
-  // ];
+  investors: Investor[] = [];
 
-    investors: Investor[] = [];
-
-  // Mock data for fund schemes with NAV rates
-  fundSchemes: FundScheme[] = [
-    { code: 'SBI001', name: 'SBI Equity Hybrid Fund - Direct Plan Growth', currentNav: 125.4567 },
-    { code: 'HDFC002', name: 'HDFC Balanced Advantage Fund - Direct Growth', currentNav: 89.1234 },
-    { code: 'ICICI003', name: 'ICICI Prudential Bluechip Fund - Direct Growth', currentNav: 156.7890 },
-    { code: 'AXIS004', name: 'Axis Long Term Equity Fund - Direct Plan Growth', currentNav: 67.8912 },
-    { code: 'KOTAK005', name: 'Kotak Emerging Equity Fund - Direct Growth', currentNav: 234.5678 }
-  ];
+  // Updated: Will be populated from API
+  fundSchemes: FundScheme[] = [];
 
   modeOfInvestmentOptions = [
     { value: 'online', label: 'Online', icon: 'public', description: 'Digital investment through online platforms' },
@@ -110,6 +115,7 @@ export class CreateInvestmentComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private investmentService: InvestmentService,
+    private amfiService: AmfiService,
     private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar,
@@ -121,9 +127,62 @@ export class CreateInvestmentComponent implements OnInit {
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadInvestors();
+    this.loadSchemesFromApi(); // Load schemes from API
     this.setupFormFields();
     this.setDefaultDate();
   }
+
+  // Load schemes from API
+  private loadSchemesFromApi(): void {
+    this.isLoadingSchemes = true;
+
+    this.amfiService.getDailySchemesWithRank().subscribe({
+      next: (response: ApiResponse) => {
+
+        // Transform API response to FundScheme array
+        this.fundSchemes = response.schemes.map((scheme: ApiScheme) => {
+          // Get the latest NAV from history (assuming history[1] is the latest)
+          const latestNav = scheme.history && scheme.history.length > 0
+            ? scheme.history[scheme.history.length - 1].nav
+            : 0;
+
+          return {
+            code: scheme.schemeCode,
+            name: scheme.schemeName,
+            currentNav: latestNav,
+            fundName: scheme.fundName // Store fund name if needed
+          };
+        });
+
+        this.isLoadingSchemes = false;
+        console.log('Loaded schemes from API:', this.fundSchemes);
+      },
+      error: (error) => {
+        console.error('Error loading schemes from API:', error);
+        this.isLoadingSchemes = false;
+
+        // Fallback to mock data if API fails
+        this.useMockSchemes();
+
+        this.snackBar.open('Using mock data (API failed)', 'Close', {
+          duration: 3000,
+          panelClass: ['warning-snackbar']
+        });
+      }
+    });
+  }
+
+  // Fallback to mock data if API fails
+  private useMockSchemes(): void {
+    this.fundSchemes = [
+      { code: 'SBI001', name: 'SBI Equity Hybrid Fund - Direct Plan Growth', currentNav: 125.4567 },
+      { code: 'HDFC002', name: 'HDFC Balanced Advantage Fund - Direct Growth', currentNav: 89.1234 },
+      { code: 'ICICI003', name: 'ICICI Prudential Bluechip Fund - Direct Growth', currentNav: 156.7890 },
+      { code: 'AXIS004', name: 'Axis Long Term Equity Fund - Direct Plan Growth', currentNav: 67.8912 },
+      { code: 'KOTAK005', name: 'Kotak Emerging Equity Fund - Direct Growth', currentNav: 234.5678 }
+    ];
+  }
+
   // Drag and drop handlers
   isDragOver = false;
 
@@ -447,14 +506,6 @@ export class CreateInvestmentComponent implements OnInit {
     }).format(amount);
   }
 
-  // Format NAV rate for display
-  // formatNavRate(navRate: number): string {
-  //   return new Intl.NumberFormat('en-IN', {
-  //     minimumFractionDigits: 4,
-  //     maximumFractionDigits: 4
-  //   }).format(navRate);
-  // }
-
   // Getters for form controls for easy template access
   get investorId() { return this.investmentForm.get('investorId'); }
   get schemeCode() { return this.investmentForm.get('schemeCode'); }
@@ -470,30 +521,30 @@ export class CreateInvestmentComponent implements OnInit {
   isFormDirty(): boolean {
     return this.investmentForm.dirty;
   }
-  
+
   getFormCompletion(): number {
-  const requiredFields = [
-    'investorId',
-    'schemeCode', 
-    'navRate',
-    'investAmount',
-    'dateOfPurchase',
-    'modeOfInvestment',
-    'imageFile'
-  ];
+    const requiredFields = [
+      'investorId',
+      'schemeCode',
+      'navRate',
+      'investAmount',
+      'dateOfPurchase',
+      'modeOfInvestment',
+      'imageFile'
+    ];
 
-  let filledFields = 0;
+    let filledFields = 0;
 
-  requiredFields.forEach(field => {
-    const control = this.investmentForm.get(field);
-    if (control && control.value && control.valid) {
-      filledFields++;
-    }
-  });
+    requiredFields.forEach(field => {
+      const control = this.investmentForm.get(field);
+      if (control && control.value && control.valid) {
+        filledFields++;
+      }
+    });
 
-  const percentage = Math.round((filledFields / requiredFields.length) * 100);
-  return Math.min(percentage, 100);
-}
+    const percentage = Math.round((filledFields / requiredFields.length) * 100);
+    return Math.min(percentage, 100);
+  }
 
   // Add these methods to your component
 
