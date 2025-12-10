@@ -72,20 +72,58 @@
                 </div>
               </div>
               <!-- Scheme Selection - UPDATED -->
+              <!-- Scheme Selection - UPDATED -->
               <div class="compact-section">
                 <label class="section-label">
-                  <mat-icon class="text-blue-500" style="font-size: 16px;">person</mat-icon>
+                  <mat-icon class="text-blue-500" style="font-size: 16px;">account_balance</mat-icon>
                   Select Scheme
                 </label>
                 <div class="dropdown-container">
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-select formControlName="schemeCode" (selectionChange)="onSchemeChange($event)">
+                      <!-- Loading State for Schemes -->
+                      <mat-option *ngIf="isLoadingSchemes" disabled>
+                        <div class="flex items-center gap-2">
+                          <mat-progress-spinner diameter="16" strokeWidth="2"
+                            mode="indeterminate"></mat-progress-spinner>
+                          <span class="text-gray-500">Loading schemes...</span>
+                        </div>
+                      </mat-option>
+
+                      <!-- Empty State for Schemes -->
+                      <mat-option *ngIf="!isLoadingSchemes && fundSchemes.length === 0" disabled>
+                        <div class="text-gray-500">No schemes available</div>
+                      </mat-option>
+
+                      <!-- Schemes List -->
                       <mat-option *ngFor="let scheme of fundSchemes" [value]="scheme.code">
                         <div class="dropdown-option">
                           <div class="dropdown-option-content">
-                            <div class="option-primary">{{ scheme.code }}</div>
-                            <div class="option-secondary">{{ scheme.name }}</div>
-                            <div class="option-tertiary">NAV: ₹{{ formatNavRate(scheme.currentNav) }}</div>
+                            <div class="flex flex-col gap-1">
+                              <!-- First line: Scheme Code -->
+                              <div class="flex items-center gap-2">
+                                <span class="font-medium text-blue-600 text-sm">{{ scheme.code }}</span>
+                                <span class="text-xs text-gray-500">|</span>
+                                <span class="text-xs text-gray-500 font-medium">{{ scheme.fundName }}</span>
+                                <span class="text-xs text-gray-500">|</span>
+                                <span class="text-xs text-gray-500 font-medium">{{ scheme.name }}</span>
+                              </div>
+
+                              <!-- Second line: Scheme Name -->
+                              <!-- <div class="text-xs text-gray-700 truncate">
+                                {{ scheme.name }}
+                                 <span class="text-xs text-gray-500">|</span>
+                              </div> -->
+
+                              <!-- Third line: NAV with icon -->
+                              <div class="flex items-center gap-1">
+                                <!-- <mat-icon class="text-green-600"
+                                  style="font-size: 12px; width: 12px; height: 12px;">trending_up</mat-icon> -->
+                                <span class="text-xs text-gray-600">NAV: </span>
+                                <span class="font-mono text-xs text-green-700 font-medium">₹{{
+                                  formatNavRate(scheme.currentNav) }}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </mat-option>

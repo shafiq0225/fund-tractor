@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { AuthService, User } from '../../../core/services/auth.service';
 import { InvestmentService } from '../../../core/services/investment.service';
 import { AmfiService } from '../../../core/services/amfi.service'; // Add this import
 import { BreadcrumbComponent } from "../../../shared/components/breadcrumb/breadcrumb.component";
+import { SnackbarService } from '../../../core/services/snackbar.service';
 
 // Define interface for form fields
 interface FormField {
@@ -118,7 +119,6 @@ export class CreateInvestmentComponent implements OnInit {
     private amfiService: AmfiService,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar,
     private decimalPipe: DecimalPipe
   ) {
     this.investmentForm = this.createForm();
@@ -127,11 +127,11 @@ export class CreateInvestmentComponent implements OnInit {
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadInvestors();
-    this.loadSchemesFromApi(); // Load schemes from API
+    this.loadSchemesFromApi();
     this.setupFormFields();
     this.setDefaultDate();
   }
-
+  snackBarService = inject(SnackbarService)
   // Load schemes from API
   private loadSchemesFromApi(): void {
     this.isLoadingSchemes = true;
@@ -157,31 +157,13 @@ export class CreateInvestmentComponent implements OnInit {
         this.isLoadingSchemes = false;
         console.log('Loaded schemes from API:', this.fundSchemes);
       },
-      error: (error) => {
-        console.error('Error loading schemes from API:', error);
+      error: (err) => {
         this.isLoadingSchemes = false;
-
-        // Fallback to mock data if API fails
-        this.useMockSchemes();
-
-        this.snackBar.open('Using mock data (API failed)', 'Close', {
-          duration: 3000,
-          panelClass: ['warning-snackbar']
-        });
+        this.snackBarService.error(err.error?.message ||'Failed to load schemes from API');
       }
     });
   }
 
-  // Fallback to mock data if API fails
-  private useMockSchemes(): void {
-    this.fundSchemes = [
-      { code: 'SBI001', name: 'SBI Equity Hybrid Fund - Direct Plan Growth', currentNav: 125.4567 },
-      { code: 'HDFC002', name: 'HDFC Balanced Advantage Fund - Direct Growth', currentNav: 89.1234 },
-      { code: 'ICICI003', name: 'ICICI Prudential Bluechip Fund - Direct Growth', currentNav: 156.7890 },
-      { code: 'AXIS004', name: 'Axis Long Term Equity Fund - Direct Plan Growth', currentNav: 67.8912 },
-      { code: 'KOTAK005', name: 'Kotak Emerging Equity Fund - Direct Growth', currentNav: 234.5678 }
-    ];
-  }
 
   // Drag and drop handlers
   isDragOver = false;
@@ -273,20 +255,16 @@ export class CreateInvestmentComponent implements OnInit {
 
   private loadInvestors(): void {
     this.isLoadingInvestors = true;
-    
+
     this.investmentService.getInvestors().subscribe({
       next: (investors) => {
         this.investors = investors;
         this.isLoadingInvestors = false;
         console.log('Loaded investors:', investors);
       },
-      error: (error) => {
-        console.error('Error loading investors:', error);
+      error: (err) => {
         this.isLoadingInvestors = false;
-        this.snackBar.open('Failed to load investors', 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
+        this.snackBarService.error(err.error?.message || 'Failed to load schemes.');
       }
     });
   }
@@ -369,19 +347,13 @@ export class CreateInvestmentComponent implements OnInit {
       // Check file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
       if (!validTypes.includes(file.type)) {
-        this.snackBar.open('Please select a valid image or PDF file', 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
+        this.snackBarService.error('Please select a valid image or PDF file');
         return;
       }
 
       // Check file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        this.snackBar.open('File size should be less than 5MB', 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
+        this.snackBarService.error('File size should be less than 5MB');
         return;
       }
 
@@ -426,10 +398,7 @@ export class CreateInvestmentComponent implements OnInit {
     this.investmentForm.patchValue({
       modeOfInvestment: 'online'
     });
-    this.snackBar.open('Form cleared', 'Close', {
-      duration: 2000,
-      panelClass: ['info-snackbar']
-    });
+    this.snackBarService.error('Form cleared');
   }
 
   onCancel(): void {
@@ -460,10 +429,7 @@ export class CreateInvestmentComponent implements OnInit {
       // Simulate API call - replace with actual service call
       setTimeout(() => {
         this.isSubmitting = false;
-        this.snackBar.open('Investment created successfully!', 'Close', {
-          duration: 5000,
-          panelClass: ['success-snackbar']
-        });
+        this.snackBarService.success('Investment created successfully!');
         this.router.navigate(['/portfolio']);
       }, 2000);
     } else {
@@ -472,10 +438,7 @@ export class CreateInvestmentComponent implements OnInit {
         this.investmentForm.get(key)?.markAsTouched();
       });
 
-      this.snackBar.open('Please fill all required fields correctly', 'Close', {
-        duration: 5000,
-        panelClass: ['error-snackbar']
-      });
+      this.snackBarService.error('Please fill all required fields correctly');
     }
   }
 
